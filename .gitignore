@@ -35,3 +35,6 @@ build/
 ### Secretos locales ###
 .env
 *.env
+
+### Claude Code (configuración personal) ###
+.claude/settings.local.json
