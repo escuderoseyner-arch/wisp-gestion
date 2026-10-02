@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>Panel de administración</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/css/estilos.css">
+  <script src="/js/sesion.js" defer></script>
+  <script src="/js/inicio.js" defer></script>
+</head>
+<!-- data-rol: inicio.js solo deja entrar a usuarios con este rol -->
+<body data-rol="ADMIN">
+  <header class="barra">
+    <div class="barra-marca">
+      <img data-logo alt="" hidden>
+      <span class="barra-nombre" data-empresa>Gestión WISP</span>
+    </div>
+    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto">Cerrar sesión</button>
+  </header>
+
+  <main class="contenido">
+    <span class="etiqueta-rol">Administrador</span>
+    <h1 class="saludo">Hola, <span id="nombre-usuario">…</span></h1>
+    <p class="saludo-sub">Bienvenido al panel de administración.</p>
+
+    <div id="error" class="aviso aviso-error" role="alert" hidden></div>
+
+    <section class="panel">
+      <p>Aquí verás pronto los clientes atrasados, los pagos de la semana y lo cobrado del mes.</p>
+      <p><a href="/cambiar-password.html">Cambiar mi contraseña</a></p>
+    </section>
+  </main>
+</body>
+</html>

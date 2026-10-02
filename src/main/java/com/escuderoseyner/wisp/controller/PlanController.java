@@ -11,7 +11,7 @@ import java.util.List;
 // Controlador de PRUEBA para confirmar que todo conecta.
 // Más adelante devolveremos DTOs en vez de la entidad directamente.
 @RestController
-@RequestMapping("/api/planes")
+@RequestMapping("/api/admin/planes") // /api/admin/**: solo ADMIN (ver SecurityConfig)
 public class PlanController {
 
     private final PlanRepository planRepository;

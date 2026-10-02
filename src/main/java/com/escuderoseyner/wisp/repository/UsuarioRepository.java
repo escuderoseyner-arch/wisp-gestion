@@ -1,5 +1,6 @@
 package com.escuderoseyner.wisp.repository;
 
+import com.escuderoseyner.wisp.model.Rol;
 import com.escuderoseyner.wisp.model.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -12,4 +13,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
 
     // Para "¿Olvidaste tu contraseña?"
     Optional<Usuario> findByEmail(String email);
+
+    // Para saber si hay que crear el admin inicial al arrancar
+    boolean existsByRol(Rol rol);
 }

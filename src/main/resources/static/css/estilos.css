@@ -1,0 +1,370 @@
+/* =====================================================================
+   Estilos compartidos. Mobile-first: las reglas base son para celular
+   y los @media (min-width) agrandan para pantallas más anchas.
+   ===================================================================== */
+
+:root {
+  --color-primario: #0f766e;
+  --color-primario-hover: #115e59;
+  --color-primario-suave: #ccfbf1;
+  --color-fondo: #f1f5f9;
+  --color-superficie: #ffffff;
+  --color-texto: #0f172a;
+  --color-texto-suave: #64748b;
+  --color-borde: #cbd5e1;
+  --color-error: #b91c1c;
+  --color-error-fondo: #fef2f2;
+  --color-info: #0f766e;
+  --color-info-fondo: #f0fdfa;
+  --radio: 16px;
+  --radio-control: 10px;
+  --sombra: 0 10px 30px rgba(15, 23, 42, 0.08);
+  color-scheme: light dark;
+}
+
+/* Modo oscuro automático según la configuración del celular */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primario: #2dd4bf;
+    --color-primario-hover: #5eead4;
+    --color-primario-suave: #134e4a;
+    --color-fondo: #0b1220;
+    --color-superficie: #111a2e;
+    --color-texto: #e2e8f0;
+    --color-texto-suave: #94a3b8;
+    --color-borde: #334155;
+    --color-error: #fca5a5;
+    --color-error-fondo: #3b1219;
+    --color-info: #5eead4;
+    --color-info-fondo: #0f2a2a;
+    --sombra: 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px; /* 16px en inputs evita que iPhone haga zoom al tocarlos */
+  line-height: 1.5;
+  color: var(--color-texto);
+  background: var(--color-fondo);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, p {
+  margin: 0;
+}
+
+a {
+  color: var(--color-primario);
+  font-weight: 600;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-primario);
+  outline-offset: 2px;
+}
+
+/* ---------- Pantallas de acceso (login, cambiar contraseña) ---------- */
+
+.pantalla-centrada {
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background:
+    linear-gradient(180deg, var(--color-primario) 0, var(--color-primario) 180px, transparent 180px),
+    var(--color-fondo);
+}
+
+.tarjeta {
+  width: 100%;
+  max-width: 420px;
+  padding: 28px 20px;
+  background: var(--color-superficie);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.marca {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.marca-logo {
+  display: block;
+  max-width: 160px;
+  max-height: 64px;
+  margin: 0 auto 12px;
+  object-fit: contain;
+}
+
+.marca-nombre {
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.marca-sub {
+  margin-top: 6px;
+  color: var(--color-texto-suave);
+}
+
+/* ---------- Formularios ---------- */
+
+.campo {
+  margin-bottom: 18px;
+}
+
+.campo label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.campo input {
+  width: 100%;
+  min-height: 48px; /* tamaño cómodo para tocar con el dedo */
+  padding: 12px 14px;
+  font: inherit;
+  color: var(--color-texto);
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-control);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.campo input:focus {
+  outline: none;
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px var(--color-primario-suave);
+}
+
+.campo-ayuda {
+  margin-top: 6px;
+  font-size: 0.875rem;
+  color: var(--color-texto-suave);
+}
+
+.campo-password {
+  position: relative;
+}
+
+.campo-password input {
+  padding-right: 92px; /* espacio para el botón "Mostrar" */
+}
+
+.boton-ojo {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-primario);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.boton-ojo:hover {
+  background: var(--color-primario-suave);
+}
+
+/* ---------- Botones ---------- */
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 18px;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radio-control);
+  cursor: pointer;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+
+.boton-primario {
+  color: #ffffff;
+  background: var(--color-primario);
+  border: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .boton-primario {
+    color: #0b1220;
+  }
+}
+
+.boton-primario:hover {
+  background: var(--color-primario-hover);
+}
+
+.boton-secundario {
+  color: var(--color-texto);
+  background: transparent;
+  border: 1px solid var(--color-borde);
+}
+
+.boton-secundario:hover {
+  background: var(--color-fondo);
+}
+
+.boton:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.boton-compacto {
+  width: auto;
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 0.9rem;
+}
+
+.acciones {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* ---------- Avisos ---------- */
+
+.aviso {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  border-left: 4px solid currentColor;
+  border-radius: var(--radio-control);
+}
+
+.aviso-error {
+  color: var(--color-error);
+  background: var(--color-error-fondo);
+}
+
+.aviso-info {
+  color: var(--color-info);
+  background: var(--color-info-fondo);
+}
+
+.aviso ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+/* ---------- Páginas internas (inicio admin / cliente) ---------- */
+
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--color-superficie);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.barra-marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0; /* permite recortar nombres largos */
+}
+
+.barra-marca img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.barra-nombre {
+  overflow: hidden;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.contenido {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+.etiqueta-rol {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-primario);
+  text-transform: uppercase;
+  background: var(--color-primario-suave);
+  border-radius: 999px;
+}
+
+.saludo {
+  font-size: 1.6rem;
+  line-height: 1.25;
+}
+
+.saludo-sub {
+  margin-top: 6px;
+  color: var(--color-texto-suave);
+}
+
+.panel {
+  margin-top: 24px;
+  padding: 20px;
+  background: var(--color-superficie);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.panel p + p {
+  margin-top: 8px;
+}
+
+/* ---------- Pantallas más anchas ---------- */
+
+@media (min-width: 480px) {
+  .tarjeta {
+    padding: 36px 32px;
+  }
+}
+
+@media (min-width: 768px) {
+  .barra {
+    padding: 12px 32px;
+  }
+
+  .contenido {
+    padding: 40px 32px;
+  }
+
+  .saludo {
+    font-size: 2rem;
+  }
+}

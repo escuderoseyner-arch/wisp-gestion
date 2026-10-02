@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>Iniciar sesión</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/css/estilos.css">
+  <script src="/js/sesion.js" defer></script>
+  <script src="/js/login.js" defer></script>
+</head>
+<body class="pantalla-centrada">
+  <main class="tarjeta">
+    <header class="marca">
+      <img class="marca-logo" data-logo alt="" hidden>
+      <h1 class="marca-nombre" data-empresa>Gestión WISP</h1>
+      <p class="marca-sub">Ingresa con tu usuario y contraseña</p>
+    </header>
+
+    <div id="aviso" class="aviso aviso-info" role="status" hidden></div>
+    <div id="error" class="aviso aviso-error" role="alert" hidden></div>
+
+    <form id="form-login" novalidate>
+      <div class="campo">
+        <label for="username">Usuario</label>
+        <input id="username" name="username" type="text" maxlength="50" required
+               autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+      </div>
+
+      <div class="campo">
+        <label for="password">Contraseña</label>
+        <div class="campo-password">
+          <input id="password" name="password" type="password" maxlength="72" required
+                 autocomplete="current-password">
+          <button type="button" class="boton-ojo" data-mostrar="password"
+                  aria-label="Mostrar contraseña" aria-pressed="false">Mostrar</button>
+        </div>
+      </div>
+
+      <button type="submit" id="boton-ingresar" class="boton boton-primario">Ingresar</button>
+    </form>
+
+    <noscript>
+      <p class="aviso aviso-error">Necesitas activar JavaScript para usar el sistema.</p>
+    </noscript>
+  </main>
+</body>
+</html>
