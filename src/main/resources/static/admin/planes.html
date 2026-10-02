@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>Planes</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/css/estilos.css">
+  <script src="/js/sesion.js" defer></script>
+  <script src="/js/planes.js" defer></script>
+</head>
+<!-- data-rol: planes.js solo deja entrar a usuarios con este rol -->
+<body data-rol="ADMIN">
+  <header class="barra">
+    <div class="barra-marca">
+      <img data-logo alt="" hidden>
+      <span class="barra-nombre" data-empresa>Gestión WISP</span>
+    </div>
+    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto">Cerrar sesión</button>
+  </header>
+
+  <main class="contenido">
+    <a class="enlace-volver" href="/admin/inicio.html">← Volver al inicio</a>
+
+    <div class="encabezado-seccion">
+      <div>
+        <h1 class="saludo">Planes</h1>
+        <p class="saludo-sub">Los planes no se borran: se desactivan.</p>
+      </div>
+      <button type="button" id="boton-nuevo" class="boton boton-primario boton-compacto">+ Nuevo plan</button>
+    </div>
+
+    <div id="exito" class="aviso aviso-info" role="status" hidden></div>
+    <div id="error" class="aviso aviso-error" role="alert" hidden></div>
+
+    <!-- Formulario para crear y editar (oculto hasta que se pulsa "Nuevo" o "Editar") -->
+    <section id="panel-formulario" class="panel" hidden aria-labelledby="titulo-formulario">
+      <h2 id="titulo-formulario" class="panel-titulo">Nuevo plan</h2>
+      <div id="error-formulario" class="aviso aviso-error" role="alert" hidden></div>
+
+      <form id="form-plan" novalidate>
+        <div class="campo">
+          <label for="nombre">Nombre</label>
+          <input id="nombre" name="nombre" type="text" maxlength="50" required autocomplete="off"
+                 placeholder="Ej: Estándar">
+        </div>
+
+        <div class="fila-campos">
+          <div class="campo">
+            <label for="bajada">Bajada (Mbps)</label>
+            <input id="bajada" name="bajadaMbps" type="number" inputmode="numeric" min="1" max="10000" step="1" required>
+          </div>
+          <div class="campo">
+            <label for="subida">Subida (Mbps)</label>
+            <input id="subida" name="subidaMbps" type="number" inputmode="numeric" min="1" max="10000" step="1" required>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="precio">Precio mensual</label>
+          <input id="precio" name="precio" type="number" inputmode="decimal" min="0.01" step="0.01" required
+                 placeholder="Ej: 79.00" aria-describedby="ayuda-precio">
+          <p id="ayuda-precio" class="campo-ayuda">Si cambias el precio, aplica a todos los clientes con este plan desde su próximo cobro.</p>
+        </div>
+
+        <div class="acciones">
+          <button type="submit" id="boton-guardar" class="boton boton-primario">Guardar plan</button>
+          <button type="button" id="boton-cancelar" class="boton boton-secundario">Cancelar</button>
+        </div>
+      </form>
+    </section>
+
+    <p id="cargando" class="saludo-sub">Cargando planes…</p>
+    <p id="vacio" class="panel vacio" hidden>Todavía no hay planes. Crea el primero con “Nuevo plan”.</p>
+    <ul id="lista-planes" class="lista-planes" aria-label="Lista de planes"></ul>
+  </main>
+</body>
+</html>

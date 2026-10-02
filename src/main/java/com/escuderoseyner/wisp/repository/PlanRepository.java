@@ -8,7 +8,15 @@ import java.util.List;
 // Spring crea la implementación sola: findAll(), save(), findById(), etc.
 public interface PlanRepository extends JpaRepository<Plan, Integer> {
 
-    // Spring arma la consulta a partir del nombre del método:
-    // SELECT * FROM planes WHERE activo = true
-    List<Plan> findByActivoTrue();
+    // Todos los planes: primero los activos, luego por nombre
+    List<Plan> findAllByOrderByActivoDescNombreAsc();
+
+    // Solo los que se pueden elegir para un cliente nuevo
+    List<Plan> findByActivoTrueOrderByNombreAsc();
+
+    // Para que no se repita el nombre ("Básico" y "básico" cuentan como iguales)
+    boolean existsByNombreIgnoreCase(String nombre);
+
+    // Lo mismo al editar, sin contar el propio plan
+    boolean existsByNombreIgnoreCaseAndIdNot(String nombre, Integer id);
 }
