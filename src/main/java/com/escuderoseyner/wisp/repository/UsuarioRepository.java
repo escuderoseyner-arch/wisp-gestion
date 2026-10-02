@@ -1,0 +1,15 @@
+package com.escuderoseyner.wisp.repository;
+
+import com.escuderoseyner.wisp.model.Usuario;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
+
+    // Para el login. Optional: puede que el usuario no exista.
+    Optional<Usuario> findByUsername(String username);
+
+    // Para "¿Olvidaste tu contraseña?"
+    Optional<Usuario> findByEmail(String email);
+}
