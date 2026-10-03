@@ -91,7 +91,7 @@ public class AuthService {
             throw new ReglaNegocioException("La contraseña nueva debe ser distinta de la actual.");
         }
 
-        usuario.setPasswordHash(passwordEncoder.encode(request.passwordNueva()));
+        usuario.cambiarPasswordHash(passwordEncoder.encode(request.passwordNueva())); // cierra sus otras sesiones
         usuario.setDebeCambiarPassword(false);
         usuario.setIntentosFallidos(0);
         return crearRespuesta(usuario);

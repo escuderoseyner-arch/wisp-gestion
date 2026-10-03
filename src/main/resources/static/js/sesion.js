@@ -67,7 +67,7 @@ const Sesion = (() => {
 
   // ---------- Navegación ----------
 
-  // motivo: 'expirada' o 'salida', para mostrar un aviso en el login
+  // motivo: 'expirada', 'cerrada' o 'salida', para mostrar un aviso en el login
   function irAlLogin(motivo) {
     borrar();
     location.replace(RUTA_LOGIN + (motivo ? '?motivo=' + motivo : ''));
@@ -139,10 +139,11 @@ const Sesion = (() => {
       throw new Error('No se pudo conectar con el servidor. Revisa tu conexión a internet.');
     }
 
-    // Token rechazado por el servidor (expiró o ya no es válido)
+    // Token rechazado por el servidor: expiró, cambió la contraseña o la cuenta se desactivó.
+    // Se borra el token y se vuelve al login.
     if (respuesta.status === 401 && sesion) {
-      irAlLogin('expirada');
-      throw new Error('Tu sesión expiró. Vuelve a ingresar.');
+      irAlLogin('cerrada');
+      throw new Error('Tu sesión se cerró. Vuelve a ingresar.');
     }
 
     const datos = await respuesta.json().catch(() => null);

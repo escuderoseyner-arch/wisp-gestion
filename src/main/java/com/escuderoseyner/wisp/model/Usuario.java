@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "usuarios")
@@ -26,6 +27,17 @@ public class Usuario {
     // Hash BCrypt, nunca la contraseña en texto plano
     @Column(name = "password_hash", nullable = false, length = 100)
     private String passwordHash;
+
+    // Último cambio o restablecimiento de contraseña (script 003). Los tokens emitidos
+    // antes de esta fecha dejan de valer. null = nunca se cambió desde que existe la columna.
+    @Column(name = "password_cambiado_en")
+    private LocalDateTime passwordCambiadoEn;
+
+    // Cambia el hash y anota cuándo, al segundo (los tokens guardan su hora de emisión en segundos)
+    public void cambiarPasswordHash(String hash) {
+        this.passwordHash = hash;
+        this.passwordCambiadoEn = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    }
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

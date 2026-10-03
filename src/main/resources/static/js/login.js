@@ -35,6 +35,9 @@
 
   const motivo = new URLSearchParams(location.search).get('motivo');
   if (motivo === 'expirada') Sesion.mostrarMensaje(cajaAviso, 'Tu sesión expiró. Vuelve a ingresar.');
+  if (motivo === 'cerrada') {
+    Sesion.mostrarMensaje(cajaAviso, 'Tu sesión se cerró: expiró, se cambió tu contraseña o tu cuenta fue desactivada. Vuelve a ingresar.');
+  }
   if (motivo === 'salida') Sesion.mostrarMensaje(cajaAviso, 'Cerraste sesión correctamente.');
 
   form.username.focus();

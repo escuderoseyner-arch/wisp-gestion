@@ -15,6 +15,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -126,13 +127,16 @@ public class SecurityConfig {
         return NimbusJwtEncoder.withSecretKey(jwtSecretKey).build();
     }
 
-    // Verifica la firma, la fecha de expiración y que el emisor sea esta app
+    // Verifica la firma, la fecha de expiración, que el emisor sea esta app
+    // y que el usuario siga vigente (UsuarioVigenteValidator consulta la base de datos)
     @Bean
-    public JwtDecoder jwtDecoder(SecretKey jwtSecretKey) {
+    public JwtDecoder jwtDecoder(SecretKey jwtSecretKey, UsuarioVigenteValidator usuarioVigenteValidator) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(jwtSecretKey)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
-        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(JwtService.EMISOR));
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+                JwtValidators.createDefaultWithIssuer(JwtService.EMISOR),
+                usuarioVigenteValidator));
         return decoder;
     }
 }

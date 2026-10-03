@@ -65,7 +65,7 @@ public class CuentaClienteService {
                 .orElseThrow(() -> new ReglaNegocioException("Este cliente todavía no tiene cuenta. Usa \"Crear cuenta\"."));
 
         String password = generadorPassword.generar();
-        usuario.setPasswordHash(passwordEncoder.encode(password));
+        usuario.cambiarPasswordHash(passwordEncoder.encode(password)); // cierra las sesiones abiertas
         usuario.setDebeCambiarPassword(true);
         usuario.setIntentosFallidos(0);
         usuario.setBloqueadoHasta(null);
