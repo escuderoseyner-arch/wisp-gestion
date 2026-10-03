@@ -1,6 +1,6 @@
 // Código de pagos que comparten admin/pagos.html y admin/clientes.html:
 // la ventana "Registrar pago" y funciones para mostrar meses, montos y estados.
-// Se carga después de sesion.js.
+// Se carga después de sesion.js y formato.js.
 
 const Pagos = (() => {
   const URL_PAGOS = '/api/admin/pagos';
@@ -8,37 +8,8 @@ const Pagos = (() => {
   const METODOS = { YAPE: 'Yape', PLIN: 'Plin', TRANSFERENCIA: 'Transferencia', EFECTIVO: 'Efectivo', OTRO: 'Otro' };
   const ESTADOS_MES = { PAGADO: 'Pagado', PENDIENTE: 'Pendiente', VENCIDO: 'Vencido', NO_APLICA: 'No aplica' };
 
-  const formatoNumero = new Intl.NumberFormat('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-  // ---------- Formatos ----------
-
-  function dinero(moneda, monto) {
-    return (moneda ? moneda + ' ' : '') + formatoNumero.format(Number(monto));
-  }
-
-  // "2026-10" -> "Octubre de 2026"
-  function nombreMes(periodo) {
-    const [anio, mes] = periodo.split('-').map(Number);
-    const texto = new Date(anio, mes - 1, 1).toLocaleDateString('es', { month: 'long', year: 'numeric' });
-    return texto.charAt(0).toUpperCase() + texto.slice(1);
-  }
-
-  // "2026-10-08" -> "08/10/2026"
-  function fecha(iso) {
-    if (!iso) return '';
-    const [anio, mes, dia] = iso.split('-');
-    return dia + '/' + mes + '/' + anio;
-  }
-
-  // Hoy en hora local, como "2026-10-03"
-  function hoy() {
-    const d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  }
-
-  function mesActual() {
-    return hoy().slice(0, 7);
-  }
+  // Formatos: vienen de formato.js
+  const { dinero, nombreMes, fecha, hoy, mesActual } = Formato;
 
   function crearEstadoMes(estado) {
     const span = document.createElement('span');

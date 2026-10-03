@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>Configuración</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/css/estilos.css">
+  <script src="/js/sesion.js" defer></script>
+  <script src="/js/formato.js" defer></script>
+  <script src="/js/configuracion.js" defer></script>
+</head>
+<!-- data-rol: configuracion.js solo deja entrar a usuarios con este rol -->
+<body data-rol="ADMIN">
+  <header class="barra">
+    <div class="barra-marca">
+      <img data-logo alt="" hidden>
+      <span class="barra-nombre" data-empresa>Gestión WISP</span>
+    </div>
+    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto">Cerrar sesión</button>
+  </header>
+
+  <main class="contenido">
+    <a class="enlace-volver" href="/admin/inicio.html">← Volver al inicio</a>
+    <h1 class="saludo">Configuración</h1>
+    <p class="saludo-sub">Datos de tu empresa. Se usan en el login, el portal del cliente y los recordatorios.</p>
+
+    <div id="exito" class="aviso aviso-info" role="status" hidden></div>
+    <div id="error" class="aviso aviso-error" role="alert" hidden></div>
+    <p id="cargando" class="saludo-sub">Cargando…</p>
+
+    <form id="form-config" class="formulario-config" novalidate hidden>
+      <section class="panel" aria-labelledby="titulo-empresa">
+        <h2 id="titulo-empresa" class="panel-titulo">Empresa</h2>
+        <div class="campo">
+          <label for="nombre-empresa">Nombre de la empresa</label>
+          <input id="nombre-empresa" name="nombreEmpresa" type="text" maxlength="100" required autocomplete="organization">
+        </div>
+        <div class="campo">
+          <label for="ruc">RUC <span class="opcional">(opcional)</span></label>
+          <input id="ruc" name="ruc" type="text" inputmode="numeric" maxlength="11" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label for="logo-url">URL del logo <span class="opcional">(opcional)</span></label>
+          <input id="logo-url" name="logoUrl" type="url" maxlength="255" autocomplete="off" spellcheck="false"
+                 placeholder="https://..." aria-describedby="ayuda-logo">
+          <p id="ayuda-logo" class="campo-ayuda">Debe empezar con https://</p>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="titulo-contacto">
+        <h2 id="titulo-contacto" class="panel-titulo">WhatsApp</h2>
+        <div class="fila-campos fila-pais">
+          <div class="campo">
+            <label for="codigo-pais">Código de país</label>
+            <input id="codigo-pais" name="codigoPais" type="text" inputmode="numeric" maxlength="4" required
+                   autocomplete="off" aria-describedby="ayuda-pais">
+          </div>
+          <div class="campo">
+            <label for="whatsapp">WhatsApp de soporte</label>
+            <input id="whatsapp" name="whatsappSoporte" type="tel" inputmode="numeric" maxlength="15" required
+                   autocomplete="off">
+          </div>
+        </div>
+        <p id="ayuda-pais" class="campo-ayuda">Código sin el + (51 = Perú). El número va sin el código de país.
+          Aquí llegan los reportes de falla, los comprobantes y los "olvidé mi contraseña".</p>
+      </section>
+
+      <section class="panel" aria-labelledby="titulo-pago">
+        <h2 id="titulo-pago" class="panel-titulo">Datos para pagar</h2>
+        <p class="campo-ayuda">Solo los ven los clientes que iniciaron sesión.</p>
+        <div class="campo">
+          <label for="yape-numero">Número de Yape <span class="opcional">(opcional)</span></label>
+          <input id="yape-numero" name="yapeNumero" type="tel" inputmode="numeric" maxlength="15" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label for="yape-titular">Titular de Yape <span class="opcional">(opcional)</span></label>
+          <input id="yape-titular" name="yapeTitular" type="text" maxlength="100" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label for="cuenta-bancaria">Cuenta bancaria <span class="opcional">(opcional)</span></label>
+          <input id="cuenta-bancaria" name="cuentaBancaria" type="text" maxlength="150" autocomplete="off"
+                 placeholder="Ej: BBVA Ahorros 0011-...">
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="titulo-cobranza">
+        <h2 id="titulo-cobranza" class="panel-titulo">Cobranza</h2>
+        <div class="campo">
+          <label for="dias-tolerancia">Días de tolerancia</label>
+          <input id="dias-tolerancia" name="diasTolerancia" type="number" inputmode="numeric" min="0" max="15" step="1"
+                 required aria-describedby="ayuda-tolerancia">
+          <p id="ayuda-tolerancia" class="campo-ayuda">De 0 a 15. Días después del día de pago antes de marcar el mes como vencido.</p>
+        </div>
+        <div class="campo">
+          <label for="plantilla">Plantilla del recordatorio</label>
+          <textarea id="plantilla" name="plantillaRecordatorio" rows="4" maxlength="500" required
+                    aria-describedby="ayuda-plantilla"></textarea>
+          <div id="ayuda-plantilla" class="campo-ayuda">
+            <p>Variables disponibles (se reemplazan al enviar):</p>
+            <ul class="variables">
+              <li><code>{nombre}</code> nombre del cliente</li>
+              <li><code>{monto}</code> total que debe</li>
+              <li><code>{mes}</code> meses que debe, ej: "agosto y septiembre 2026"</li>
+            </ul>
+          </div>
+        </div>
+        <p class="etiqueta-suave">Vista previa</p>
+        <p id="vista-previa" class="vista-previa" aria-live="polite"></p>
+      </section>
+
+      <div id="error-formulario" class="aviso aviso-error" role="alert" hidden></div>
+      <div class="acciones">
+        <button type="submit" id="boton-guardar" class="boton boton-primario">Guardar configuración</button>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

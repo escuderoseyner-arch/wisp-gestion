@@ -24,7 +24,7 @@
   const cajaError = $('error');
   const vistas = { lista: $('vista-lista'), detalle: $('vista-detalle'), formulario: $('vista-formulario') };
 
-  const formatoPrecio = new Intl.NumberFormat('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatoPrecio = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   // Mensaje de éxito para mostrar después de cambiar de vista
   let mensajePendiente = null;

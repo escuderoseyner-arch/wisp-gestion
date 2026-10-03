@@ -22,7 +22,7 @@
   // id del plan que se está editando, o null si se está creando uno nuevo
   let idEnEdicion = null;
 
-  const formatoPrecio = new Intl.NumberFormat('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatoPrecio = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   Sesion.cargarEmpresa();
   document.getElementById('cerrar-sesion').addEventListener('click', Sesion.cerrar);

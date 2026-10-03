@@ -138,6 +138,7 @@ a {
 
 .campo input,
 .campo select,
+.campo textarea,
 .mensaje-copiable {
   width: 100%;
   min-height: 48px; /* tamaño cómodo para tocar con el dedo */
@@ -152,6 +153,7 @@ a {
 
 .campo input:focus,
 .campo select:focus,
+.campo textarea:focus,
 .mensaje-copiable:focus {
   outline: none;
   border-color: var(--color-primario);
@@ -682,6 +684,44 @@ a {
 
 .dialogo p {
   margin-bottom: 20px;
+}
+
+/* ---------- Configuración ---------- */
+
+.formulario-config .panel:first-child {
+  margin-top: 0;
+}
+
+.formulario-config .acciones {
+  margin-top: 20px;
+}
+
+/* Código de país angosto, número ancho */
+.fila-pais {
+  grid-template-columns: 7rem 1fr;
+}
+
+.campo textarea {
+  resize: vertical;
+}
+
+.variables {
+  margin: 4px 0 0;
+  padding-left: 20px;
+}
+
+.variables code {
+  font-weight: 700;
+  color: var(--color-texto);
+}
+
+.vista-previa {
+  padding: 12px 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--color-fondo);
+  border: 1px dashed var(--color-borde);
+  border-radius: var(--radio-control);
 }
 
 /* ---------- Pagos ---------- */
