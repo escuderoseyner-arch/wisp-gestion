@@ -92,6 +92,7 @@
     botonEditar.type = 'button';
     botonEditar.className = 'boton boton-secundario boton-compacto';
     botonEditar.textContent = 'Editar';
+    Iconos.en(botonEditar, 'editar');
     botonEditar.setAttribute('aria-label', 'Editar el plan ' + plan.nombre);
     botonEditar.addEventListener('click', () => abrirFormulario(plan));
 
@@ -99,6 +100,7 @@
     botonEstado.type = 'button';
     botonEstado.className = 'boton boton-secundario boton-compacto';
     botonEstado.textContent = plan.activo ? 'Desactivar' : 'Activar';
+    Iconos.en(botonEstado, plan.activo ? 'pausa' : 'play');
     botonEstado.setAttribute('aria-label', (plan.activo ? 'Desactivar' : 'Activar') + ' el plan ' + plan.nombre);
     botonEstado.addEventListener('click', () => cambiarActivo(plan, botonEstado));
 

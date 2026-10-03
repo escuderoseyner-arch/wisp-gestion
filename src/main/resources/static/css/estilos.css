@@ -1,49 +1,89 @@
 /* =====================================================================
-   Estilos compartidos. Mobile-first: las reglas base son para celular
-   y los @media (min-width) agrandan para pantallas más anchas.
+   Estilos de wisp-gestion
+   - Mobile-first: las reglas base son para celular (desde 360px) y los
+     @media (min-width) acomodan pantallas más anchas.
+   - Tema claro por defecto; oscuro solo si el sistema lo pide.
+   - Letra del sistema (sin fuentes externas, por la CSP).
+   - Íconos: SVG creados por js/iconos.js (clase .icono).
    ===================================================================== */
 
+/* ---------- Colores y medidas ---------- */
+
 :root {
-  --color-primario: #0f766e;
-  --color-primario-hover: #115e59;
-  --color-primario-suave: #ccfbf1;
-  --color-fondo: #f1f5f9;
-  --color-superficie: #ffffff;
-  --color-texto: #0f172a;
-  --color-texto-suave: #64748b;
-  --color-borde: #cbd5e1;
-  --color-error: #b91c1c;
-  --color-error-fondo: #fef2f2;
-  --color-alerta: #a16207;
-  --color-alerta-fondo: #fef9c3;
-  --color-info: #0f766e;
-  --color-info-fondo: #f0fdfa;
+  /* Base: blanco hueso y grises suaves */
+  --fondo: #f7f5f0;
+  --superficie: #ffffff;
+  --superficie-2: #f2f0ea;
+  --texto: #1f2a33;
+  --texto-suave: #56616b;
+  --borde: #e2ddd3;
+  --borde-fuerte: #cfc9bd;
+
+  /* Principal: verde azulado apagado */
+  --primario: #2f6f73;
+  --primario-hover: #275d61;
+  --primario-suave: #e2eeed;
+  --primario-texto: #22575a;
+  --sobre-primario: #ffffff;
+
+  /* Estados (pastel, siempre con texto) */
+  --ok-fondo: #e2f1e5;
+  --ok-texto: #25603a;
+  --alerta-fondo: #fbefd5;
+  --alerta-texto: #7a5210;
+  --error-fondo: #f9e2df;
+  --error-texto: #9a2f26;
+  --gris-fondo: #e8e6e1;
+  --gris-texto: #4c555d;
+  --gris-claro-fondo: #f3f1ec;
+  --gris-claro-texto: #6b747c;
+
+  --whatsapp: #25d366;
+  --whatsapp-hover: #20bd5b;
+  --sobre-whatsapp: #0e3b22;
+
   --radio: 16px;
-  --radio-control: 10px;
-  --sombra: 0 10px 30px rgba(15, 23, 42, 0.08);
-  color-scheme: light dark;
+  --radio-control: 12px;
+  --sombra: 0 1px 2px rgba(31, 42, 51, 0.04), 0 4px 16px rgba(31, 42, 51, 0.05);
+  --transicion: 120ms ease;
+  --alto-nav: 64px;
+
+  color-scheme: light;
 }
 
-/* Modo oscuro automático según la configuración del celular */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-primario: #2dd4bf;
-    --color-primario-hover: #5eead4;
-    --color-primario-suave: #134e4a;
-    --color-fondo: #0b1220;
-    --color-superficie: #111a2e;
-    --color-texto: #e2e8f0;
-    --color-texto-suave: #94a3b8;
-    --color-borde: #334155;
-    --color-error: #fca5a5;
-    --color-error-fondo: #3b1219;
-    --color-alerta: #fde047;
-    --color-alerta-fondo: #3a3110;
-    --color-info: #5eead4;
-    --color-info-fondo: #0f2a2a;
-    --sombra: 0 10px 30px rgba(0, 0, 0, 0.4);
+    --fondo: #14181b;
+    --superficie: #1c2125;
+    --superficie-2: #23292e;
+    --texto: #e5e8ea;
+    --texto-suave: #a5aeb6;
+    --borde: #2f363c;
+    --borde-fuerte: #414a51;
+
+    --primario: #7db5b2;
+    --primario-hover: #95c6c3;
+    --primario-suave: #20302f;
+    --primario-texto: #9fcdca;
+    --sobre-primario: #0f1d1c;
+
+    --ok-fondo: #1e3226;
+    --ok-texto: #a3d7b1;
+    --alerta-fondo: #372e1d;
+    --alerta-texto: #ebcc8c;
+    --error-fondo: #3b2321;
+    --error-texto: #f1aca4;
+    --gris-fondo: #2a3035;
+    --gris-texto: #c4cacf;
+    --gris-claro-fondo: #22272b;
+    --gris-claro-texto: #9aa3ab;
+
+    --sombra: 0 1px 2px rgba(0, 0, 0, 0.3);
+    color-scheme: dark;
   }
 }
+
+/* ---------- Base ---------- */
 
 *,
 *::before,
@@ -55,30 +95,259 @@
   display: none !important;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   min-height: 100dvh;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-size: 16px; /* 16px en inputs evita que iPhone haga zoom al tocarlos */
-  line-height: 1.5;
-  color: var(--color-texto);
-  background: var(--color-fondo);
+  font-size: 1.0625rem; /* 17px: cómodo de leer en celular */
+  line-height: 1.55;
+  color: var(--texto);
+  background: var(--fondo);
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, p {
+h1, h2, h3, p {
   margin: 0;
 }
 
 a {
-  color: var(--color-primario);
+  color: var(--primario-texto);
   font-weight: 600;
+  text-underline-offset: 3px;
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-primario);
+  outline: 3px solid var(--primario);
   outline-offset: 2px;
+}
+
+.icono {
+  flex-shrink: 0;
+  width: 1.25em;
+  height: 1.25em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Barra superior y navegación del admin ---------- */
+
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 60px;
+  padding: 8px 16px;
+  background: var(--superficie);
+  border-bottom: 1px solid var(--borde);
+}
+
+.barra-marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0; /* permite recortar nombres largos */
+}
+
+.barra-marca img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.barra-nombre {
+  overflow: hidden;
+  font-size: 1.05rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* En celular: fija abajo de la pantalla, como en una app */
+.nav-admin {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  background: var(--superficie);
+  border-top: 1px solid var(--borde);
+  box-shadow: 0 -2px 12px rgba(31, 42, 51, 0.06);
+}
+
+.nav-admin ul {
+  display: flex;
+  justify-content: space-around;
+  margin: 0;
+  padding: 0 4px;
+  list-style: none;
+}
+
+.nav-admin li {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.nav-enlace {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: var(--alto-nav);
+  padding: 6px 2px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--texto-suave);
+  text-align: center;
+  text-decoration: none;
+  border-radius: var(--radio-control);
+  transition: color var(--transicion), background-color var(--transicion);
+}
+
+.nav-enlace .icono {
+  width: 24px;
+  height: 24px;
+}
+
+.nav-enlace:hover {
+  color: var(--texto);
+}
+
+.nav-enlace[aria-current="page"] {
+  color: var(--primario-texto);
+}
+
+.nav-enlace[aria-current="page"] .icono {
+  padding: 2px 10px;
+  width: 44px;
+  background: var(--primario-suave);
+  border-radius: 999px;
+}
+
+/* Espacio para que la barra de abajo no tape el contenido */
+body.con-nav-admin {
+  padding-bottom: calc(var(--alto-nav) + 12px);
+}
+
+/* ---------- Contenido ---------- */
+
+.contenido {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+.saludo {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.saludo-sub {
+  margin-top: 6px;
+  color: var(--texto-suave);
+}
+
+.encabezado-seccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.enlace-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  margin-bottom: 8px;
+  text-decoration: none;
+}
+
+.panel {
+  margin-top: 16px;
+  padding: 20px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.panel p + p {
+  margin-top: 8px;
+}
+
+.panel-titulo {
+  margin-bottom: 14px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.panel-destacado {
+  border: 2px solid var(--primario);
+}
+
+.encabezado-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.encabezado-panel .panel-titulo {
+  margin: 0;
+}
+
+.subtitulo {
+  margin: 22px 0 8px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.panel-pie {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.etiqueta-suave {
+  display: block;
+  margin: 16px 0 4px;
+  font-size: 0.875rem;
+  color: var(--texto-suave);
+}
+
+.codigo {
+  display: inline-block;
+  padding: 2px 10px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--texto);
+  background: var(--superficie-2);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
 }
 
 /* ---------- Pantallas de acceso (login, cambiar contraseña) ---------- */
@@ -88,16 +357,17 @@ a {
   place-items: center;
   padding: 24px 16px;
   background:
-    linear-gradient(180deg, var(--color-primario) 0, var(--color-primario) 180px, transparent 180px),
-    var(--color-fondo);
+    linear-gradient(180deg, var(--primario-suave) 0, var(--primario-suave) 220px, transparent 220px),
+    var(--fondo);
 }
 
 .tarjeta {
   width: 100%;
   max-width: 420px;
   padding: 28px 20px;
-  background: var(--color-superficie);
-  border-radius: var(--radio);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 20px;
   box-shadow: var(--sombra);
 }
 
@@ -109,19 +379,33 @@ a {
 .marca-logo {
   display: block;
   max-width: 160px;
-  max-height: 64px;
-  margin: 0 auto 12px;
+  max-height: 72px;
+  margin: 0 auto 14px;
   object-fit: contain;
 }
 
 .marca-nombre {
   font-size: 1.5rem;
+  font-weight: 700;
   line-height: 1.25;
 }
 
 .marca-sub {
   margin-top: 6px;
-  color: var(--color-texto-suave);
+  color: var(--texto-suave);
+}
+
+.enlace-ayuda {
+  margin-top: 18px;
+  text-align: center;
+}
+
+.enlace-ayuda a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 4px;
 }
 
 /* ---------- Formularios ---------- */
@@ -141,14 +425,15 @@ a {
 .campo textarea,
 .mensaje-copiable {
   width: 100%;
-  min-height: 48px; /* tamaño cómodo para tocar con el dedo */
+  min-height: 50px; /* cómodo para tocar con el dedo */
   padding: 12px 14px;
   font: inherit;
-  color: var(--color-texto);
-  background: var(--color-superficie);
-  border: 1px solid var(--color-borde);
+  font-size: 1rem; /* 16px o más: el iPhone no hace zoom al tocar */
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--borde-fuerte);
   border-radius: var(--radio-control);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color var(--transicion), box-shadow var(--transicion);
 }
 
 .campo input:focus,
@@ -156,14 +441,40 @@ a {
 .campo textarea:focus,
 .mensaje-copiable:focus {
   outline: none;
-  border-color: var(--color-primario);
-  box-shadow: 0 0 0 3px var(--color-primario-suave);
+  border-color: var(--primario);
+  box-shadow: 0 0 0 3px var(--primario-suave);
+}
+
+.campo input[readonly] {
+  color: var(--texto-suave);
+  background: var(--superficie-2);
+}
+
+.campo textarea {
+  resize: vertical;
 }
 
 .campo-ayuda {
   margin-top: 6px;
-  font-size: 0.875rem;
-  color: var(--color-texto-suave);
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+}
+
+.opcional {
+  font-weight: 400;
+  color: var(--texto-suave);
+}
+
+/* align-items: end -> las casillas quedan alineadas aunque una etiqueta ocupe dos líneas */
+.fila-campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  gap: 12px;
+}
+
+.fila-pais {
+  grid-template-columns: 6.5rem 1fr;
 }
 
 .campo-password {
@@ -171,28 +482,80 @@ a {
 }
 
 .campo-password input {
-  padding-right: 92px; /* espacio para el botón "Mostrar" */
+  padding-right: 96px; /* espacio para el botón "Mostrar" */
 }
 
 .boton-ojo {
   position: absolute;
   top: 50%;
   right: 6px;
-  min-height: 36px;
+  min-height: 38px;
   padding: 0 12px;
   font: inherit;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  color: var(--color-primario);
+  color: var(--primario-texto);
   background: transparent;
   border: 0;
   border-radius: 8px;
   transform: translateY(-50%);
   cursor: pointer;
+  transition: background-color var(--transicion);
 }
 
 .boton-ojo:hover {
-  background: var(--color-primario-suave);
+  background: var(--primario-suave);
+}
+
+.filtros {
+  padding: 16px 16px 0;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+.form-en-linea {
+  margin-top: 16px;
+}
+
+.formulario-config {
+  margin-top: 20px;
+}
+
+.formulario-config .panel:first-child {
+  margin-top: 0;
+}
+
+.formulario-config .acciones {
+  margin-top: 20px;
+}
+
+.variables {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+.variables li + li {
+  margin-top: 2px;
+}
+
+.variables code {
+  font-weight: 700;
+  color: var(--texto);
+}
+
+.vista-previa {
+  padding: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--superficie-2);
+  border: 1px dashed var(--borde-fuerte);
+  border-radius: var(--radio-control);
+}
+
+.mensaje-copiable {
+  margin-bottom: 12px;
+  resize: vertical;
 }
 
 /* ---------- Botones ---------- */
@@ -201,53 +564,75 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   width: 100%;
-  min-height: 48px;
+  min-height: 50px;
   padding: 0 18px;
   font: inherit;
+  font-size: 1rem;
   font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
   text-decoration: none;
+  border: 1px solid transparent;
   border-radius: var(--radio-control);
   cursor: pointer;
-  transition: background-color 0.15s, opacity 0.15s;
+  transition: background-color var(--transicion), border-color var(--transicion), color var(--transicion);
 }
 
 .boton-primario {
-  color: #ffffff;
-  background: var(--color-primario);
-  border: 0;
-}
-
-@media (prefers-color-scheme: dark) {
-  .boton-primario {
-    color: #0b1220;
-  }
+  color: var(--sobre-primario);
+  background: var(--primario);
 }
 
 .boton-primario:hover {
-  background: var(--color-primario-hover);
+  background: var(--primario-hover);
 }
 
 .boton-secundario {
-  color: var(--color-texto);
-  background: transparent;
-  border: 1px solid var(--color-borde);
+  color: var(--texto);
+  background: var(--superficie);
+  border-color: var(--borde-fuerte);
 }
 
 .boton-secundario:hover {
-  background: var(--color-fondo);
+  background: var(--superficie-2);
+}
+
+.boton-peligro {
+  color: var(--error-texto);
+  background: var(--error-fondo);
+  border-color: transparent;
+}
+
+.boton-peligro:hover {
+  border-color: var(--error-texto);
+}
+
+.boton-whatsapp {
+  color: var(--sobre-whatsapp);
+  background: var(--whatsapp);
+}
+
+.boton-whatsapp:hover {
+  background: var(--whatsapp-hover);
 }
 
 .boton:disabled {
-  opacity: 0.65;
+  opacity: 0.6;
   cursor: wait;
 }
 
 .boton-compacto {
   width: auto;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 14px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+}
+
+.boton .icono {
+  width: 20px;
+  height: 20px;
 }
 
 .acciones {
@@ -256,24 +641,33 @@ a {
   margin-top: 8px;
 }
 
-/* ---------- Avisos ---------- */
+.acciones-detalle {
+  display: grid;
+  gap: 10px;
+}
+
+/* ---------- Mensajes (éxito, información y error) ----------
+   Van dentro del contenido, no encima: nunca tapan nada. */
 
 .aviso {
-  margin-bottom: 18px;
-  padding: 12px 14px;
-  font-size: 0.95rem;
-  border-left: 4px solid currentColor;
+  position: relative;
+  margin: 0 0 16px;
+  padding: 14px 16px 14px 48px;
+  font-size: 1rem;
+  line-height: 1.45;
   border-radius: var(--radio-control);
 }
 
-.aviso-error {
-  color: var(--color-error);
-  background: var(--color-error-fondo);
-}
-
-.aviso-info {
-  color: var(--color-info);
-  background: var(--color-info-fondo);
+.aviso::before {
+  content: "";
+  position: absolute;
+  top: 15px;
+  left: 16px;
+  width: 22px;
+  height: 22px;
+  background: currentColor;
+  -webkit-mask: var(--icono-aviso) center / contain no-repeat;
+  mask: var(--icono-aviso) center / contain no-repeat;
 }
 
 .aviso ul {
@@ -281,175 +675,141 @@ a {
   padding-left: 20px;
 }
 
-/* ---------- Páginas internas (inicio admin / cliente) ---------- */
+.aviso-info {
+  --icono-aviso: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M8 12.5l2.5 2.5L16 9.5'/%3E%3C/svg%3E");
+  color: var(--ok-texto);
+  background: var(--ok-fondo);
+}
 
-.barra {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
+.aviso-error {
+  --icono-aviso: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 8v4M12 16h.01'/%3E%3C/svg%3E");
+  color: var(--error-texto);
+  background: var(--error-fondo);
+}
+
+/* ---------- Pantallas vacías ---------- */
+
+.vacio {
+  margin-top: 16px;
+  padding: 28px 20px 24px;
+  color: var(--texto-suave);
+  text-align: center;
+  background: var(--superficie);
+  border: 1px dashed var(--borde-fuerte);
+  border-radius: var(--radio);
+}
+
+.vacio::before {
+  content: "";
+  display: block;
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 10px;
+  background: var(--borde-fuerte);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 13h5l1.5 3h5L16 13h5'/%3E%3Cpath d='M5.5 5h13L21 13v6H3v-6z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 13h5l1.5 3h5L16 13h5'/%3E%3Cpath d='M5.5 5h13L21 13v6H3v-6z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* Dentro de un panel: más chico y sin borde propio */
+.panel .vacio {
+  margin-top: 4px;
+  padding: 16px 12px;
+  font-size: 0.95rem;
+  background: var(--superficie-2);
+  border: 0;
+}
+
+.panel .vacio::before {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 6px;
+}
+
+/* ---------- Estados (pastel y siempre con texto) ---------- */
+
+.estado {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 16px;
-  background: var(--color-superficie);
-  border-bottom: 1px solid var(--color-borde);
-}
-
-.barra-marca {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0; /* permite recortar nombres largos */
-}
-
-.barra-marca img {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-}
-
-.barra-nombre {
-  overflow: hidden;
+  flex-shrink: 0;
+  padding: 3px 12px;
+  font-size: 0.85rem;
   font-weight: 700;
+  line-height: 1.4;
   white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.contenido {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 24px 16px 40px;
-}
-
-.etiqueta-rol {
-  display: inline-block;
-  margin-bottom: 8px;
-  padding: 2px 10px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--color-primario);
-  text-transform: uppercase;
-  background: var(--color-primario-suave);
   border-radius: 999px;
 }
 
-.saludo {
-  font-size: 1.6rem;
-  line-height: 1.25;
+.estado-pagado,
+.estado-activo {
+  color: var(--ok-texto);
+  background: var(--ok-fondo);
 }
 
-.saludo-sub {
-  margin-top: 6px;
-  color: var(--color-texto-suave);
+.estado-pendiente {
+  color: var(--alerta-texto);
+  background: var(--alerta-fondo);
 }
 
-.panel {
-  margin-top: 24px;
-  padding: 20px;
-  background: var(--color-superficie);
-  border-radius: var(--radio);
-  box-shadow: var(--sombra);
+.estado-vencido {
+  color: var(--error-texto);
+  background: var(--error-fondo);
 }
 
-.panel p + p {
-  margin-top: 8px;
+.estado-suspendido,
+.estado-inactivo {
+  color: var(--gris-texto);
+  background: var(--gris-fondo);
 }
 
-/* ---------- Menú del inicio de admin ---------- */
-
-.menu {
-  display: grid;
-  gap: 12px;
-  margin: 24px 0 0;
-  padding: 0;
-  list-style: none;
+.estado-no_aplica,
+.estado-retirado {
+  color: var(--gris-claro-texto);
+  background: var(--gris-claro-fondo);
+  border: 1px solid var(--borde);
 }
 
-.menu-enlace {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 56px;
-  padding: 14px 18px;
-  color: var(--color-texto);
-  text-decoration: none;
-  background: var(--color-superficie);
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio);
-}
+/* ---------- Tarjetas (planes, clientes, pagos del mes) ---------- */
 
-.menu-enlace:hover {
-  border-color: var(--color-primario);
-}
-
-.menu-enlace small {
-  display: block;
-  font-weight: 400;
-  color: var(--color-texto-suave);
-}
-
-/* ---------- Páginas de gestión (planes, ...) ---------- */
-
-.enlace-volver {
-  display: inline-block;
-  margin-bottom: 16px;
-  padding: 6px 0;
-  text-decoration: none;
-}
-
-.encabezado-seccion {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.panel-titulo {
-  margin-bottom: 16px;
-  font-size: 1.2rem;
-}
-
-.fila-campos {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.vacio {
-  color: var(--color-texto-suave);
-  text-align: center;
-}
-
-.lista-planes {
+.lista-planes,
+.lista-tarjetas {
   display: grid;
   gap: 14px;
-  margin: 24px 0 0;
+  margin: 16px 0 0;
   padding: 0;
   list-style: none;
 }
 
-.tarjeta-plan {
+.tarjeta-plan,
+.tarjeta-cliente {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  height: 100%;
   padding: 18px;
-  background: var(--color-superficie);
-  border: 1px solid var(--color-borde);
+  color: var(--texto);
+  font-weight: 400;
+  text-decoration: none;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
   border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  transition: border-color var(--transicion);
 }
 
-.tarjeta-plan.inactivo {
-  background: var(--color-fondo);
+.tarjeta-cliente:hover {
+  border-color: var(--primario);
+}
+
+.tarjeta-plan.inactivo,
+.tarjeta-cliente.inactivo {
+  background: var(--superficie-2);
   border-style: dashed;
+  box-shadow: none;
 }
 
 .tarjeta-plan.inactivo .tarjeta-plan-nombre,
 .tarjeta-plan.inactivo .tarjeta-plan-precio {
-  color: var(--color-texto-suave);
+  color: var(--texto-suave);
 }
 
 .tarjeta-plan-cabecera {
@@ -462,268 +822,86 @@ a {
 .tarjeta-plan-nombre {
   margin: 0;
   font-size: 1.15rem;
+  font-weight: 700;
   line-height: 1.3;
   overflow-wrap: anywhere;
 }
 
 .tarjeta-plan-precio {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 700;
+  line-height: 1.2;
 }
 
 .tarjeta-plan-precio span {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 400;
-  color: var(--color-texto-suave);
+  color: var(--texto-suave);
 }
 
 .tarjeta-plan-velocidad {
-  color: var(--color-texto-suave);
-}
-
-.tarjeta-plan-acciones {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: auto;
-  padding-top: 10px;
-}
-
-.tarjeta-plan-acciones .boton {
-  width: 100%;
-}
-
-.estado {
-  flex-shrink: 0;
-  padding: 2px 10px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  border-radius: 999px;
-}
-
-.estado-activo {
-  color: var(--color-primario);
-  background: var(--color-primario-suave);
-}
-
-.estado-inactivo,
-.estado-retirado {
-  color: var(--color-texto-suave);
-  background: var(--color-superficie);
-  border: 1px solid var(--color-borde);
-}
-
-.estado-suspendido {
-  color: var(--color-alerta);
-  background: var(--color-alerta-fondo);
-}
-
-/* Enlace "¿Olvidaste tu contraseña?" del login */
-.enlace-ayuda {
-  margin-top: 18px;
-  text-align: center;
-}
-
-.enlace-ayuda a {
-  display: inline-block;
-  padding: 8px 4px; /* área cómoda para tocar */
-}
-
-/* ---------- Clientes ---------- */
-
-.form-en-linea {
-  margin-top: 16px;
-}
-
-#cuenta-datos {
-  margin-bottom: 12px;
-}
-
-.opcional {
-  font-weight: 400;
-  color: var(--color-texto-suave);
-}
-
-.filtros {
-  padding: 16px 16px 0;
-  background: var(--color-superficie);
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio);
-}
-
-.lista-tarjetas {
-  display: grid;
-  gap: 14px;
-  margin: 20px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* Toda la tarjeta es un enlace al detalle */
-.tarjeta-cliente {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  height: 100%;
-  padding: 16px 18px;
-  color: var(--color-texto);
-  font-weight: 400;
-  text-decoration: none;
-  background: var(--color-superficie);
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio);
-  transition: border-color 0.15s;
-}
-
-.tarjeta-cliente:hover {
-  border-color: var(--color-primario);
-}
-
-.tarjeta-cliente.inactivo {
-  background: var(--color-fondo);
-  border-style: dashed;
+  color: var(--texto-suave);
 }
 
 .tarjeta-cliente-pago {
-  font-size: 0.9rem;
   font-weight: 600;
 }
 
-.codigo {
-  display: inline-block;
-  padding: 2px 8px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-weight: 700;
-  color: var(--color-texto);
-  background: var(--color-fondo);
-  border: 1px solid var(--color-borde);
-  border-radius: 8px;
-}
-
-#vista-detalle .codigo {
-  margin-bottom: 6px;
-}
-
-/* Lista de datos "etiqueta: valor" del detalle */
-.datos {
-  display: grid;
-  gap: 12px;
-  margin: 0;
-}
-
-.datos dt {
-  font-size: 0.85rem;
-  color: var(--color-texto-suave);
-}
-
-.datos dd {
-  margin: 0;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.acciones-detalle {
-  display: grid;
+/* Los botones comparten fila si caben; si no, cada uno ocupa su propia fila (sin partir el texto) */
+.tarjeta-plan-acciones {
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
+  margin-top: auto;
+  padding-top: 12px;
 }
 
-.boton-peligro {
-  color: #ffffff;
-  background: var(--color-error);
-  border: 0;
+.tarjeta-plan-acciones .boton {
+  flex: 1 1 auto;
+  white-space: nowrap;
 }
 
-@media (prefers-color-scheme: dark) {
-  .boton-peligro {
-    color: #0b1220;
-  }
-}
+/* ---------- Listas en filas (meses, historial, panel) ---------- */
 
-.boton-peligro:hover {
-  filter: brightness(0.92);
-}
-
-/* Contraseña temporal recién generada */
-.panel-destacado {
-  border: 2px solid var(--color-primario);
-}
-
-.password-temporal {
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 1.5rem;
-  letter-spacing: 0.08em;
-}
-
-.etiqueta-suave {
-  display: block;
-  margin: 16px 0 6px;
-  font-size: 0.85rem;
-  color: var(--color-texto-suave);
-}
-
-.mensaje-copiable {
-  margin-bottom: 12px;
-  resize: vertical;
-}
-
-/* Ventana de confirmación */
-.dialogo {
-  width: calc(100% - 32px);
-  max-width: 420px;
-  padding: 24px 20px;
-  color: var(--color-texto);
-  background: var(--color-superficie);
-  border: 0;
-  border-radius: var(--radio);
-  box-shadow: var(--sombra);
-}
-
-.dialogo::backdrop {
-  background: rgba(15, 23, 42, 0.55);
-}
-
-.dialogo p {
-  margin-bottom: 20px;
-}
-
-/* ---------- Panel del admin ---------- */
-
-.accesos {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin: 20px 0;
+.lista-filas {
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.acceso {
+.fila {
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 52px;
-  padding: 10px;
-  color: var(--color-texto);
-  text-align: center;
-  text-decoration: none;
-  background: var(--color-superficie);
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio);
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--borde);
 }
 
-.acceso:hover {
-  border-color: var(--color-primario);
+.lista-filas .fila:first-child {
+  border-top: 0;
 }
 
-.totales-3 {
-  grid-template-columns: 1fr 1fr;
+.fila-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
-.totales-3 .total:first-child {
-  grid-column: 1 / -1;
+.fila-texto small,
+.fila-lado small,
+.check-mes-texto small {
+  font-size: 0.9rem;
+  color: var(--texto-suave);
 }
 
-/* Filas con cliente, monto y acciones (atrasados, próximos) */
+.fila .estado,
+.fila .boton {
+  flex-shrink: 0;
+}
+
 .fila-cliente {
   flex-wrap: wrap;
 }
@@ -739,11 +917,23 @@ a {
   text-align: right;
 }
 
-.fila-lado small {
-  color: var(--color-texto-suave);
+/* En celular, el monto y los días van en su propia fila: monto a la izquierda, días a la derecha */
+.fila-cliente .fila-lado {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  width: 100%;
+  text-align: left;
+}
+
+.fila-cliente .fila-monto {
+  font-size: 1.3rem;
 }
 
 .fila-monto {
+  font-size: 1.1rem;
   white-space: nowrap;
 }
 
@@ -756,63 +946,123 @@ a {
 
 .fila-acciones .boton {
   flex: 1 1 auto;
+  white-space: nowrap;
 }
 
-.total-semana {
-  font-size: 1.2rem;
-}
-
-.panel-pie {
-  margin-top: 24px;
-}
-
-/* Botón de WhatsApp (verde de WhatsApp con texto oscuro: buen contraste en ambos temas) */
-.boton-whatsapp {
-  color: #0b1220;
-  background: #25d366;
-  border: 0;
-}
-
-.boton-whatsapp:hover {
-  background: #1fbe5a;
-}
-
+/* Botones "Recordar" y "Registrar pago" del detalle: en celular, a lo ancho y lado a lado */
 .fila-acciones-pagos {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  width: 100%;
 }
 
-/* ---------- Portal del cliente ---------- */
-
-.portal {
-  max-width: 640px;
+.fila-acciones-pagos .boton {
+  flex: 1 1 auto;
+  white-space: nowrap;
 }
 
+/* Datos "etiqueta: valor" */
+.datos {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+
+.datos dt {
+  font-size: 0.875rem;
+  color: var(--texto-suave);
+}
+
+.datos dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+#cuenta-datos {
+  margin-bottom: 12px;
+}
+
+#vista-detalle .codigo,
 .portal .codigo {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+/* ---------- Totales y montos grandes ---------- */
+
+/* En celular, un total por fila (a todo el ancho, para que los montos grandes quepan) */
+.totales {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+.panel .total {
+  background: var(--superficie-2);
+  border: 0;
+}
+
+.total-etiqueta,
+.total-detalle {
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+}
+
+/* El monto nunca se parte en dos líneas ("S/" arriba y el número abajo) */
+.total-valor {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.total-pendiente .total-valor {
+  color: var(--alerta-texto);
+}
+
+.total-semana {
+  font-size: 1.4rem;
 }
 
 .monto-grande {
-  font-size: 2rem;
-  font-weight: 700;
-  line-height: 1.2;
+  font-size: 2.4rem;
+  font-weight: 800;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
 .monto-deuda {
-  color: var(--color-error);
+  color: var(--error-texto);
 }
 
 .al-dia {
-  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  font-size: 1.15rem;
   font-weight: 700;
-  color: var(--color-primario);
+  color: var(--ok-texto);
+  background: var(--ok-fondo);
+  border-radius: var(--radio-control);
 }
 
 .proximo {
   margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-borde);
+  padding-top: 14px;
+  border-top: 1px solid var(--borde);
 }
 
 .proximo .etiqueta-suave {
@@ -820,72 +1070,20 @@ a {
 }
 
 .proximo-texto {
+  font-size: 1.1rem;
   font-weight: 600;
 }
 
-/* ---------- Configuración ---------- */
-
-.formulario-config .panel:first-child {
-  margin-top: 0;
+.pagos-resumen {
+  font-weight: 600;
 }
 
-.formulario-config .acciones {
-  margin-top: 20px;
+.pagos-resumen.con-deuda {
+  color: var(--error-texto);
 }
 
-/* Código de país angosto, número ancho */
-.fila-pais {
-  grid-template-columns: 7rem 1fr;
-}
+/* ---------- Selector de mes: ← [mes] → ---------- */
 
-.campo textarea {
-  resize: vertical;
-}
-
-.variables {
-  margin: 4px 0 0;
-  padding-left: 20px;
-}
-
-.variables code {
-  font-weight: 700;
-  color: var(--color-texto);
-}
-
-.vista-previa {
-  padding: 12px 14px;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  background: var(--color-fondo);
-  border: 1px dashed var(--color-borde);
-  border-radius: var(--radio-control);
-}
-
-/* ---------- Pagos ---------- */
-
-/* Estado de un mes */
-.estado-pagado {
-  color: var(--color-primario);
-  background: var(--color-primario-suave);
-}
-
-.estado-pendiente {
-  color: var(--color-alerta);
-  background: var(--color-alerta-fondo);
-}
-
-.estado-vencido {
-  color: var(--color-error);
-  background: var(--color-error-fondo);
-}
-
-.estado-no_aplica {
-  color: var(--color-texto-suave);
-  background: var(--color-superficie);
-  border: 1px solid var(--color-borde);
-}
-
-/* Selector de mes: ← [mes] → */
 .navegador-mes {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -894,72 +1092,65 @@ a {
   margin: 16px 0;
 }
 
+.navegador-mes > .boton {
+  min-width: 48px;
+  padding: 0 12px;
+}
+
 .navegador-mes-centro {
   text-align: center;
 }
 
 .navegador-mes-centro .etiqueta-suave {
-  margin: 0 0 4px;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
 }
 
 .navegador-mes input {
   width: 100%;
   max-width: 220px;
-  min-height: 44px;
+  min-height: 48px;
   padding: 8px 12px;
   font: inherit;
-  color: var(--color-texto);
-  background: var(--color-superficie);
-  border: 1px solid var(--color-borde);
+  font-size: 1rem;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--borde-fuerte);
   border-radius: var(--radio-control);
 }
 
 .navegador-mes-nombre {
   margin-top: 4px;
+  font-size: 1.1rem;
   font-weight: 700;
 }
 
-/* Totales del mes */
-.totales {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 18px;
+/* ---------- Ventanas (confirmación y registrar pago) ---------- */
+
+.dialogo {
+  width: calc(100% - 32px);
+  max-width: 440px;
+  padding: 24px 20px;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
 }
 
-.total {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 14px;
-  background: var(--color-superficie);
-  border: 1px solid var(--color-borde);
-  border-left: 4px solid var(--color-primario);
-  border-radius: var(--radio);
+.dialogo::backdrop {
+  background: rgba(20, 24, 27, 0.5);
 }
 
-.total-pendiente {
-  border-left-color: var(--color-alerta);
+.dialogo p {
+  margin-bottom: 20px;
 }
 
-.total-etiqueta,
-.total-detalle {
-  font-size: 0.85rem;
-  color: var(--color-texto-suave);
-}
-
-.total-valor {
-  font-size: 1.35rem;
-  overflow-wrap: anywhere;
-}
-
-.tarjeta-plan-acciones.una-accion {
-  grid-template-columns: 1fr;
-}
-
-/* Ventana "Registrar pago" */
 .dialogo-pago {
-  max-width: 480px;
+  max-width: 500px;
   max-height: calc(100dvh - 32px);
   overflow-y: auto;
 }
@@ -979,7 +1170,7 @@ a {
 .lista-meses {
   display: grid;
   gap: 8px;
-  max-height: 260px;
+  max-height: 280px;
   overflow-y: auto;
 }
 
@@ -987,23 +1178,24 @@ a {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 52px;
+  min-height: 56px;
   padding: 8px 12px;
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--borde-fuerte);
   border-radius: var(--radio-control);
   cursor: pointer;
+  transition: border-color var(--transicion), background-color var(--transicion);
 }
 
 .check-mes:has(input:checked) {
-  border-color: var(--color-primario);
-  background: var(--color-primario-suave);
+  border-color: var(--primario);
+  background: var(--primario-suave);
 }
 
 .check-mes input {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
-  accent-color: var(--color-primario);
+  accent-color: var(--primario);
 }
 
 .check-mes-texto {
@@ -1013,68 +1205,23 @@ a {
   min-width: 0;
 }
 
-.check-mes-texto small,
-.fila-texto small {
-  color: var(--color-texto-suave);
-}
-
 .total-pago {
   margin-bottom: 16px;
+  padding: 12px 14px;
   font-size: 1.1rem;
+  background: var(--superficie-2);
+  border-radius: var(--radio-control);
 }
 
-/* Pagos en el detalle del cliente */
-.encabezado-panel {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
+.total-pago strong {
+  font-size: 1.3rem;
 }
 
-.encabezado-panel .panel-titulo {
-  margin: 0;
-}
-
-.pagos-resumen {
-  font-weight: 600;
-}
-
-.pagos-resumen.con-deuda {
-  color: var(--color-error);
-}
-
-.subtitulo {
-  margin: 20px 0 8px;
-  font-size: 1rem;
-}
-
-.lista-filas {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.fila {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 0;
-  border-top: 1px solid var(--color-borde);
-}
-
-.fila-texto {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.fila .estado,
-.fila .boton {
-  flex-shrink: 0;
+/* Contraseña temporal recién generada */
+.password-temporal {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 1.6rem;
+  letter-spacing: 0.08em;
 }
 
 /* ---------- Pantallas más anchas ---------- */
@@ -1083,15 +1230,19 @@ a {
   .tarjeta {
     padding: 36px 32px;
   }
+
+  .totales {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .totales-3 .total:first-child {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (min-width: 768px) {
-  .barra {
-    padding: 12px 32px;
-  }
-
   .contenido {
-    padding: 40px 32px;
+    padding: 32px 32px 48px;
   }
 
   .saludo {
@@ -1100,15 +1251,16 @@ a {
 
   .lista-planes,
   .lista-tarjetas,
-  .menu,
   .acciones-detalle {
     grid-template-columns: repeat(2, 1fr);
   }
 
   #panel-formulario,
   #form-cliente,
-  #vista-detalle {
-    max-width: 640px;
+  #vista-detalle,
+  .formulario-config,
+  .portal {
+    max-width: 680px;
   }
 
   .filtros {
@@ -1119,10 +1271,6 @@ a {
 
   .datos {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .accesos {
-    grid-template-columns: repeat(4, 1fr);
   }
 
   .totales-3 {
@@ -1140,9 +1288,77 @@ a {
   .fila-acciones .boton {
     flex: 0 0 auto;
   }
+
+  .fila-cliente .fila-lado {
+    flex-direction: column;
+    align-items: flex-end;
+    width: auto;
+    text-align: right;
+  }
+
+  .fila-acciones-pagos {
+    width: auto;
+  }
+
+  .fila-acciones-pagos .boton {
+    flex: 0 0 auto;
+  }
+
+  .total-valor {
+    font-size: 1.75rem;
+  }
 }
 
-@media (min-width: 1024px) {
+/* Escritorio: el menú sube a la barra superior, junto al nombre */
+@media (min-width: 960px) {
+  body.con-nav-admin {
+    padding-bottom: 0;
+  }
+
+  .nav-admin {
+    position: static;
+    flex: 1;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .nav-admin ul {
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .nav-admin li {
+    flex: 0 0 auto;
+  }
+
+  .nav-enlace {
+    flex-direction: row;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: 0.95rem;
+  }
+
+  .nav-enlace .icono {
+    width: 20px;
+    height: 20px;
+  }
+
+  .nav-enlace:hover {
+    background: var(--superficie-2);
+  }
+
+  .nav-enlace[aria-current="page"] {
+    background: var(--primario-suave);
+  }
+
+  .nav-enlace[aria-current="page"] .icono {
+    width: 20px;
+    padding: 0;
+    background: none;
+  }
+
   .lista-planes,
   .lista-tarjetas {
     grid-template-columns: repeat(3, 1fr);

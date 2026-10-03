@@ -3,11 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0f766e">
+  <meta name="theme-color" content="#ffffff">
   <title>Panel de administración</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/css/estilos.css">
   <script src="/js/sesion.js" defer></script>
+  <script src="/js/iconos.js" defer></script>
+  <script src="/js/nav-admin.js" defer></script>
   <script src="/js/formato.js" defer></script>
   <script src="/js/pagos-comun.js" defer></script>
   <script src="/js/panel.js" defer></script>
@@ -19,20 +21,12 @@
       <img data-logo alt="" hidden>
       <span class="barra-nombre" data-empresa>Gestión WISP</span>
     </div>
-    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto">Cerrar sesión</button>
+    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto" aria-label="Cerrar sesión"><span data-icono="salir"></span>Salir</button>
   </header>
 
   <main class="contenido">
     <h1 class="saludo">Hola, <span id="nombre-usuario">…</span></h1>
-
-    <nav aria-label="Secciones">
-      <ul class="accesos">
-        <li><a class="acceso" href="/admin/clientes.html">Clientes</a></li>
-        <li><a class="acceso" href="/admin/pagos.html">Pagos</a></li>
-        <li><a class="acceso" href="/admin/planes.html">Planes</a></li>
-        <li><a class="acceso" href="/admin/configuracion.html">Configuración</a></li>
-      </ul>
-    </nav>
+    <p class="saludo-sub">Así van los cobros de tu empresa.</p>
 
     <div id="exito" class="aviso aviso-info" role="status" hidden></div>
     <div id="error" class="aviso aviso-error" role="alert" hidden></div>
@@ -43,7 +37,7 @@
       <section class="panel" aria-labelledby="titulo-mes">
         <div class="encabezado-panel">
           <h2 id="titulo-mes" class="panel-titulo"></h2>
-          <a href="/admin/pagos.html" class="boton boton-secundario boton-compacto">Ver pagos del mes</a>
+          <a href="/admin/pagos.html" class="boton boton-secundario boton-compacto"><span data-icono="pagos"></span>Ver pagos del mes</a>
         </div>
         <div class="totales totales-3">
           <div class="total">
@@ -65,14 +59,14 @@
       <!-- Atrasados -->
       <section class="panel" aria-labelledby="titulo-atrasados">
         <h2 id="titulo-atrasados" class="panel-titulo">Atrasados</h2>
-        <p id="atrasados-vacio" class="campo-ayuda" hidden>Nadie tiene meses vencidos.</p>
+        <p id="atrasados-vacio" class="vacio" hidden>¡Muy bien! Nadie tiene meses vencidos.</p>
         <ul id="lista-atrasados" class="lista-filas" aria-label="Clientes atrasados"></ul>
       </section>
 
       <!-- Próximos a vencer -->
       <section class="panel" aria-labelledby="titulo-proximos">
         <h2 id="titulo-proximos" class="panel-titulo"></h2>
-        <p id="proximos-vacio" class="campo-ayuda" hidden>Nadie vence en los próximos días.</p>
+        <p id="proximos-vacio" class="vacio" hidden>Nadie vence en los próximos días.</p>
         <ul id="lista-proximos" class="lista-filas" aria-label="Próximos a vencer"></ul>
       </section>
 
@@ -83,11 +77,11 @@
           <strong id="total-semana" class="total-semana"></strong>
         </div>
         <p id="semana-rango" class="campo-ayuda"></p>
-        <p id="semana-vacio" class="campo-ayuda" hidden>Todavía no hay pagos esta semana.</p>
+        <p id="semana-vacio" class="vacio" hidden>Aún no hay pagos esta semana. Cuando registres uno, aparecerá aquí.</p>
         <ul id="lista-semana" class="lista-filas" aria-label="Pagos de esta semana"></ul>
       </section>
 
-      <p class="panel-pie"><a href="/cambiar-password.html">Cambiar mi contraseña</a></p>
+      <p class="panel-pie"><a href="/cambiar-password.html" class="enlace-volver"><span data-icono="candado"></span>Cambiar mi contraseña</a></p>
     </div>
   </main>
 </body>

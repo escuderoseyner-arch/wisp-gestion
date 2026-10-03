@@ -107,6 +107,7 @@
     verCliente.className = 'boton boton-secundario boton-compacto';
     verCliente.href = '/admin/clientes.html#cliente/' + fila.clienteId;
     verCliente.textContent = 'Ver cliente';
+    Iconos.en(verCliente, 'usuario');
     if (fila.pago) {
       acciones.appendChild(verCliente);
       acciones.classList.add('una-accion');
@@ -115,6 +116,7 @@
       registrar.type = 'button';
       registrar.className = 'boton boton-primario boton-compacto';
       registrar.textContent = 'Registrar pago';
+      Iconos.en(registrar, 'mas');
       registrar.setAttribute('aria-label', 'Registrar pago de ' + fila.nombres);
       registrar.addEventListener('click', () => registrarPago(fila, registrar));
       acciones.append(registrar, verCliente);

@@ -3,11 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0f766e">
+  <meta name="theme-color" content="#ffffff">
   <title>Pagos</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/css/estilos.css">
   <script src="/js/sesion.js" defer></script>
+  <script src="/js/iconos.js" defer></script>
+  <script src="/js/nav-admin.js" defer></script>
   <script src="/js/formato.js" defer></script>
   <script src="/js/pagos-comun.js" defer></script>
   <script src="/js/pagos.js" defer></script>
@@ -19,21 +21,21 @@
       <img data-logo alt="" hidden>
       <span class="barra-nombre" data-empresa>Gestión WISP</span>
     </div>
-    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto">Cerrar sesión</button>
+    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto" aria-label="Cerrar sesión"><span data-icono="salir"></span>Salir</button>
   </header>
 
   <main class="contenido">
-    <a class="enlace-volver" href="/admin/inicio.html">← Volver al inicio</a>
     <h1 class="saludo">Pagos</h1>
+    <p class="saludo-sub">Elige un mes para ver quién ya pagó y quién falta.</p>
 
     <div class="navegador-mes" role="group" aria-label="Mes">
-      <button type="button" id="mes-anterior" class="boton boton-secundario boton-compacto" aria-label="Mes anterior">←</button>
+      <button type="button" id="mes-anterior" class="boton boton-secundario boton-compacto" aria-label="Mes anterior"><span data-icono="atras"></span></button>
       <div class="navegador-mes-centro">
         <label for="mes" class="etiqueta-suave">Mes</label>
         <input id="mes" type="month" required>
         <p id="mes-nombre" class="navegador-mes-nombre" aria-live="polite"></p>
       </div>
-      <button type="button" id="mes-siguiente" class="boton boton-secundario boton-compacto" aria-label="Mes siguiente">→</button>
+      <button type="button" id="mes-siguiente" class="boton boton-secundario boton-compacto" aria-label="Mes siguiente"><span data-icono="adelante"></span></button>
     </div>
 
     <div class="totales" aria-live="polite">
@@ -69,8 +71,8 @@
       </div>
     </form>
 
-    <p id="cargando" class="saludo-sub">Cargando…</p>
-    <p id="vacio" class="panel vacio" hidden>No hay clientes para mostrar.</p>
+    <p id="cargando" class="saludo-sub">Cargando el mes…</p>
+    <p id="vacio" class="vacio" hidden>No hay clientes para mostrar en este mes. Si escribiste algo en “Buscar” o elegiste un estado, prueba quitarlo.</p>
     <ul id="lista-pagos" class="lista-tarjetas" aria-label="Clientes del mes"></ul>
   </main>
 </body>

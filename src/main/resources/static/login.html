@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0f766e">
+  <meta name="theme-color" content="#ffffff">
   <title>Iniciar sesión</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/css/estilos.css">
   <script src="/js/sesion.js" defer></script>
+  <script src="/js/iconos.js" defer></script>
   <script src="/js/formato.js" defer></script>
   <script src="/js/login.js" defer></script>
 </head>
@@ -16,7 +17,7 @@
     <header class="marca">
       <img class="marca-logo" data-logo alt="" hidden>
       <h1 class="marca-nombre" data-empresa>Gestión WISP</h1>
-      <p class="marca-sub">Ingresa con tu usuario y contraseña</p>
+      <p class="marca-sub">Escribe tu usuario y tu contraseña para entrar.</p>
     </header>
 
     <div id="aviso" class="aviso aviso-info" role="status" hidden></div>
@@ -44,7 +45,7 @@
 
     <!-- Solo aparece si la empresa tiene un WhatsApp de soporte configurado -->
     <p class="enlace-ayuda">
-      <a id="enlace-olvido" href="#" target="_blank" rel="noopener noreferrer" hidden>¿Olvidaste tu contraseña?</a>
+      <a id="enlace-olvido" href="#" target="_blank" rel="noopener noreferrer" hidden><span data-icono="whatsapp"></span>¿Olvidaste tu contraseña?</a>
     </p>
 
     <noscript>

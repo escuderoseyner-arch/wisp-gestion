@@ -3,11 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0f766e">
+  <meta name="theme-color" content="#ffffff">
   <title>Planes</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/css/estilos.css">
   <script src="/js/sesion.js" defer></script>
+  <script src="/js/iconos.js" defer></script>
+  <script src="/js/nav-admin.js" defer></script>
   <script src="/js/planes.js" defer></script>
 </head>
 <!-- data-rol: planes.js solo deja entrar a usuarios con este rol -->
@@ -17,18 +19,16 @@
       <img data-logo alt="" hidden>
       <span class="barra-nombre" data-empresa>Gestión WISP</span>
     </div>
-    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto">Cerrar sesión</button>
+    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto" aria-label="Cerrar sesión"><span data-icono="salir"></span>Salir</button>
   </header>
 
   <main class="contenido">
-    <a class="enlace-volver" href="/admin/inicio.html">← Volver al inicio</a>
-
     <div class="encabezado-seccion">
       <div>
         <h1 class="saludo">Planes</h1>
-        <p class="saludo-sub">Los planes no se borran: se desactivan.</p>
+        <p class="saludo-sub">Los paquetes de internet que ofreces. No se borran: se desactivan.</p>
       </div>
-      <button type="button" id="boton-nuevo" class="boton boton-primario boton-compacto">+ Nuevo plan</button>
+      <button type="button" id="boton-nuevo" class="boton boton-primario boton-compacto"><span data-icono="mas"></span>Nuevo plan</button>
     </div>
 
     <div id="exito" class="aviso aviso-info" role="status" hidden></div>
@@ -72,7 +72,7 @@
     </section>
 
     <p id="cargando" class="saludo-sub">Cargando planes…</p>
-    <p id="vacio" class="panel vacio" hidden>Todavía no hay planes. Crea el primero con “Nuevo plan”.</p>
+    <p id="vacio" class="vacio" hidden>Aún no tienes planes. Toca “Nuevo plan” para crear el primero.</p>
     <ul id="lista-planes" class="lista-planes" aria-label="Lista de planes"></ul>
   </main>
 </body>

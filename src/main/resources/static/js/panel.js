@@ -110,6 +110,7 @@
     registrar.type = 'button';
     registrar.className = 'boton boton-primario boton-compacto';
     registrar.textContent = 'Registrar pago';
+    Iconos.en(registrar, 'mas');
     registrar.setAttribute('aria-label', 'Registrar pago de ' + fila.nombres);
     registrar.addEventListener('click', () => registrarPago(fila, periodoPago, registrar));
 
@@ -117,6 +118,7 @@
     ver.className = 'boton boton-secundario boton-compacto';
     ver.href = '/admin/clientes.html#cliente/' + fila.clienteId;
     ver.textContent = 'Ver';
+    Iconos.en(ver, 'usuario');
     ver.setAttribute('aria-label', 'Ver a ' + fila.nombres);
 
     // "Recordar" solo aparece si el cliente tiene celular

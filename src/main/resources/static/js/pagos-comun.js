@@ -37,6 +37,7 @@ const Pagos = (() => {
     enlace.target = '_blank';
     enlace.rel = 'noopener noreferrer';
     enlace.textContent = 'Recordar';
+    Iconos.en(enlace, 'whatsapp');
     enlace.setAttribute('aria-label', 'Enviar recordatorio por WhatsApp a ' + nombre);
     return enlace;
   }

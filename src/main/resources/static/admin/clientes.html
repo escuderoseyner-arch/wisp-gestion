@@ -3,11 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0f766e">
+  <meta name="theme-color" content="#ffffff">
   <title>Clientes</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/css/estilos.css">
   <script src="/js/sesion.js" defer></script>
+  <script src="/js/iconos.js" defer></script>
+  <script src="/js/nav-admin.js" defer></script>
   <script src="/js/formato.js" defer></script>
   <script src="/js/pagos-comun.js" defer></script>
   <script src="/js/clientes.js" defer></script>
@@ -19,7 +21,7 @@
       <img data-logo alt="" hidden>
       <span class="barra-nombre" data-empresa>Gestión WISP</span>
     </div>
-    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto">Cerrar sesión</button>
+    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto" aria-label="Cerrar sesión"><span data-icono="salir"></span>Salir</button>
   </header>
 
   <main class="contenido">
@@ -28,14 +30,12 @@
 
     <!-- ==================== LISTA ==================== -->
     <section id="vista-lista" aria-labelledby="titulo-lista">
-      <a class="enlace-volver" href="/admin/inicio.html">← Volver al inicio</a>
-
       <div class="encabezado-seccion">
         <div>
           <h1 id="titulo-lista" class="saludo">Clientes</h1>
           <p id="contador" class="saludo-sub" aria-live="polite"></p>
         </div>
-        <a href="#nuevo" class="boton boton-primario boton-compacto">+ Nuevo cliente</a>
+        <a href="#nuevo" class="boton boton-primario boton-compacto"><span data-icono="mas"></span>Nuevo cliente</a>
       </div>
 
       <form id="filtros" class="filtros" role="search" novalidate>
@@ -64,13 +64,13 @@
       </form>
 
       <p id="cargando" class="saludo-sub">Cargando clientes…</p>
-      <p id="vacio" class="panel vacio" hidden>No hay clientes con esos filtros.</p>
+      <p id="vacio" class="vacio" hidden>No encontramos clientes con esa búsqueda. Prueba con otro nombre o código, o cambia la zona o el estado.</p>
       <ul id="lista-clientes" class="lista-tarjetas" aria-label="Lista de clientes"></ul>
     </section>
 
     <!-- ==================== DETALLE ==================== -->
     <section id="vista-detalle" hidden aria-labelledby="det-nombre">
-      <a class="enlace-volver" href="#">← Volver a la lista</a>
+      <a class="enlace-volver" href="#"><span data-icono="atras"></span>Volver a la lista</a>
 
       <div class="encabezado-seccion">
         <div>
@@ -91,8 +91,8 @@
         <label for="pass-mensaje" class="etiqueta-suave">Mensaje para enviar</label>
         <textarea id="pass-mensaje" class="mensaje-copiable" rows="4" readonly></textarea>
         <div class="acciones">
-          <button type="button" id="boton-copiar" class="boton boton-primario">Copiar mensaje</button>
-          <button type="button" id="boton-ocultar-password" class="boton boton-secundario">Ya lo envié, ocultar</button>
+          <button type="button" id="boton-copiar" class="boton boton-primario"><span data-icono="copiar"></span>Copiar mensaje</button>
+          <button type="button" id="boton-ocultar-password" class="boton boton-secundario"><span data-icono="check"></span>Ya lo envié, ocultar</button>
         </div>
       </section>
 
@@ -105,17 +105,17 @@
         <div class="encabezado-panel">
           <h2 id="titulo-pagos" class="panel-titulo">Pagos</h2>
           <div id="pagos-acciones" class="fila-acciones-pagos">
-            <button type="button" id="boton-registrar-pago" class="boton boton-primario boton-compacto" hidden>Registrar pago</button>
+            <button type="button" id="boton-registrar-pago" class="boton boton-primario boton-compacto" hidden><span data-icono="mas"></span>Registrar pago</button>
           </div>
         </div>
         <p id="pagos-resumen" class="pagos-resumen"></p>
 
         <h3 class="subtitulo">Meses</h3>
-        <p id="pagos-meses-vacio" class="campo-ayuda" hidden>Su servicio todavía no empieza.</p>
+        <p id="pagos-meses-vacio" class="vacio" hidden>Su servicio todavía no empieza, así que aún no tiene meses por pagar.</p>
         <ul id="pagos-meses" class="lista-filas" aria-label="Estado de cada mes"></ul>
 
         <h3 class="subtitulo">Historial de pagos</h3>
-        <p id="pagos-historial-vacio" class="campo-ayuda" hidden>Todavía no tiene pagos registrados.</p>
+        <p id="pagos-historial-vacio" class="vacio" hidden>Aún no tiene pagos registrados. Usa “Registrar pago” cuando te pague.</p>
         <ul id="pagos-historial" class="lista-filas" aria-label="Pagos registrados"></ul>
       </section>
 
@@ -142,27 +142,27 @@
         </form>
 
         <div id="cuenta-botones" class="acciones">
-          <button type="button" id="boton-crear-cuenta" class="boton boton-primario" hidden>Crear cuenta</button>
-          <button type="button" id="boton-restablecer" class="boton boton-secundario" hidden>Restablecer contraseña</button>
-          <button type="button" id="boton-cambiar-usuario" class="boton boton-secundario" hidden>Cambiar usuario</button>
+          <button type="button" id="boton-crear-cuenta" class="boton boton-primario" hidden><span data-icono="usuario"></span>Crear cuenta</button>
+          <button type="button" id="boton-restablecer" class="boton boton-secundario" hidden><span data-icono="candado"></span>Restablecer contraseña</button>
+          <button type="button" id="boton-cambiar-usuario" class="boton boton-secundario" hidden><span data-icono="editar"></span>Cambiar usuario</button>
         </div>
       </section>
 
       <section id="panel-acciones" class="panel" aria-labelledby="titulo-acciones">
         <h2 id="titulo-acciones" class="panel-titulo">Acciones</h2>
         <div class="acciones-detalle">
-          <a id="accion-editar" class="boton boton-secundario" href="#">Editar datos</a>
-          <button type="button" id="accion-suspender" class="boton boton-secundario" hidden>Suspender</button>
-          <button type="button" id="accion-reactivar" class="boton boton-secundario" hidden>Reactivar</button>
-          <a id="accion-reasignar" class="boton boton-secundario" href="#">Reasignar código</a>
-          <button type="button" id="accion-retirar" class="boton boton-peligro">Retirar cliente</button>
+          <a id="accion-editar" class="boton boton-secundario" href="#"><span data-icono="editar"></span>Editar datos</a>
+          <button type="button" id="accion-suspender" class="boton boton-secundario" hidden><span data-icono="pausa"></span>Suspender</button>
+          <button type="button" id="accion-reactivar" class="boton boton-secundario" hidden><span data-icono="play"></span>Reactivar</button>
+          <a id="accion-reasignar" class="boton boton-secundario" href="#"><span data-icono="intercambio"></span>Reasignar código</a>
+          <button type="button" id="accion-retirar" class="boton boton-peligro"><span data-icono="salir"></span>Retirar cliente</button>
         </div>
       </section>
     </section>
 
     <!-- ==================== FORMULARIO (crear, editar, reasignar) ==================== -->
     <section id="vista-formulario" hidden aria-labelledby="form-titulo">
-      <a id="form-volver" class="enlace-volver" href="#">← Volver</a>
+      <a id="form-volver" class="enlace-volver" href="#"><span data-icono="atras"></span>Volver</a>
       <h1 id="form-titulo" class="saludo"></h1>
       <p id="form-sub" class="saludo-sub"></p>
 

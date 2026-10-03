@@ -3,11 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0f766e">
+  <meta name="theme-color" content="#ffffff">
   <title>Configuración</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/css/estilos.css">
   <script src="/js/sesion.js" defer></script>
+  <script src="/js/iconos.js" defer></script>
+  <script src="/js/nav-admin.js" defer></script>
   <script src="/js/formato.js" defer></script>
   <script src="/js/configuracion.js" defer></script>
 </head>
@@ -18,17 +20,16 @@
       <img data-logo alt="" hidden>
       <span class="barra-nombre" data-empresa>Gestión WISP</span>
     </div>
-    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto">Cerrar sesión</button>
+    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto" aria-label="Cerrar sesión"><span data-icono="salir"></span>Salir</button>
   </header>
 
   <main class="contenido">
-    <a class="enlace-volver" href="/admin/inicio.html">← Volver al inicio</a>
     <h1 class="saludo">Configuración</h1>
     <p class="saludo-sub">Datos de tu empresa. Se usan en el login, el portal del cliente y los recordatorios.</p>
 
     <div id="exito" class="aviso aviso-info" role="status" hidden></div>
     <div id="error" class="aviso aviso-error" role="alert" hidden></div>
-    <p id="cargando" class="saludo-sub">Cargando…</p>
+    <p id="cargando" class="saludo-sub">Cargando la configuración…</p>
 
     <form id="form-config" class="formulario-config" novalidate hidden>
       <section class="panel" aria-labelledby="titulo-empresa">

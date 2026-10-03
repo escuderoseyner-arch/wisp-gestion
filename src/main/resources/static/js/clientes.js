@@ -267,6 +267,7 @@
       eliminar.type = 'button';
       eliminar.className = 'boton boton-secundario boton-compacto';
       eliminar.textContent = 'Eliminar';
+      Iconos.en(eliminar, 'basura');
       eliminar.setAttribute('aria-label', 'Eliminar el pago de ' + Pagos.nombreMes(pago.periodo));
       eliminar.addEventListener('click', () => eliminarPago(pago, eliminar));
       return crearFila(Pagos.nombreMes(pago.periodo), partes.join(' · '), eliminar);
