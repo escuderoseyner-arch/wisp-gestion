@@ -8,9 +8,10 @@
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/css/estilos.css">
   <script src="/js/sesion.js" defer></script>
-  <script src="/js/inicio.js" defer></script>
+  <script src="/js/formato.js" defer></script>
+  <script src="/js/portal.js" defer></script>
 </head>
-<!-- data-rol: inicio.js solo deja entrar a usuarios con este rol -->
+<!-- data-rol: portal.js solo deja entrar a usuarios con este rol -->
 <body data-rol="CLIENTE">
   <header class="barra">
     <div class="barra-marca">
@@ -20,17 +21,76 @@
     <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto">Cerrar sesión</button>
   </header>
 
-  <main class="contenido">
-    <span class="etiqueta-rol">Cliente</span>
-    <h1 class="saludo">Hola, <span id="nombre-usuario">…</span></h1>
-    <p class="saludo-sub">Bienvenido a tu cuenta.</p>
-
+  <main class="contenido portal">
     <div id="error" class="aviso aviso-error" role="alert" hidden></div>
+    <p id="cargando" class="saludo-sub">Cargando tu cuenta…</p>
 
-    <section class="panel">
-      <p>Aquí verás pronto tu plan, tu estado y tu historial de pagos.</p>
-      <p><a href="/cambiar-password.html">Cambiar mi contraseña</a></p>
-    </section>
+    <div id="portal" hidden>
+      <span id="codigo" class="codigo"></span>
+      <h1 class="saludo">Hola, <span id="nombre"></span></h1>
+
+      <div id="aviso-suspendido" class="aviso aviso-error" role="status" hidden>
+        Tu servicio está <strong>suspendido</strong>. Paga tus meses pendientes y envía tu comprobante para reactivarlo.
+      </div>
+
+      <!-- Deuda -->
+      <section class="panel" aria-labelledby="titulo-deuda">
+        <h2 id="titulo-deuda" class="panel-titulo">Tus pagos</h2>
+        <div id="con-deuda" hidden>
+          <p class="etiqueta-suave">Debes</p>
+          <p id="deuda-total" class="monto-grande monto-deuda"></p>
+          <p id="deuda-meses"></p>
+        </div>
+        <p id="al-dia" class="al-dia" hidden>Estás al día. ¡Gracias!</p>
+        <div id="proximo" class="proximo" hidden>
+          <p class="etiqueta-suave">Próximo vencimiento</p>
+          <p id="proximo-texto" class="proximo-texto"></p>
+        </div>
+      </section>
+
+      <!-- Cómo pagar -->
+      <section class="panel" aria-labelledby="titulo-pagar">
+        <h2 id="titulo-pagar" class="panel-titulo">Cómo pagar</h2>
+        <dl id="datos-pago" class="datos"></dl>
+        <p id="datos-pago-vacio" class="campo-ayuda" hidden>Consulta con la empresa cómo realizar tu pago.</p>
+        <div class="acciones">
+          <a id="boton-comprobante" class="boton boton-whatsapp" target="_blank" rel="noopener noreferrer" hidden>
+            Enviar comprobante de pago
+          </a>
+        </div>
+      </section>
+
+      <!-- Plan -->
+      <section class="panel" aria-labelledby="titulo-plan">
+        <div class="encabezado-panel">
+          <h2 id="titulo-plan" class="panel-titulo">Tu plan</h2>
+          <span id="estado-servicio" class="estado"></span>
+        </div>
+        <p id="plan-nombre" class="tarjeta-plan-nombre"></p>
+        <p id="plan-velocidad" class="tarjeta-plan-velocidad"></p>
+        <p id="plan-precio" class="tarjeta-plan-precio"></p>
+      </section>
+
+      <!-- Soporte -->
+      <section class="panel" aria-labelledby="titulo-soporte">
+        <h2 id="titulo-soporte" class="panel-titulo">¿Problemas con tu internet?</h2>
+        <p class="campo-ayuda">Escríbenos por WhatsApp y cuéntanos qué pasa.</p>
+        <div class="acciones">
+          <a id="boton-falla" class="boton boton-secundario" target="_blank" rel="noopener noreferrer" hidden>
+            Reportar una falla
+          </a>
+        </div>
+      </section>
+
+      <!-- Historial -->
+      <section class="panel" aria-labelledby="titulo-historial">
+        <h2 id="titulo-historial" class="panel-titulo">Historial de pagos</h2>
+        <p id="historial-vacio" class="campo-ayuda" hidden>Todavía no tienes pagos registrados.</p>
+        <ul id="historial" class="lista-filas" aria-label="Tus pagos"></ul>
+      </section>
+
+      <p class="panel-pie"><a href="/cambiar-password.html">Cambiar mi contraseña</a></p>
+    </div>
   </main>
 </body>
 </html>
