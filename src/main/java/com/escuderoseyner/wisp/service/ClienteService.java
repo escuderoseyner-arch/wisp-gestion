@@ -35,11 +35,12 @@ public class ClienteService {
     private static final Pattern FORMATO_IPV4 = Pattern.compile(
             "^((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)$");
 
-    private static final List<EstadoCliente> VIGENTES = List.of(EstadoCliente.ACTIVO, EstadoCliente.SUSPENDIDO);
+    public static final List<EstadoCliente> VIGENTES = List.of(EstadoCliente.ACTIVO, EstadoCliente.SUSPENDIDO);
     private static final int MAX_LARGO_BUSQUEDA = 100;
 
-    // Orden numérico del código: C-2, C-10, C-100 (como texto, C-100 iría antes que C-2)
-    private static final Comparator<Cliente> POR_CODIGO =
+    // Orden numérico del código: C-2, C-10, C-100 (como texto, C-100 iría antes que C-2).
+    // Público porque PagoService ordena igual la lista del mes.
+    public static final Comparator<Cliente> POR_CODIGO =
             Comparator.comparingLong((Cliente c) -> numeroDeCodigo(c.getCodigo()))
                     .thenComparing(Cliente::getCodigo)
                     .thenComparing(Cliente::getId);

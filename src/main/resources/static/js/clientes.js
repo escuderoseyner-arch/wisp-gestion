@@ -181,9 +181,111 @@
     $('boton-restablecer').addEventListener('click', (e) => generarPassword(e.currentTarget, 'restablecer'));
     $('boton-copiar').addEventListener('click', copiarMensaje);
     $('boton-ocultar-password').addEventListener('click', ocultarPassword);
+    $('boton-registrar-pago').addEventListener('click', registrarPago);
     $('boton-cambiar-usuario').addEventListener('click', abrirFormularioUsuario);
     $('boton-cancelar-usuario').addEventListener('click', cerrarFormularioUsuario);
     $('form-usuario').addEventListener('submit', cambiarUsuario);
+  }
+
+  // ---------- Pagos del cliente ----------
+
+  async function cargarPagos(clienteId) {
+    try {
+      const cuenta = await Sesion.api(Pagos.URL_PAGOS + '/cliente/' + clienteId);
+      if (!clienteActual || clienteActual.id !== clienteId) return; // ya se abrió otro cliente
+      dibujarPagos(cuenta);
+    } catch (error) {
+      Sesion.mostrarError(cajaError, error);
+    }
+  }
+
+  function dibujarPagos(cuenta) {
+    const moneda = cuenta.moneda;
+
+    let resumen = cuenta.mesesVencidos === 0
+      ? 'Al día.'
+      : 'Debe ' + cuenta.mesesVencidos + (cuenta.mesesVencidos === 1 ? ' mes' : ' meses') + ': '
+        + Pagos.dinero(moneda, cuenta.deuda) + '.';
+    if (cuenta.periodoSugerido) resumen += ' Próximo por pagar: ' + Pagos.nombreMes(cuenta.periodoSugerido) + '.';
+    $('pagos-resumen').textContent = resumen;
+    $('pagos-resumen').classList.toggle('con-deuda', cuenta.mesesVencidos > 0);
+    $('boton-registrar-pago').hidden = cuenta.mesesPorPagar.length === 0;
+
+    // Meses: estado de cada uno, el más reciente primero
+    $('pagos-meses').replaceChildren(...cuenta.meses.map((mes) => {
+      const detalle = mes.pago
+        ? Pagos.dinero(moneda, mes.pago.monto) + ' · pagó el ' + Pagos.fecha(mes.pago.fechaPago)
+        : Pagos.textoVence(mes);
+      return crearFila(Pagos.nombreMes(mes.periodo), detalle, Pagos.crearEstadoMes(mes.estado));
+    }));
+    $('pagos-meses-vacio').hidden = cuenta.meses.length > 0;
+
+    // Historial: cada pago con su botón para eliminarlo si se registró por error
+    $('pagos-historial').replaceChildren(...cuenta.historial.map((pago) => {
+      const partes = [
+        Pagos.dinero(moneda, pago.monto),
+        Pagos.fecha(pago.fechaPago),
+        Pagos.METODOS[pago.metodo],
+        'registró ' + pago.registradoPor,
+      ];
+      if (pago.observacion) partes.push(pago.observacion);
+
+      const eliminar = document.createElement('button');
+      eliminar.type = 'button';
+      eliminar.className = 'boton boton-secundario boton-compacto';
+      eliminar.textContent = 'Eliminar';
+      eliminar.setAttribute('aria-label', 'Eliminar el pago de ' + Pagos.nombreMes(pago.periodo));
+      eliminar.addEventListener('click', () => eliminarPago(pago, eliminar));
+      return crearFila(Pagos.nombreMes(pago.periodo), partes.join(' · '), eliminar);
+    }));
+    $('pagos-historial-vacio').hidden = cuenta.historial.length > 0;
+  }
+
+  function crearFila(titulo, detalle, extra) {
+    const item = document.createElement('li');
+    item.className = 'fila';
+    const texto = document.createElement('div');
+    texto.className = 'fila-texto';
+    const fuerte = document.createElement('strong');
+    fuerte.textContent = titulo;
+    const pequeno = document.createElement('small');
+    pequeno.textContent = detalle;
+    texto.append(fuerte, pequeno);
+    item.append(texto, extra);
+    return item;
+  }
+
+  async function registrarPago() {
+    limpiarAvisos();
+    const id = clienteActual.id;
+    try {
+      if (await Pagos.abrirFormulario(id)) {
+        Sesion.mostrarMensaje(cajaExito, 'Pago registrado.');
+        await cargarPagos(id);
+      }
+    } catch (error) {
+      Sesion.mostrarError(cajaError, error);
+    }
+  }
+
+  async function eliminarPago(pago, boton) {
+    const confirmado = await confirmar({
+      titulo: '¿Eliminar el pago de ' + Pagos.nombreMes(pago.periodo) + '?',
+      texto: 'Úsalo solo si se registró por error. El mes volverá a quedar sin pagar.',
+      boton: 'Sí, eliminar',
+    });
+    if (!confirmado) return;
+
+    limpiarAvisos();
+    boton.disabled = true;
+    try {
+      await Sesion.api(Pagos.URL_PAGOS + '/' + pago.id, { method: 'DELETE' });
+      Sesion.mostrarMensaje(cajaExito, 'Pago de ' + Pagos.nombreMes(pago.periodo) + ' eliminado.');
+      await cargarPagos(clienteActual.id);
+    } catch (error) {
+      Sesion.mostrarError(cajaError, error);
+      boton.disabled = false;
+    }
   }
 
   // ---------- Cambiar usuario de acceso ----------
@@ -299,6 +401,7 @@
     $('boton-restablecer').hidden = retirado || !cuenta;
     $('boton-cambiar-usuario').hidden = retirado || !cuenta;
     cerrarFormularioUsuario();
+    cargarPagos(cliente.id);
 
     // Acciones: un retirado ya no se modifica
     $('panel-acciones').hidden = retirado;

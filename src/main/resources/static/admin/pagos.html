@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>Pagos</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/css/estilos.css">
+  <script src="/js/sesion.js" defer></script>
+  <script src="/js/pagos-comun.js" defer></script>
+  <script src="/js/pagos.js" defer></script>
+</head>
+<!-- data-rol: pagos.js solo deja entrar a usuarios con este rol -->
+<body data-rol="ADMIN">
+  <header class="barra">
+    <div class="barra-marca">
+      <img data-logo alt="" hidden>
+      <span class="barra-nombre" data-empresa>Gestión WISP</span>
+    </div>
+    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto">Cerrar sesión</button>
+  </header>
+
+  <main class="contenido">
+    <a class="enlace-volver" href="/admin/inicio.html">← Volver al inicio</a>
+    <h1 class="saludo">Pagos</h1>
+
+    <div class="navegador-mes" role="group" aria-label="Mes">
+      <button type="button" id="mes-anterior" class="boton boton-secundario boton-compacto" aria-label="Mes anterior">←</button>
+      <div class="navegador-mes-centro">
+        <label for="mes" class="etiqueta-suave">Mes</label>
+        <input id="mes" type="month" required>
+        <p id="mes-nombre" class="navegador-mes-nombre" aria-live="polite"></p>
+      </div>
+      <button type="button" id="mes-siguiente" class="boton boton-secundario boton-compacto" aria-label="Mes siguiente">→</button>
+    </div>
+
+    <div class="totales" aria-live="polite">
+      <div class="total">
+        <span class="total-etiqueta">Cobrado</span>
+        <strong id="total-cobrado" class="total-valor">—</strong>
+        <span id="total-cobrado-detalle" class="total-detalle"></span>
+      </div>
+      <div class="total total-pendiente">
+        <span class="total-etiqueta">Pendiente</span>
+        <strong id="total-pendiente" class="total-valor">—</strong>
+        <span id="total-pendiente-detalle" class="total-detalle"></span>
+      </div>
+    </div>
+
+    <div id="exito" class="aviso aviso-info" role="status" hidden></div>
+    <div id="error" class="aviso aviso-error" role="alert" hidden></div>
+
+    <form id="filtros" class="filtros" role="search" novalidate>
+      <div class="campo">
+        <label for="filtro-buscar">Buscar</label>
+        <input id="filtro-buscar" type="search" maxlength="100" placeholder="Código o nombre"
+               autocomplete="off" autocapitalize="none" spellcheck="false">
+      </div>
+      <div class="campo">
+        <label for="filtro-estado">Estado</label>
+        <select id="filtro-estado">
+          <option value="">Todos</option>
+          <option value="VENCIDO">Vencidos</option>
+          <option value="PENDIENTE">Pendientes</option>
+          <option value="PAGADO">Pagados</option>
+        </select>
+      </div>
+    </form>
+
+    <p id="cargando" class="saludo-sub">Cargando…</p>
+    <p id="vacio" class="panel vacio" hidden>No hay clientes para mostrar.</p>
+    <ul id="lista-pagos" class="lista-tarjetas" aria-label="Clientes del mes"></ul>
+  </main>
+</body>
+</html>

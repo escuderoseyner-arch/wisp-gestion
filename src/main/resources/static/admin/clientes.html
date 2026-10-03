@@ -8,6 +8,7 @@
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/css/estilos.css">
   <script src="/js/sesion.js" defer></script>
+  <script src="/js/pagos-comun.js" defer></script>
   <script src="/js/clientes.js" defer></script>
 </head>
 <!-- data-rol: clientes.js solo deja entrar a usuarios con este rol -->
@@ -97,6 +98,22 @@
       <section class="panel" aria-labelledby="titulo-datos">
         <h2 id="titulo-datos" class="panel-titulo">Datos</h2>
         <dl id="det-datos" class="datos"></dl>
+      </section>
+
+      <section class="panel" aria-labelledby="titulo-pagos">
+        <div class="encabezado-panel">
+          <h2 id="titulo-pagos" class="panel-titulo">Pagos</h2>
+          <button type="button" id="boton-registrar-pago" class="boton boton-primario boton-compacto" hidden>Registrar pago</button>
+        </div>
+        <p id="pagos-resumen" class="pagos-resumen"></p>
+
+        <h3 class="subtitulo">Meses</h3>
+        <p id="pagos-meses-vacio" class="campo-ayuda" hidden>Su servicio todavía no empieza.</p>
+        <ul id="pagos-meses" class="lista-filas" aria-label="Estado de cada mes"></ul>
+
+        <h3 class="subtitulo">Historial de pagos</h3>
+        <p id="pagos-historial-vacio" class="campo-ayuda" hidden>Todavía no tiene pagos registrados.</p>
+        <ul id="pagos-historial" class="lista-filas" aria-label="Pagos registrados"></ul>
       </section>
 
       <section class="panel" aria-labelledby="titulo-cuenta">

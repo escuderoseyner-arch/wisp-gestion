@@ -1,6 +1,7 @@
 package com.escuderoseyner.wisp.service;
 
 import com.escuderoseyner.wisp.dto.ConfiguracionPublicaResponse;
+import com.escuderoseyner.wisp.model.Configuracion;
 import com.escuderoseyner.wisp.repository.ConfiguracionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,5 +24,20 @@ public class ConfiguracionService {
         return configuracionRepository.findById(ID_CONFIGURACION)
                 .map(c -> new ConfiguracionPublicaResponse(c.getNombreEmpresa(), c.getLogoUrl(), c.getWhatsappSoporte()))
                 .orElse(new ConfiguracionPublicaResponse("Gestión WISP", null, null));
+    }
+
+    // Días de gracia después del día de pago antes de considerar un mes VENCIDO
+    @Transactional(readOnly = true)
+    public int diasTolerancia() {
+        return configuracionRepository.findById(ID_CONFIGURACION)
+                .map(Configuracion::getDiasTolerancia)
+                .orElse(3);
+    }
+
+    @Transactional(readOnly = true)
+    public String moneda() {
+        return configuracionRepository.findById(ID_CONFIGURACION)
+                .map(Configuracion::getMoneda)
+                .orElse("S/");
     }
 }
