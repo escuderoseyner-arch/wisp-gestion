@@ -183,7 +183,8 @@ const Sesion = (() => {
     caja.textContent = '';
   }
 
-  // Pone el nombre y el logo de la empresa en los elementos con data-empresa y data-logo
+  // Pone el nombre y el logo de la empresa en los elementos con data-empresa y data-logo.
+  // Devuelve los datos públicos de la empresa, o null si no se pudieron cargar.
   async function cargarEmpresa() {
     try {
       const empresa = await api('/api/public/configuracion');
@@ -201,8 +202,10 @@ const Sesion = (() => {
           img.hidden = false;
         });
       }
+      return empresa;
     } catch {
       // Si falla, se queda el nombre genérico del HTML
+      return null;
     }
   }
 

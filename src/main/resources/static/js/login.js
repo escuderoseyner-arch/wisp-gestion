@@ -13,8 +13,25 @@
   const cajaError = document.getElementById('error');
   const cajaAviso = document.getElementById('aviso');
 
-  Sesion.cargarEmpresa();
+  Sesion.cargarEmpresa().then(prepararEnlaceOlvido);
   Sesion.activarBotonesMostrar();
+
+  // "¿Olvidaste tu contraseña?": abre WhatsApp de soporte con el usuario ya escrito
+  function prepararEnlaceOlvido(empresa) {
+    let numero = ((empresa && empresa.whatsappSoporte) || '').replace(/\D/g, '');
+    if (!numero) return; // sin WhatsApp configurado, el enlace queda oculto
+    // wa.me necesita el código de país: un celular peruano de 9 dígitos se completa con 51
+    if (/^9\d{8}$/.test(numero)) numero = '51' + numero;
+
+    const enlace = document.getElementById('enlace-olvido');
+    const actualizar = () => {
+      const mensaje = 'Hola, olvidé mi contraseña. Mi usuario es: ' + form.username.value.trim();
+      enlace.href = 'https://wa.me/' + numero + '?text=' + encodeURIComponent(mensaje);
+    };
+    actualizar();
+    form.username.addEventListener('input', actualizar);
+    enlace.hidden = false;
+  }
 
   const motivo = new URLSearchParams(location.search).get('motivo');
   if (motivo === 'expirada') Sesion.mostrarMensaje(cajaAviso, 'Tu sesión expiró. Vuelve a ingresar.');

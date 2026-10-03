@@ -73,6 +73,21 @@ public class CuentaClienteService {
         return new CuentaTemporalResponse(usuario.getUsername(), password);
     }
 
+    // El usuario es independiente del celular. La comparación en MySQL no distingue
+    // mayúsculas, así que "Juan" choca con "juan".
+    @Transactional
+    public String cambiarUsuario(Integer clienteId, String usernameNuevo) {
+        buscarVigente(clienteId);
+        Usuario usuario = usuarioRepository.findByClienteId(clienteId)
+                .orElseThrow(() -> new ReglaNegocioException("Este cliente todavía no tiene cuenta. Usa \"Crear cuenta\"."));
+        String username = usernameNuevo.trim();
+        if (usuarioRepository.existsByUsernameAndIdNot(username, usuario.getId())) {
+            throw new ReglaNegocioException("El usuario " + username + " ya lo usa otra persona.");
+        }
+        usuario.setUsername(username);
+        return username;
+    }
+
     private Cliente buscarVigente(Integer clienteId) {
         Cliente cliente = clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe un cliente con el id " + clienteId + "."));

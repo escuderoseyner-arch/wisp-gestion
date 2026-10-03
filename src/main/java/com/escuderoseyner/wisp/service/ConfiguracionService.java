@@ -21,7 +21,7 @@ public class ConfiguracionService {
     @Transactional(readOnly = true)
     public ConfiguracionPublicaResponse obtenerPublica() {
         return configuracionRepository.findById(ID_CONFIGURACION)
-                .map(c -> new ConfiguracionPublicaResponse(c.getNombreEmpresa(), c.getLogoUrl()))
-                .orElse(new ConfiguracionPublicaResponse("Gestión WISP", null));
+                .map(c -> new ConfiguracionPublicaResponse(c.getNombreEmpresa(), c.getLogoUrl(), c.getWhatsappSoporte()))
+                .orElse(new ConfiguracionPublicaResponse("Gestión WISP", null, null));
     }
 }

@@ -181,6 +181,67 @@
     $('boton-restablecer').addEventListener('click', (e) => generarPassword(e.currentTarget, 'restablecer'));
     $('boton-copiar').addEventListener('click', copiarMensaje);
     $('boton-ocultar-password').addEventListener('click', ocultarPassword);
+    $('boton-cambiar-usuario').addEventListener('click', abrirFormularioUsuario);
+    $('boton-cancelar-usuario').addEventListener('click', cerrarFormularioUsuario);
+    $('form-usuario').addEventListener('submit', cambiarUsuario);
+  }
+
+  // ---------- Cambiar usuario de acceso ----------
+
+  function abrirFormularioUsuario() {
+    limpiarAvisos();
+    Sesion.ocultar($('error-usuario'));
+    $('nuevo-usuario').value = clienteActual.cuenta.username;
+    $('form-usuario').hidden = false;
+    $('cuenta-botones').hidden = true;
+    $('nuevo-usuario').focus();
+    $('nuevo-usuario').select();
+  }
+
+  function cerrarFormularioUsuario() {
+    $('form-usuario').hidden = true;
+    $('cuenta-botones').hidden = false;
+    $('nuevo-usuario').value = '';
+  }
+
+  async function cambiarUsuario(evento) {
+    evento.preventDefault();
+    const cajaErrorUsuario = $('error-usuario');
+    Sesion.ocultar(cajaErrorUsuario);
+    const c = clienteActual;
+    const username = $('nuevo-usuario').value.trim();
+
+    if (!/^[A-Za-z0-9._-]{3,50}$/.test(username)) {
+      Sesion.mostrarMensaje(cajaErrorUsuario,
+        'El usuario debe tener de 3 a 50 caracteres: letras sin tildes, números, punto, guion o guion bajo.');
+      return;
+    }
+    if (username === c.cuenta.username) {
+      cerrarFormularioUsuario();
+      return;
+    }
+
+    const confirmado = await confirmar({
+      titulo: '¿Cambiar el usuario?',
+      texto: c.nombres + ' tendrá que ingresar con "' + username + '" en lugar de "' + c.cuenta.username
+        + '". Su contraseña no cambia. Avísale del cambio.',
+      boton: 'Sí, cambiar',
+    });
+    if (!confirmado) return;
+
+    const boton = $('boton-guardar-usuario');
+    boton.disabled = true;
+    try {
+      dibujarDetalle(await Sesion.api(URL_CLIENTES + '/' + c.id + '/cuenta/usuario', {
+        method: 'PUT',
+        body: { username },
+      }));
+      Sesion.mostrarMensaje(cajaExito, 'Usuario cambiado a "' + username + '".');
+    } catch (error) {
+      Sesion.mostrarError(cajaErrorUsuario, error);
+    } finally {
+      boton.disabled = false;
+    }
   }
 
   async function mostrarDetalle(id) {
@@ -219,20 +280,25 @@
 
     // Cuenta del portal
     const cuenta = cliente.cuenta;
-    let textoCuenta;
+    $('cuenta-datos').hidden = !cuenta;
+    let textoCuenta = '';
     if (cuenta) {
-      textoCuenta = 'Usuario: ' + cuenta.username + ' · ' + (cuenta.activa ? 'Activa' : 'Desactivada')
-        + (cuenta.debeCambiarPassword && cuenta.activa ? ' · Aún no cambia su contraseña temporal' : '');
+      $('cuenta-usuario').textContent = cuenta.username;
+      $('cuenta-estado').textContent = (cuenta.activa ? 'Activa' : 'Desactivada')
+        + (cuenta.debeCambiarPassword && cuenta.activa ? ' · aún no cambia su contraseña temporal' : '');
     } else if (retirado) {
       textoCuenta = 'No tiene cuenta.';
     } else if (cliente.celular) {
-      textoCuenta = 'Todavía no tiene cuenta. Su usuario será su celular.';
+      textoCuenta = 'Todavía no tiene cuenta. Su usuario inicial será su celular.';
     } else {
       textoCuenta = 'Agrega un celular al cliente para poder crearle una cuenta.';
     }
     $('cuenta-texto').textContent = textoCuenta;
+    $('cuenta-texto').hidden = !textoCuenta;
     $('boton-crear-cuenta').hidden = retirado || Boolean(cuenta) || !cliente.celular;
     $('boton-restablecer').hidden = retirado || !cuenta;
+    $('boton-cambiar-usuario').hidden = retirado || !cuenta;
+    cerrarFormularioUsuario();
 
     // Acciones: un retirado ya no se modifica
     $('panel-acciones').hidden = retirado;
@@ -384,7 +450,7 @@
     } else if (modo === 'editar') {
       $('form-titulo').textContent = 'Editar ' + cliente.codigo;
       $('form-sub').textContent = cliente.cuenta
-        ? 'Si cambias el celular, también cambia su usuario del portal.'
+        ? 'Cambiar el celular no cambia su usuario de acceso.'
         : '';
       llenarDatos(form, cliente);
       $('boton-guardar').textContent = 'Guardar cambios';

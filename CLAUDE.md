@@ -5,7 +5,7 @@ Debe ser genérico y vendible a otras empresas: los datos de cada empresa viven 
 
 ## Sobre el desarrollador
 - Joaquín, estudiante de Computación e Informática. Entiende Java/Spring a nivel de curso, pero ya no escribe mucho código a mano.
-- Explica cada cambio en español sencillo: qué archivo tocaste, qué hace y por qué. Si usas un concepto nuevo, explícalo en una o dos frases.
+- Al terminar, responde corto: si salió bien o no, y qué debo ejecutar o probar. Sin explicaciones salvo que las pida.
 - Trabaja en pasos pequeños. Al terminar cada paso, compila y ejecuta para comprobar que funciona antes de seguir.
 
 ## Stack

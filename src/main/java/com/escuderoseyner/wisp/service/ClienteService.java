@@ -114,23 +114,10 @@ public class ClienteService {
         Cliente cliente = buscarVigente(id);
         Optional<Usuario> cuenta = usuarioRepository.findByClienteId(id);
 
-        // Si tiene cuenta, su celular es su usuario: debe existir y no chocar con otro usuario
-        List<String> problemas = new ArrayList<>();
-        String celular = limpiarCelular(request.celular());
-        cuenta.ifPresent(usuario -> {
-            if (celular == null) {
-                problemas.add("Este cliente tiene cuenta en el portal y su celular es su usuario: no se puede dejar vacío.");
-            } else if (usuarioRepository.existsByUsernameAndIdNot(celular, usuario.getId())) {
-                problemas.add("El celular " + celular + " ya lo usa otro usuario del sistema.");
-            }
-        });
+        validarYAplicar(cliente, request.codigo(), request, id, cliente.getPlan(), new ArrayList<>());
 
-        validarYAplicar(cliente, request.codigo(), request, id, cliente.getPlan(), problemas);
-
-        cuenta.ifPresent(usuario -> {
-            usuario.setUsername(cliente.getCelular());
-            usuario.setNombreMostrar(cliente.getNombres());
-        });
+        // El usuario de acceso NO cambia con el celular: se cambia aparte ("Cambiar usuario")
+        cuenta.ifPresent(usuario -> usuario.setNombreMostrar(cliente.getNombres()));
         return aDetalle(cliente, cuenta);
     }
 

@@ -516,7 +516,26 @@ a {
   background: var(--color-alerta-fondo);
 }
 
+/* Enlace "¿Olvidaste tu contraseña?" del login */
+.enlace-ayuda {
+  margin-top: 18px;
+  text-align: center;
+}
+
+.enlace-ayuda a {
+  display: inline-block;
+  padding: 8px 4px; /* área cómoda para tocar */
+}
+
 /* ---------- Clientes ---------- */
+
+.form-en-linea {
+  margin-top: 16px;
+}
+
+#cuenta-datos {
+  margin-bottom: 12px;
+}
 
 .opcional {
   font-weight: 400;

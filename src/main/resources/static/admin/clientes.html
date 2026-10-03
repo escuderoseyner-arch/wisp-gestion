@@ -101,10 +101,30 @@
 
       <section class="panel" aria-labelledby="titulo-cuenta">
         <h2 id="titulo-cuenta" class="panel-titulo">Cuenta del portal</h2>
+        <dl id="cuenta-datos" class="datos" hidden>
+          <div><dt>Usuario de acceso</dt><dd id="cuenta-usuario"></dd></div>
+          <div><dt>Estado</dt><dd id="cuenta-estado"></dd></div>
+        </dl>
         <p id="cuenta-texto"></p>
-        <div class="acciones">
+
+        <form id="form-usuario" class="form-en-linea" novalidate hidden>
+          <div class="campo">
+            <label for="nuevo-usuario">Nuevo usuario</label>
+            <input id="nuevo-usuario" name="username" type="text" maxlength="50" required autocomplete="off"
+                   autocapitalize="none" spellcheck="false" aria-describedby="ayuda-usuario">
+            <p id="ayuda-usuario" class="campo-ayuda">3 a 50 caracteres: letras sin tildes, números, punto, guion o guion bajo.</p>
+          </div>
+          <div id="error-usuario" class="aviso aviso-error" role="alert" hidden></div>
+          <div class="acciones">
+            <button type="submit" id="boton-guardar-usuario" class="boton boton-primario">Guardar usuario</button>
+            <button type="button" id="boton-cancelar-usuario" class="boton boton-secundario">Cancelar</button>
+          </div>
+        </form>
+
+        <div id="cuenta-botones" class="acciones">
           <button type="button" id="boton-crear-cuenta" class="boton boton-primario" hidden>Crear cuenta</button>
           <button type="button" id="boton-restablecer" class="boton boton-secundario" hidden>Restablecer contraseña</button>
+          <button type="button" id="boton-cambiar-usuario" class="boton boton-secundario" hidden>Cambiar usuario</button>
         </div>
       </section>
 
@@ -145,7 +165,7 @@
           <label for="celular">Celular <span class="opcional">(opcional)</span></label>
           <input id="celular" name="celular" type="tel" inputmode="numeric" maxlength="11" autocomplete="off"
                  placeholder="987654321" aria-describedby="ayuda-celular">
-          <p id="ayuda-celular" class="campo-ayuda">9 dígitos empezando con 9. Es su usuario si se le crea una cuenta.</p>
+          <p id="ayuda-celular" class="campo-ayuda">9 dígitos empezando con 9. Al crearle una cuenta, su usuario inicial será este celular.</p>
         </div>
 
         <div class="campo">

@@ -1,5 +1,6 @@
 package com.escuderoseyner.wisp.controller;
 
+import com.escuderoseyner.wisp.dto.CambiarUsuarioRequest;
 import com.escuderoseyner.wisp.dto.ClienteDetalleResponse;
 import com.escuderoseyner.wisp.dto.ClienteRequest;
 import com.escuderoseyner.wisp.dto.ClienteResumenResponse;
@@ -103,5 +104,12 @@ public class ClienteController {
     @PostMapping("/{id}/cuenta/restablecer-password")
     public CuentaTemporalResponse restablecerPassword(@PathVariable Integer id) {
         return cuentaClienteService.restablecerPassword(id);
+    }
+
+    @PutMapping("/{id}/cuenta/usuario")
+    public ClienteDetalleResponse cambiarUsuario(@PathVariable Integer id,
+                                                 @Valid @RequestBody CambiarUsuarioRequest request) {
+        cuentaClienteService.cambiarUsuario(id, request.username());
+        return clienteService.detalle(id);
     }
 }
