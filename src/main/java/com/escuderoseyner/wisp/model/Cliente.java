@@ -25,11 +25,16 @@ public class Cliente {
     @Column(nullable = false, length = 100)
     private String nombres;
 
-    @Column(nullable = false, length = 15)
+    // Opcional desde el script 002: hay clientes sin número
+    @Column(length = 15)
     private String celular;
 
     @Column(length = 200)
     private String referencia;
+
+    // Caserío, sector o barrio (ej: "Zona Norte"). Agregada en el script 002.
+    @Column(length = 50)
+    private String zona;
 
     // Muchos clientes pueden tener el mismo plan.
     // LAZY: el plan solo se consulta a la base de datos cuando se usa.

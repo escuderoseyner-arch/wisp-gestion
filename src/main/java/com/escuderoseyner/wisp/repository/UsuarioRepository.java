@@ -16,4 +16,12 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
 
     // Para saber si hay que crear el admin inicial al arrancar
     boolean existsByRol(Rol rol);
+
+    // La cuenta del portal de un cliente (si tiene)
+    Optional<Usuario> findByClienteId(Integer clienteId);
+
+    // ¿Otro usuario ya usa este username?
+    boolean existsByUsername(String username);
+
+    boolean existsByUsernameAndIdNot(String username, Integer id);
 }

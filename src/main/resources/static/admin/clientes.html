@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>Clientes</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/css/estilos.css">
+  <script src="/js/sesion.js" defer></script>
+  <script src="/js/clientes.js" defer></script>
+</head>
+<!-- data-rol: clientes.js solo deja entrar a usuarios con este rol -->
+<body data-rol="ADMIN">
+  <header class="barra">
+    <div class="barra-marca">
+      <img data-logo alt="" hidden>
+      <span class="barra-nombre" data-empresa>Gestión WISP</span>
+    </div>
+    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto">Cerrar sesión</button>
+  </header>
+
+  <main class="contenido">
+    <div id="exito" class="aviso aviso-info" role="status" hidden></div>
+    <div id="error" class="aviso aviso-error" role="alert" hidden></div>
+
+    <!-- ==================== LISTA ==================== -->
+    <section id="vista-lista" aria-labelledby="titulo-lista">
+      <a class="enlace-volver" href="/admin/inicio.html">← Volver al inicio</a>
+
+      <div class="encabezado-seccion">
+        <div>
+          <h1 id="titulo-lista" class="saludo">Clientes</h1>
+          <p id="contador" class="saludo-sub" aria-live="polite"></p>
+        </div>
+        <a href="#nuevo" class="boton boton-primario boton-compacto">+ Nuevo cliente</a>
+      </div>
+
+      <form id="filtros" class="filtros" role="search" novalidate>
+        <div class="campo">
+          <label for="filtro-buscar">Buscar</label>
+          <input id="filtro-buscar" type="search" maxlength="100" placeholder="Código o nombre"
+                 autocomplete="off" autocapitalize="none" spellcheck="false">
+        </div>
+        <div class="fila-campos">
+          <div class="campo">
+            <label for="filtro-zona">Zona</label>
+            <select id="filtro-zona">
+              <option value="">Todas</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="filtro-estado">Estado</label>
+            <select id="filtro-estado">
+              <option value="">Vigentes</option>
+              <option value="ACTIVO">Activos</option>
+              <option value="SUSPENDIDO">Suspendidos</option>
+              <option value="RETIRADO">Retirados</option>
+            </select>
+          </div>
+        </div>
+      </form>
+
+      <p id="cargando" class="saludo-sub">Cargando clientes…</p>
+      <p id="vacio" class="panel vacio" hidden>No hay clientes con esos filtros.</p>
+      <ul id="lista-clientes" class="lista-tarjetas" aria-label="Lista de clientes"></ul>
+    </section>
+
+    <!-- ==================== DETALLE ==================== -->
+    <section id="vista-detalle" hidden aria-labelledby="det-nombre">
+      <a class="enlace-volver" href="#">← Volver a la lista</a>
+
+      <div class="encabezado-seccion">
+        <div>
+          <span id="det-codigo" class="codigo"></span>
+          <h1 id="det-nombre" class="saludo"></h1>
+        </div>
+        <span id="det-estado" class="estado"></span>
+      </div>
+
+      <!-- Contraseña temporal: se muestra una sola vez y se borra al salir de esta vista -->
+      <section id="panel-password" class="panel panel-destacado" hidden aria-labelledby="titulo-password">
+        <h2 id="titulo-password" class="panel-titulo">Contraseña temporal</h2>
+        <p>Envíasela al cliente por WhatsApp. <strong>Solo se muestra esta vez</strong>: si la pierdes, usa “Restablecer contraseña”.</p>
+        <dl class="datos">
+          <div><dt>Usuario</dt><dd id="pass-usuario"></dd></div>
+          <div><dt>Contraseña</dt><dd id="pass-valor" class="password-temporal"></dd></div>
+        </dl>
+        <label for="pass-mensaje" class="etiqueta-suave">Mensaje para enviar</label>
+        <textarea id="pass-mensaje" class="mensaje-copiable" rows="4" readonly></textarea>
+        <div class="acciones">
+          <button type="button" id="boton-copiar" class="boton boton-primario">Copiar mensaje</button>
+          <button type="button" id="boton-ocultar-password" class="boton boton-secundario">Ya lo envié, ocultar</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="titulo-datos">
+        <h2 id="titulo-datos" class="panel-titulo">Datos</h2>
+        <dl id="det-datos" class="datos"></dl>
+      </section>
+
+      <section class="panel" aria-labelledby="titulo-cuenta">
+        <h2 id="titulo-cuenta" class="panel-titulo">Cuenta del portal</h2>
+        <p id="cuenta-texto"></p>
+        <div class="acciones">
+          <button type="button" id="boton-crear-cuenta" class="boton boton-primario" hidden>Crear cuenta</button>
+          <button type="button" id="boton-restablecer" class="boton boton-secundario" hidden>Restablecer contraseña</button>
+        </div>
+      </section>
+
+      <section id="panel-acciones" class="panel" aria-labelledby="titulo-acciones">
+        <h2 id="titulo-acciones" class="panel-titulo">Acciones</h2>
+        <div class="acciones-detalle">
+          <a id="accion-editar" class="boton boton-secundario" href="#">Editar datos</a>
+          <button type="button" id="accion-suspender" class="boton boton-secundario" hidden>Suspender</button>
+          <button type="button" id="accion-reactivar" class="boton boton-secundario" hidden>Reactivar</button>
+          <a id="accion-reasignar" class="boton boton-secundario" href="#">Reasignar código</a>
+          <button type="button" id="accion-retirar" class="boton boton-peligro">Retirar cliente</button>
+        </div>
+      </section>
+    </section>
+
+    <!-- ==================== FORMULARIO (crear, editar, reasignar) ==================== -->
+    <section id="vista-formulario" hidden aria-labelledby="form-titulo">
+      <a id="form-volver" class="enlace-volver" href="#">← Volver</a>
+      <h1 id="form-titulo" class="saludo"></h1>
+      <p id="form-sub" class="saludo-sub"></p>
+
+      <form id="form-cliente" class="panel" novalidate>
+        <div id="error-formulario" class="aviso aviso-error" role="alert" hidden></div>
+
+        <div class="campo">
+          <label for="codigo">Código</label>
+          <input id="codigo" name="codigo" type="text" maxlength="10" required autocomplete="off"
+                 autocapitalize="characters" spellcheck="false" aria-describedby="ayuda-codigo">
+          <p id="ayuda-codigo" class="campo-ayuda">Formato C-NN, por ejemplo C-07.</p>
+        </div>
+
+        <div class="campo">
+          <label for="nombres">Nombre completo</label>
+          <input id="nombres" name="nombres" type="text" maxlength="100" required autocomplete="off">
+        </div>
+
+        <div class="campo">
+          <label for="celular">Celular <span class="opcional">(opcional)</span></label>
+          <input id="celular" name="celular" type="tel" inputmode="numeric" maxlength="11" autocomplete="off"
+                 placeholder="987654321" aria-describedby="ayuda-celular">
+          <p id="ayuda-celular" class="campo-ayuda">9 dígitos empezando con 9. Es su usuario si se le crea una cuenta.</p>
+        </div>
+
+        <div class="campo">
+          <label for="zona">Zona <span class="opcional">(opcional)</span></label>
+          <input id="zona" name="zona" type="text" maxlength="50" list="lista-zonas" autocomplete="off"
+                 placeholder="Ej: Zona Norte">
+          <datalist id="lista-zonas"></datalist>
+        </div>
+
+        <div class="campo">
+          <label for="referencia">Referencia <span class="opcional">(opcional)</span></label>
+          <input id="referencia" name="referencia" type="text" maxlength="200" autocomplete="off"
+                 placeholder="Ej: casa azul frente a la plaza">
+        </div>
+
+        <div class="campo">
+          <label for="plan">Plan</label>
+          <select id="plan" name="planId" required>
+            <option value="">Elige un plan</option>
+          </select>
+        </div>
+
+        <div class="fila-campos">
+          <div class="campo">
+            <label for="dia-pago">Día de pago</label>
+            <input id="dia-pago" name="diaPago" type="number" inputmode="numeric" min="1" max="28" step="1" required>
+          </div>
+          <div class="campo">
+            <label for="fecha-inicio">Fecha de inicio</label>
+            <input id="fecha-inicio" name="fechaInicio" type="date" required>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="ip">IP <span class="opcional">(opcional)</span></label>
+          <input id="ip" name="ip" type="text" inputmode="decimal" maxlength="15" autocomplete="off"
+                 spellcheck="false" placeholder="192.168.1.20">
+        </div>
+
+        <div class="acciones">
+          <button type="submit" id="boton-guardar" class="boton boton-primario">Guardar</button>
+          <a id="boton-cancelar" class="boton boton-secundario" href="#">Cancelar</a>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <!-- Confirmación antes de acciones importantes (retirar, reasignar, restablecer) -->
+  <dialog id="dialogo" class="dialogo" aria-labelledby="dialogo-titulo" aria-describedby="dialogo-texto">
+    <form method="dialog">
+      <h2 id="dialogo-titulo" class="panel-titulo"></h2>
+      <p id="dialogo-texto"></p>
+      <div class="acciones">
+        <button type="submit" value="si" id="dialogo-si" class="boton boton-peligro"></button>
+        <button type="submit" value="no" class="boton boton-secundario">Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ReglaNegocioException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse reglaNegocio(ReglaNegocioException e) {
-        return ErrorResponse.de(e.getMessage());
+        return new ErrorResponse(e.getMessage(), e.getDetalles());
     }
 
     // Falló alguna validación de @Valid (@NotBlank, @Size, ...)
