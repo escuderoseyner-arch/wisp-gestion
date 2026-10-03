@@ -32,6 +32,10 @@ public class Configuracion {
     @Column(name = "whatsapp_soporte", nullable = false, length = 15)
     private String whatsappSoporte;
 
+    // Código de país para los enlaces wa.me (ej: "51" = Perú). Agregada en el script 004.
+    @Column(name = "codigo_pais", nullable = false, length = 4)
+    private String codigoPais = "51";
+
     @Column(name = "yape_numero", length = 15)
     private String yapeNumero;
 
