@@ -52,6 +52,7 @@
         destacado: dinero(a.deuda),
         nota: a.diasAtraso === 1 ? '1 día de atraso' : a.diasAtraso + ' días de atraso',
         periodoPago: a.periodos[0],
+        recordar: { periodos: a.periodos, monto: a.deuda }, // debe todos sus meses vencidos
       });
     }));
     $('atrasados-vacio').hidden = p.atrasados.length > 0;
@@ -63,6 +64,7 @@
       destacado: dinero(x.monto),
       nota: textoDias(x.diasRestantes) + ' (' + Formato.fecha(x.vence) + ')',
       periodoPago: x.periodo,
+      recordar: { periodos: [x.periodo], monto: x.monto }, // el mes que está por vencer
     })));
     $('proximos-vacio').hidden = p.proximos.length > 0;
 
@@ -88,7 +90,7 @@
   }
 
   // Fila de un cliente con sus acciones. Siempre textContent, nunca innerHTML.
-  function crearFilaCliente(fila, { detalle, destacado, nota, periodoPago }) {
+  function crearFilaCliente(fila, { detalle, destacado, nota, periodoPago, recordar }) {
     const item = crearItem(fila.codigo + ' · ' + fila.nombres, detalle);
     item.classList.add('fila-cliente');
 
@@ -117,7 +119,18 @@
     ver.textContent = 'Ver';
     ver.setAttribute('aria-label', 'Ver a ' + fila.nombres);
 
-    acciones.append(registrar, ver);
+    // "Recordar" solo aparece si el cliente tiene celular
+    const botonRecordar = Pagos.crearBotonRecordar({
+      plantilla: panel.plantillaRecordatorio,
+      codigoPais: panel.codigoPais,
+      moneda: panel.moneda,
+      celular: fila.celular,
+      nombre: fila.nombres,
+      periodos: recordar.periodos,
+      monto: recordar.monto,
+    });
+
+    acciones.append(...[botonRecordar, registrar, ver].filter(Boolean));
     item.append(lado, acciones);
     return item;
   }

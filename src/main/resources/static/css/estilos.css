@@ -766,6 +766,23 @@ a {
   margin-top: 24px;
 }
 
+/* Botón de WhatsApp (verde de WhatsApp con texto oscuro: buen contraste en ambos temas) */
+.boton-whatsapp {
+  color: #0b1220;
+  background: #25d366;
+  border: 0;
+}
+
+.boton-whatsapp:hover {
+  background: #1fbe5a;
+}
+
+.fila-acciones-pagos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 /* ---------- Configuración ---------- */
 
 .formulario-config .panel:first-child {

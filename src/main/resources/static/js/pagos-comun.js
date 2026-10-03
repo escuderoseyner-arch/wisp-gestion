@@ -18,6 +18,29 @@ const Pagos = (() => {
     return span;
   }
 
+  // Botón "Recordar": enlace wa.me al celular del cliente con la plantilla de la empresa.
+  //   {nombre} = nombre del cliente, {monto} = total que debe, {mes} = meses en español.
+  // Devuelve null si el cliente no tiene celular o no hay meses que recordar.
+  function crearBotonRecordar({ plantilla, codigoPais, moneda, celular, nombre, periodos, monto }) {
+    if (!celular || !plantilla || periodos.length === 0) return null;
+    const texto = Formato.rellenarPlantilla(plantilla, {
+      nombre,
+      monto: dinero(moneda, monto),
+      mes: Formato.mesesEnTexto(periodos),
+    });
+    const url = Formato.enlaceWhatsApp(codigoPais, celular, texto);
+    if (!url) return null;
+
+    const enlace = document.createElement('a');
+    enlace.className = 'boton boton-whatsapp boton-compacto';
+    enlace.href = url;
+    enlace.target = '_blank';
+    enlace.rel = 'noopener noreferrer';
+    enlace.textContent = 'Recordar';
+    enlace.setAttribute('aria-label', 'Enviar recordatorio por WhatsApp a ' + nombre);
+    return enlace;
+  }
+
   // Texto corto del vencimiento de un mes sin pagar
   function textoVence(mes) {
     if (mes.estado === 'VENCIDO') return 'Venció el ' + fecha(mes.vence);
@@ -207,6 +230,7 @@ const Pagos = (() => {
     fecha,
     mesActual,
     crearEstadoMes,
+    crearBotonRecordar,
     textoVence,
   };
 })();

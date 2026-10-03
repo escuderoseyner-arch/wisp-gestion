@@ -189,18 +189,51 @@
 
   // ---------- Pagos del cliente ----------
 
+  // Plantilla y código de país para "Recordar": se piden una sola vez
+  let configuracion = null;
+
   async function cargarPagos(clienteId) {
     try {
-      const cuenta = await Sesion.api(Pagos.URL_PAGOS + '/cliente/' + clienteId);
+      if (!configuracion) configuracion = Sesion.api('/api/admin/configuracion');
+      const [cuenta, config] = await Promise.all([
+        Sesion.api(Pagos.URL_PAGOS + '/cliente/' + clienteId),
+        configuracion,
+      ]);
       if (!clienteActual || clienteActual.id !== clienteId) return; // ya se abrió otro cliente
-      dibujarPagos(cuenta);
+      dibujarPagos(cuenta, config);
     } catch (error) {
+      configuracion = null; // se vuelve a intentar la próxima vez
       Sesion.mostrarError(cajaError, error);
     }
   }
 
-  function dibujarPagos(cuenta) {
+  // Qué recordar: los meses vencidos; si está al día, el mes actual si aún no lo paga
+  function botonRecordar(cuenta, config) {
+    if (clienteActual.estado === 'RETIRADO') return null;
+    let periodos = cuenta.meses.filter((m) => m.estado === 'VENCIDO').map((m) => m.periodo);
+    let monto = cuenta.deuda;
+    if (periodos.length === 0) {
+      const actual = cuenta.meses.find((m) => m.periodo === Formato.mesActual() && m.estado === 'PENDIENTE');
+      if (!actual) return null;
+      periodos = [actual.periodo];
+      monto = cuenta.montoSugerido;
+    }
+    return Pagos.crearBotonRecordar({
+      plantilla: config.plantillaRecordatorio,
+      codigoPais: config.codigoPais,
+      moneda: cuenta.moneda,
+      celular: clienteActual.celular,
+      nombre: clienteActual.nombres,
+      periodos,
+      monto,
+    });
+  }
+
+  function dibujarPagos(cuenta, config) {
     const moneda = cuenta.moneda;
+    $('pagos-acciones').querySelectorAll('.boton-whatsapp').forEach((b) => b.remove());
+    const recordar = botonRecordar(cuenta, config);
+    if (recordar) $('pagos-acciones').prepend(recordar);
 
     let resumen = cuenta.mesesVencidos === 0
       ? 'Al día.'
