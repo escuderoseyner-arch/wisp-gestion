@@ -224,24 +224,14 @@ public class PagoService {
         pagoRepository.delete(pago);
     }
 
-    // ---------- Reglas del estado de un mes ----------
+    // ---------- Reglas del estado de un mes (en CalculadoraEstadoMes) ----------
 
-    // El día de pago va de 1 a 28, así que existe en todos los meses
     private LocalDate vencimiento(Cliente cliente, YearMonth mes, int tolerancia) {
-        return mes.atDay(cliente.getDiaPago()).plusDays(tolerancia);
+        return CalculadoraEstadoMes.vencimiento(cliente, mes, tolerancia);
     }
 
     private EstadoMes estadoDe(Cliente cliente, YearMonth mes, boolean pagado, int tolerancia, LocalDate hoy) {
-        if (pagado) {
-            return EstadoMes.PAGADO;
-        }
-        boolean antesDeInicio = mes.isBefore(YearMonth.from(cliente.getFechaInicio()));
-        boolean despuesDeRetiro = cliente.getFechaRetiro() != null
-                && mes.isAfter(YearMonth.from(cliente.getFechaRetiro()));
-        if (antesDeInicio || despuesDeRetiro) {
-            return EstadoMes.NO_APLICA;
-        }
-        return hoy.isAfter(vencimiento(cliente, mes, tolerancia)) ? EstadoMes.VENCIDO : EstadoMes.PENDIENTE;
+        return CalculadoraEstadoMes.estado(cliente, mes, pagado, tolerancia, hoy);
     }
 
     private MesResponse aMes(Cliente cliente, YearMonth mes, Pago pago, int tolerancia, LocalDate hoy) {

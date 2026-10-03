@@ -24,4 +24,16 @@ public interface PagoRepository extends JpaRepository<Pago, Integer> {
 
     @Query("SELECT p FROM Pago p JOIN FETCH p.registradoPor WHERE p.periodo = :periodo")
     List<Pago> findDelPeriodo(LocalDate periodo);
+
+    // Pagos recibidos entre dos fechas, con su cliente (para "pagos de esta semana")
+    @Query("""
+            SELECT p FROM Pago p JOIN FETCH p.cliente
+            WHERE p.fechaPago BETWEEN :desde AND :hasta
+            ORDER BY p.fechaPago DESC, p.id DESC
+            """)
+    List<Pago> findRecibidosEntre(LocalDate desde, LocalDate hasta);
+
+    // Solo [id del cliente, periodo] de todos los pagos: liviano, para calcular los atrasados
+    @Query("SELECT p.cliente.id, p.periodo FROM Pago p")
+    List<Object[]> findClienteYPeriodo();
 }

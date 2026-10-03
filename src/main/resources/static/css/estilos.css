@@ -686,6 +686,86 @@ a {
   margin-bottom: 20px;
 }
 
+/* ---------- Panel del admin ---------- */
+
+.accesos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 20px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.acceso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 10px;
+  color: var(--color-texto);
+  text-align: center;
+  text-decoration: none;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+}
+
+.acceso:hover {
+  border-color: var(--color-primario);
+}
+
+.totales-3 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.totales-3 .total:first-child {
+  grid-column: 1 / -1;
+}
+
+/* Filas con cliente, monto y acciones (atrasados, próximos) */
+.fila-cliente {
+  flex-wrap: wrap;
+}
+
+.fila-cliente .fila-texto {
+  flex: 1 1 60%;
+}
+
+.fila-lado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.fila-lado small {
+  color: var(--color-texto-suave);
+}
+
+.fila-monto {
+  white-space: nowrap;
+}
+
+.fila-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.fila-acciones .boton {
+  flex: 1 1 auto;
+}
+
+.total-semana {
+  font-size: 1.2rem;
+}
+
+.panel-pie {
+  margin-top: 24px;
+}
+
 /* ---------- Configuración ---------- */
 
 .formulario-config .panel:first-child {
@@ -982,6 +1062,26 @@ a {
 
   .datos {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .accesos {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .totales-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .totales-3 .total:first-child {
+    grid-column: auto;
+  }
+
+  .fila-acciones {
+    width: auto;
+  }
+
+  .fila-acciones .boton {
+    flex: 0 0 auto;
   }
 }
 

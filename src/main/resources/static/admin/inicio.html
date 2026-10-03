@@ -8,9 +8,11 @@
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/css/estilos.css">
   <script src="/js/sesion.js" defer></script>
-  <script src="/js/inicio.js" defer></script>
+  <script src="/js/formato.js" defer></script>
+  <script src="/js/pagos-comun.js" defer></script>
+  <script src="/js/panel.js" defer></script>
 </head>
-<!-- data-rol: inicio.js solo deja entrar a usuarios con este rol -->
+<!-- data-rol: panel.js solo deja entrar a usuarios con este rol -->
 <body data-rol="ADMIN">
   <header class="barra">
     <div class="barra-marca">
@@ -21,39 +23,72 @@
   </header>
 
   <main class="contenido">
-    <span class="etiqueta-rol">Administrador</span>
     <h1 class="saludo">Hola, <span id="nombre-usuario">…</span></h1>
-    <p class="saludo-sub">Bienvenido al panel de administración.</p>
-
-    <div id="error" class="aviso aviso-error" role="alert" hidden></div>
 
     <nav aria-label="Secciones">
-      <ul class="menu">
-        <li>
-          <a class="menu-enlace" href="/admin/pagos.html">
-            <span>Pagos<small>Cobrado y pendiente del mes, registrar pagos</small></span>
-            <span aria-hidden="true">→</span>
-          </a>
-        </li>
-        <li>
-          <a class="menu-enlace" href="/admin/clientes.html">
-            <span>Clientes<small>Buscar, crear, suspender, retirar y crear cuentas</small></span>
-            <span aria-hidden="true">→</span>
-          </a>
-        </li>
-        <li>
-          <a class="menu-enlace" href="/admin/planes.html">
-            <span>Planes<small>Crear, editar y desactivar planes de internet</small></span>
-            <span aria-hidden="true">→</span>
-          </a>
-        </li>
+      <ul class="accesos">
+        <li><a class="acceso" href="/admin/clientes.html">Clientes</a></li>
+        <li><a class="acceso" href="/admin/pagos.html">Pagos</a></li>
+        <li><a class="acceso" href="/admin/planes.html">Planes</a></li>
+        <li><a class="acceso" href="/admin/configuracion.html">Configuración</a></li>
       </ul>
     </nav>
 
-    <section class="panel">
-      <p>Aquí verás pronto los clientes atrasados, los pagos de la semana y lo cobrado del mes.</p>
-      <p><a href="/cambiar-password.html">Cambiar mi contraseña</a></p>
-    </section>
+    <div id="exito" class="aviso aviso-info" role="status" hidden></div>
+    <div id="error" class="aviso aviso-error" role="alert" hidden></div>
+    <p id="cargando" class="saludo-sub">Cargando el panel…</p>
+
+    <div id="panel" hidden>
+      <!-- Resumen del mes actual -->
+      <section class="panel" aria-labelledby="titulo-mes">
+        <div class="encabezado-panel">
+          <h2 id="titulo-mes" class="panel-titulo"></h2>
+          <a href="/admin/pagos.html" class="boton boton-secundario boton-compacto">Ver pagos del mes</a>
+        </div>
+        <div class="totales totales-3">
+          <div class="total">
+            <span class="total-etiqueta">Esperado</span>
+            <strong id="total-esperado" class="total-valor"></strong>
+          </div>
+          <div class="total">
+            <span class="total-etiqueta">Cobrado</span>
+            <strong id="total-cobrado" class="total-valor"></strong>
+          </div>
+          <div class="total total-pendiente">
+            <span class="total-etiqueta">Pendiente</span>
+            <strong id="total-pendiente" class="total-valor"></strong>
+          </div>
+        </div>
+        <p id="clientes-resumen" class="campo-ayuda"></p>
+      </section>
+
+      <!-- Atrasados -->
+      <section class="panel" aria-labelledby="titulo-atrasados">
+        <h2 id="titulo-atrasados" class="panel-titulo">Atrasados</h2>
+        <p id="atrasados-vacio" class="campo-ayuda" hidden>Nadie tiene meses vencidos.</p>
+        <ul id="lista-atrasados" class="lista-filas" aria-label="Clientes atrasados"></ul>
+      </section>
+
+      <!-- Próximos a vencer -->
+      <section class="panel" aria-labelledby="titulo-proximos">
+        <h2 id="titulo-proximos" class="panel-titulo"></h2>
+        <p id="proximos-vacio" class="campo-ayuda" hidden>Nadie vence en los próximos días.</p>
+        <ul id="lista-proximos" class="lista-filas" aria-label="Próximos a vencer"></ul>
+      </section>
+
+      <!-- Pagos de esta semana -->
+      <section class="panel" aria-labelledby="titulo-semana">
+        <div class="encabezado-panel">
+          <h2 id="titulo-semana" class="panel-titulo">Pagos de esta semana</h2>
+          <strong id="total-semana" class="total-semana"></strong>
+        </div>
+        <p id="semana-rango" class="campo-ayuda"></p>
+        <p id="semana-vacio" class="campo-ayuda" hidden>Todavía no hay pagos esta semana.</p>
+        <ul id="lista-semana" class="lista-filas" aria-label="Pagos de esta semana"></ul>
+      </section>
+
+      <p class="panel-pie"><a href="/cambiar-password.html">Cambiar mi contraseña</a></p>
+    </div>
   </main>
 </body>
 </html>
