@@ -5,6 +5,7 @@ import com.escuderoseyner.wisp.dto.LoginRequest;
 import com.escuderoseyner.wisp.dto.LoginResponse;
 import com.escuderoseyner.wisp.dto.UsuarioActualResponse;
 import com.escuderoseyner.wisp.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -24,17 +25,20 @@ public class AuthController {
         this.authService = authService;
     }
 
-    // Público: no necesita token
+    // Público: no necesita token.
+    // getRemoteAddr(): la IP de la conexión. No se usa X-Forwarded-For porque el navegador lo puede
+    // falsificar; si la app se pone detrás de un proxy, configurar server.forward-headers-strategy.
     @PostMapping("/login")
-    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
-        return authService.login(request);
+    public LoginResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
+        return authService.login(request, http.getRemoteAddr());
     }
 
     // @AuthenticationPrincipal Jwt: el token ya validado; getSubject() es el username
     @PostMapping("/cambiar-password")
     public LoginResponse cambiarPassword(@AuthenticationPrincipal Jwt jwt,
-                                         @Valid @RequestBody CambiarPasswordRequest request) {
-        return authService.cambiarPassword(jwt.getSubject(), request);
+                                         @Valid @RequestBody CambiarPasswordRequest request,
+                                         HttpServletRequest http) {
+        return authService.cambiarPassword(jwt.getSubject(), request, http.getRemoteAddr());
     }
 
     @GetMapping("/me")

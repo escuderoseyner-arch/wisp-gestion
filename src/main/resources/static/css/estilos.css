@@ -51,8 +51,11 @@
   color-scheme: light;
 }
 
+/* Tema oscuro. js/tema.js pone data-tema="claro" u "oscuro" en <html> si la persona eligió uno;
+   sin atributo es "Automático" y manda el sistema. Los colores oscuros están dos veces porque
+   CSS no permite reutilizar un bloque: una para "automático + sistema oscuro" y otra para "oscuro". */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-tema="claro"]) {
     --fondo: #14181b;
     --superficie: #1c2125;
     --superficie-2: #23292e;
@@ -81,6 +84,36 @@
     --sombra: 0 1px 2px rgba(0, 0, 0, 0.3);
     color-scheme: dark;
   }
+}
+
+:root[data-tema="oscuro"] {
+  --fondo: #14181b;
+  --superficie: #1c2125;
+  --superficie-2: #23292e;
+  --texto: #e5e8ea;
+  --texto-suave: #a5aeb6;
+  --borde: #2f363c;
+  --borde-fuerte: #414a51;
+
+  --primario: #7db5b2;
+  --primario-hover: #95c6c3;
+  --primario-suave: #20302f;
+  --primario-texto: #9fcdca;
+  --sobre-primario: #0f1d1c;
+
+  --ok-fondo: #1e3226;
+  --ok-texto: #a3d7b1;
+  --alerta-fondo: #372e1d;
+  --alerta-texto: #ebcc8c;
+  --error-fondo: #3b2321;
+  --error-texto: #f1aca4;
+  --gris-fondo: #2a3035;
+  --gris-texto: #c4cacf;
+  --gris-claro-fondo: #22272b;
+  --gris-claro-texto: #9aa3ab;
+
+  --sombra: 0 1px 2px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
 }
 
 /* ---------- Base ---------- */
@@ -238,6 +271,27 @@ a {
   width: 44px;
   background: var(--primario-suave);
   border-radius: 999px;
+}
+
+/* Botón de tema: en celular solo el ícono (el nombre lo lee el lector de pantalla) */
+.boton-tema {
+  flex-shrink: 0;
+  padding: 0 12px;
+}
+
+.boton-tema-texto {
+  display: none;
+}
+
+/* En login y cambiar contraseña: arriba a la derecha */
+.selector-tema-flotante {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.barra .boton-compacto {
+  flex-shrink: 0;
 }
 
 /* Espacio para que la barra de abajo no tape el contenido */
@@ -1229,6 +1283,10 @@ body.con-nav-admin {
 @media (min-width: 480px) {
   .tarjeta {
     padding: 36px 32px;
+  }
+
+  .boton-tema-texto {
+    display: inline;
   }
 
   .totales {

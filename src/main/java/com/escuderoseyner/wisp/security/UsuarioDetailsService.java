@@ -9,8 +9,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-
 // Le dice a Spring Security cómo buscar un usuario en la tabla "usuarios".
 // Spring usa esto en el login para comparar la contraseña con el hash BCrypt.
 @Service
@@ -27,19 +25,17 @@ public class UsuarioDetailsService implements UserDetailsService {
         Usuario usuario = usuarioRepository.findConClienteByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
 
-        boolean bloqueado = usuario.getBloqueadoHasta() != null
-                && usuario.getBloqueadoHasta().isAfter(LocalDateTime.now());
         // Un cliente RETIRADO no entra al portal (un SUSPENDIDO sí, para ver su deuda)
         boolean clienteRetirado = usuario.getCliente() != null
                 && usuario.getCliente().getEstado() == EstadoCliente.RETIRADO;
 
-        // Si la cuenta está bloqueada o desactivada, Spring rechaza el login
-        // ANTES de revisar la contraseña.
+        // Si la cuenta está desactivada, Spring rechaza el login ANTES de revisar la contraseña.
+        // Los bloqueos por intentos fallidos los maneja ControlIntentosLogin (por cuenta + IP),
+        // así que las columnas intentos_fallidos y bloqueado_hasta ya no se usan.
         return User.withUsername(usuario.getUsername())
                 .password(usuario.getPasswordHash())
                 .roles(usuario.getRol().name())
                 .disabled(!usuario.getActivo() || clienteRetirado)
-                .accountLocked(bloqueado)
                 .build();
     }
 }

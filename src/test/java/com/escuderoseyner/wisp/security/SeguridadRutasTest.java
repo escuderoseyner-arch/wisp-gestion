@@ -1,11 +1,13 @@
 package com.escuderoseyner.wisp.security;
 
+import com.escuderoseyner.wisp.controller.AdministradorController;
 import com.escuderoseyner.wisp.controller.ClienteController;
 import com.escuderoseyner.wisp.controller.PagoController;
 import com.escuderoseyner.wisp.controller.PlanController;
 import com.escuderoseyner.wisp.controller.PortalClienteController;
 import com.escuderoseyner.wisp.model.Rol;
 import com.escuderoseyner.wisp.model.Usuario;
+import com.escuderoseyner.wisp.service.AdministradorService;
 import com.escuderoseyner.wisp.service.ClienteService;
 import com.escuderoseyner.wisp.service.CuentaClienteService;
 import com.escuderoseyner.wisp.service.PagoService;
@@ -33,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 // Prueba las reglas de acceso con tokens JWT REALES (firmados con JwtService y validados por
 // el JwtDecoder de SecurityConfig). Los servicios son simulados: aquí solo importa quién entra.
-@WebMvcTest(controllers = {ClienteController.class, PagoController.class, PlanController.class,
+@WebMvcTest(controllers = {AdministradorController.class, ClienteController.class, PagoController.class, PlanController.class,
         PortalClienteController.class})
 @Import({SecurityConfig.class, RespuestasSeguridad.class, JwtService.class})
 @TestPropertySource(properties = {
@@ -70,6 +72,9 @@ class SeguridadRutasTest {
 
     @MockitoBean
     private PortalClienteService portalClienteService;
+
+    @MockitoBean
+    private AdministradorService administradorService;
 
     @BeforeEach
     void usuarioVigente() {
@@ -112,10 +117,10 @@ class SeguridadRutasTest {
     void clienteNoEntraAAdmin() throws Exception {
         String cliente = tokenCliente();
         for (String ruta : new String[]{"/api/admin/clientes", "/api/admin/clientes/2", "/api/admin/pagos/cliente/2",
-                "/api/admin/pagos/mes", "/api/admin/planes"}) {
+                "/api/admin/pagos/mes", "/api/admin/planes", "/api/admin/administradores"}) {
             mockMvc.perform(get(ruta).header("Authorization", cliente)).andExpect(status().isForbidden());
         }
-        verifyNoInteractions(clienteService, pagoService, planService);
+        verifyNoInteractions(clienteService, pagoService, planService, administradorService);
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.escuderoseyner.wisp.controller;
 
 import com.escuderoseyner.wisp.dto.ErrorResponse;
 import com.escuderoseyner.wisp.service.CredencialesInvalidasException;
+import com.escuderoseyner.wisp.service.DemasiadosIntentosException;
 import com.escuderoseyner.wisp.service.RecursoNoEncontradoException;
 import com.escuderoseyner.wisp.service.ReglaNegocioException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -45,6 +46,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse jsonInvalido(HttpMessageNotReadableException e) {
         return ErrorResponse.de("El cuerpo de la petición no es un JSON válido.");
+    }
+
+    @ExceptionHandler(DemasiadosIntentosException.class)
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    public ErrorResponse demasiadosIntentos(DemasiadosIntentosException e) {
+        return ErrorResponse.de(e.getMessage());
     }
 
     @ExceptionHandler(RecursoNoEncontradoException.class)

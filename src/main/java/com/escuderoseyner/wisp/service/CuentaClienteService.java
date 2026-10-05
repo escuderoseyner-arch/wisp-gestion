@@ -7,6 +7,7 @@ import com.escuderoseyner.wisp.model.Rol;
 import com.escuderoseyner.wisp.model.Usuario;
 import com.escuderoseyner.wisp.repository.ClienteRepository;
 import com.escuderoseyner.wisp.repository.UsuarioRepository;
+import com.escuderoseyner.wisp.security.ControlIntentosLogin;
 import com.escuderoseyner.wisp.security.GeneradorPasswordTemporal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,13 +23,16 @@ public class CuentaClienteService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final GeneradorPasswordTemporal generadorPassword;
+    private final ControlIntentosLogin controlIntentos;
 
     public CuentaClienteService(ClienteRepository clienteRepository, UsuarioRepository usuarioRepository,
-                                PasswordEncoder passwordEncoder, GeneradorPasswordTemporal generadorPassword) {
+                                PasswordEncoder passwordEncoder, GeneradorPasswordTemporal generadorPassword,
+                                ControlIntentosLogin controlIntentos) {
         this.clienteRepository = clienteRepository;
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.generadorPassword = generadorPassword;
+        this.controlIntentos = controlIntentos;
     }
 
     @Transactional
@@ -67,9 +71,8 @@ public class CuentaClienteService {
         String password = generadorPassword.generar();
         usuario.cambiarPasswordHash(passwordEncoder.encode(password)); // cierra las sesiones abiertas
         usuario.setDebeCambiarPassword(true);
-        usuario.setIntentosFallidos(0);
-        usuario.setBloqueadoHasta(null);
         usuario.setActivo(true);
+        controlIntentos.desbloquearCuenta(usuario.getUsername());
         return new CuentaTemporalResponse(usuario.getUsername(), password);
     }
 

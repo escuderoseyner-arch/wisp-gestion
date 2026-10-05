@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>Administradores</title>
+  <link rel="icon" href="data:,">
+  <script src="/js/tema.js"></script>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <script src="/js/sesion.js" defer></script>
+  <script src="/js/iconos.js" defer></script>
+  <script src="/js/nav-admin.js" defer></script>
+  <script src="/js/formato.js" defer></script>
+  <script src="/js/administradores.js" defer></script>
+</head>
+<!-- data-rol: administradores.js solo deja entrar a usuarios con este rol -->
+<body data-rol="ADMIN">
+  <header class="barra">
+    <div class="barra-marca">
+      <img data-logo alt="" hidden>
+      <span class="barra-nombre" data-empresa>Gestión WISP</span>
+    </div>
+    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto" aria-label="Cerrar sesión"><span data-icono="salir"></span>Salir</button>
+  </header>
+
+  <main class="contenido">
+    <div class="encabezado-seccion">
+      <div>
+        <h1 class="saludo">Administradores</h1>
+        <p class="saludo-sub">Las personas que pueden entrar a este panel. No se borran: se desactivan.</p>
+      </div>
+      <button type="button" id="boton-nuevo" class="boton boton-primario boton-compacto"><span data-icono="mas"></span>Nuevo administrador</button>
+    </div>
+
+    <div id="exito" class="aviso aviso-info" role="status" hidden></div>
+    <div id="error" class="aviso aviso-error" role="alert" hidden></div>
+
+    <!-- Contraseña temporal: se muestra una sola vez -->
+    <section id="panel-password" class="panel panel-destacado" hidden aria-labelledby="titulo-password">
+      <h2 id="titulo-password" class="panel-titulo">Contraseña temporal</h2>
+      <p>Entrégasela a la persona. <strong>Solo se muestra esta vez</strong>: al entrar, el sistema le pedirá crear una propia.</p>
+      <dl class="datos">
+        <div><dt>Usuario</dt><dd id="pass-usuario"></dd></div>
+        <div><dt>Contraseña</dt><dd id="pass-valor" class="password-temporal"></dd></div>
+      </dl>
+      <div class="acciones">
+        <button type="button" id="boton-copiar" class="boton boton-primario"><span data-icono="copiar"></span>Copiar usuario y contraseña</button>
+        <button type="button" id="boton-ocultar-password" class="boton boton-secundario"><span data-icono="check"></span>Ya la entregué, ocultar</button>
+      </div>
+    </section>
+
+    <!-- Formulario de nuevo administrador -->
+    <section id="panel-formulario" class="panel" hidden aria-labelledby="titulo-formulario">
+      <h2 id="titulo-formulario" class="panel-titulo">Nuevo administrador</h2>
+      <div id="error-formulario" class="aviso aviso-error" role="alert" hidden></div>
+      <form id="form-admin" novalidate>
+        <div class="campo">
+          <label for="nombre">Nombre</label>
+          <input id="nombre" name="nombreMostrar" type="text" maxlength="100" required autocomplete="off"
+                 placeholder="Ej: Rosa Pérez">
+        </div>
+        <div class="campo">
+          <label for="usuario">Usuario para entrar</label>
+          <input id="usuario" name="username" type="text" maxlength="50" required autocomplete="off"
+                 autocapitalize="none" spellcheck="false" aria-describedby="ayuda-usuario">
+          <p id="ayuda-usuario" class="campo-ayuda">3 a 50 caracteres: letras sin tildes, números, punto, guion o guion bajo.
+            La contraseña la genera el sistema.</p>
+        </div>
+        <div class="acciones">
+          <button type="submit" id="boton-guardar" class="boton boton-primario">Crear administrador</button>
+          <button type="button" id="boton-cancelar" class="boton boton-secundario">Cancelar</button>
+        </div>
+      </form>
+    </section>
+
+    <p id="cargando" class="saludo-sub">Cargando administradores…</p>
+    <ul id="lista-admins" class="lista-tarjetas" aria-label="Administradores"></ul>
+  </main>
+
+  <!-- Confirmación antes de desactivar o restablecer -->
+  <dialog id="dialogo" class="dialogo" aria-labelledby="dialogo-titulo" aria-describedby="dialogo-texto">
+    <form method="dialog">
+      <h2 id="dialogo-titulo" class="panel-titulo"></h2>
+      <p id="dialogo-texto"></p>
+      <div class="acciones">
+        <button type="submit" value="si" id="dialogo-si" class="boton boton-peligro"></button>
+        <button type="submit" value="no" class="boton boton-secundario">Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>
