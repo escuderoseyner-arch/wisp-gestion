@@ -1,5 +1,6 @@
 package com.escuderoseyner.wisp.security;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
@@ -16,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 //     conexión, sigue entrando con normalidad.
 // Los contadores viven en memoria (se reinician si se reinicia la app). Es suficiente para un
 // solo servidor; si algún día hay varios, habría que moverlos a la base de datos o a Redis.
+@Slf4j
 @Component
 public class ControlIntentosLogin {
 
@@ -53,7 +55,10 @@ public class ControlIntentosLogin {
         if (porIp.size() + porCuentaEIp.size() > LIMPIAR_DESDE) {
             limpiarVencidos();
         }
-        sumar(porIp, ip);
+        if (sumar(porIp, ip) == MAX_FALLOS_POR_IP) {
+            // Sirve también para comprobar en producción que se ve la IP real del cliente (y no la del proxy)
+            log.warn("IP {} bloqueada 15 minutos por {} intentos de login fallidos", ip, MAX_FALLOS_POR_IP);
+        }
         sumar(porCuentaEIp, clave(username, ip));
     }
 
@@ -68,11 +73,12 @@ public class ControlIntentosLogin {
         porCuentaEIp.keySet().removeIf(k -> k.startsWith(prefijo));
     }
 
-    private void sumar(Map<String, Contador> mapa, String clave) {
+    // Devuelve cuántos fallos van en la ventana actual
+    private int sumar(Map<String, Contador> mapa, String clave) {
         Instant ahora = reloj.instant();
-        mapa.compute(clave, (k, actual) -> actual == null || vencido(actual, ahora)
+        return mapa.compute(clave, (k, actual) -> actual == null || vencido(actual, ahora)
                 ? new Contador(ahora, 1)
-                : new Contador(actual.inicio(), actual.fallos() + 1));
+                : new Contador(actual.inicio(), actual.fallos() + 1)).fallos();
     }
 
     private boolean superaLimite(Contador contador, int maximo) {
