@@ -5,6 +5,7 @@ import com.escuderoseyner.wisp.controller.ClienteController;
 import com.escuderoseyner.wisp.controller.PagoController;
 import com.escuderoseyner.wisp.controller.PlanController;
 import com.escuderoseyner.wisp.controller.PortalClienteController;
+import com.escuderoseyner.wisp.controller.RedController;
 import com.escuderoseyner.wisp.model.Rol;
 import com.escuderoseyner.wisp.model.Usuario;
 import com.escuderoseyner.wisp.service.AdministradorService;
@@ -13,6 +14,7 @@ import com.escuderoseyner.wisp.service.CuentaClienteService;
 import com.escuderoseyner.wisp.service.PagoService;
 import com.escuderoseyner.wisp.service.PlanService;
 import com.escuderoseyner.wisp.service.PortalClienteService;
+import com.escuderoseyner.wisp.service.RedService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // Prueba las reglas de acceso con tokens JWT REALES (firmados con JwtService y validados por
 // el JwtDecoder de SecurityConfig). Los servicios son simulados: aquí solo importa quién entra.
 @WebMvcTest(controllers = {AdministradorController.class, ClienteController.class, PagoController.class, PlanController.class,
-        PortalClienteController.class})
+        PortalClienteController.class, RedController.class})
 @Import({SecurityConfig.class, RespuestasSeguridad.class, JwtService.class})
 @TestPropertySource(properties = {
         // Clave SOLO para pruebas (32 bytes en Base64). La real viene de JWT_SECRET.
@@ -75,6 +77,9 @@ class SeguridadRutasTest {
 
     @MockitoBean
     private AdministradorService administradorService;
+
+    @MockitoBean
+    private RedService redService;
 
     @BeforeEach
     void usuarioVigente() {
@@ -117,10 +122,10 @@ class SeguridadRutasTest {
     void clienteNoEntraAAdmin() throws Exception {
         String cliente = tokenCliente();
         for (String ruta : new String[]{"/api/admin/clientes", "/api/admin/clientes/2", "/api/admin/pagos/cliente/2",
-                "/api/admin/pagos/mes", "/api/admin/planes", "/api/admin/administradores"}) {
+                "/api/admin/pagos/mes", "/api/admin/planes", "/api/admin/administradores", "/api/admin/redes"}) {
             mockMvc.perform(get(ruta).header("Authorization", cliente)).andExpect(status().isForbidden());
         }
-        verifyNoInteractions(clienteService, pagoService, planService, administradorService);
+        verifyNoInteractions(clienteService, pagoService, planService, administradorService, redService);
     }
 
     @Test

@@ -21,4 +21,9 @@ public interface DatosCliente {
     LocalDate fechaInicio();
 
     String ip();
+
+    // MikroTik al que pertenece (null = ninguno) y nombre de su cola (vacío = el código)
+    Integer redId();
+
+    String nombreCola();
 }

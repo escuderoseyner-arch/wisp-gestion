@@ -41,6 +41,11 @@ public record ClienteRequest(
         LocalDate fechaInicio,
 
         @Size(max = 15, message = "La IP no puede tener más de 15 caracteres")
-        String ip
+        String ip,
+
+        Integer redId,
+
+        @Size(max = 40, message = "El nombre de la cola no puede tener más de 40 caracteres")
+        String nombreCola
 ) implements DatosCliente {
 }

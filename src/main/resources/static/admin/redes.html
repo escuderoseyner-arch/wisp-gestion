@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>Redes</title>
+  <link rel="icon" href="data:,">
+  <script src="/js/tema.js"></script>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <script src="/js/sesion.js" defer></script>
+  <script src="/js/iconos.js" defer></script>
+  <script src="/js/nav-admin.js" defer></script>
+  <script src="/js/redes.js" defer></script>
+</head>
+<!-- data-rol: redes.js solo deja entrar a usuarios con este rol -->
+<body data-rol="ADMIN">
+  <header class="barra">
+    <div class="barra-marca">
+      <img data-logo alt="" hidden>
+      <span class="barra-nombre" data-empresa>Gestión WISP</span>
+    </div>
+    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto" aria-label="Cerrar sesión"><span data-icono="salir"></span>Salir</button>
+  </header>
+
+  <main class="contenido">
+    <div class="encabezado-seccion">
+      <div>
+        <h1 class="saludo">Redes</h1>
+        <p class="saludo-sub">Cada red es un MikroTik que consulta a esta web. La web nunca se conecta al router.</p>
+      </div>
+      <button type="button" id="boton-nuevo" class="boton boton-primario boton-compacto"><span data-icono="mas"></span>Nueva red</button>
+    </div>
+
+    <div id="exito" class="aviso aviso-info" role="status" hidden></div>
+    <div id="error" class="aviso aviso-error" role="alert" hidden></div>
+
+    <!-- Token: se muestra una sola vez -->
+    <section id="panel-token" class="panel panel-destacado" hidden aria-labelledby="titulo-token">
+      <h2 id="titulo-token" class="panel-titulo">Token de la red</h2>
+      <p>Cópialo ahora y guárdalo en un lugar seguro. <strong>Solo se muestra esta vez</strong>: la web guarda únicamente su huella (hash).</p>
+      <dl class="datos">
+        <div><dt>Red</dt><dd id="token-red"></dd></div>
+        <div><dt>Token</dt><dd id="token-valor" class="token-red"></dd></div>
+      </dl>
+      <div class="acciones">
+        <button type="button" id="boton-copiar" class="boton boton-primario"><span data-icono="copiar"></span>Copiar token</button>
+        <button type="button" id="boton-ocultar-token" class="boton boton-secundario"><span data-icono="check"></span>Ya lo guardé, ocultar</button>
+      </div>
+    </section>
+
+    <!-- Crear y editar -->
+    <section id="panel-formulario" class="panel" hidden aria-labelledby="titulo-formulario">
+      <h2 id="titulo-formulario" class="panel-titulo">Nueva red</h2>
+      <div id="error-formulario" class="aviso aviso-error" role="alert" hidden></div>
+
+      <form id="form-red" novalidate>
+        <div class="campo">
+          <label for="nombre">Nombre</label>
+          <input id="nombre" name="nombre" type="text" maxlength="60" required autocomplete="off" placeholder="Ej: Red Norte">
+        </div>
+
+        <div class="campo">
+          <label for="cola-padre">Cola padre</label>
+          <input id="cola-padre" name="colaPadre" type="text" maxlength="40" required autocomplete="off"
+                 spellcheck="false" placeholder="Ej: Total-Clientes" aria-describedby="ayuda-cola-padre">
+          <p id="ayuda-cola-padre" class="campo-ayuda">La cola del MikroTik que agrupa a los clientes. El sistema nunca la modifica.</p>
+        </div>
+
+        <div class="campo">
+          <label for="colas-protegidas">Colas protegidas <span class="opcional">(opcional)</span></label>
+          <input id="colas-protegidas" name="colasProtegidas" type="text" maxlength="500" autocomplete="off"
+                 spellcheck="false" placeholder="Ej: Oficina, Torre-Sur" aria-describedby="ayuda-protegidas">
+          <p id="ayuda-protegidas" class="campo-ayuda">Otras colas del router que el sistema nunca debe tocar, separadas por coma.</p>
+        </div>
+
+        <div class="fila-campos">
+          <div class="campo">
+            <label for="intervalo">Consulta cada (segundos)</label>
+            <input id="intervalo" name="intervaloSegundos" type="number" inputmode="numeric" min="30" max="3600" step="1" required>
+          </div>
+          <div class="campo">
+            <label for="modo">Modo</label>
+            <select id="modo" name="modo" required aria-describedby="ayuda-modo">
+              <option value="SOLO_LECTURA">Solo lectura</option>
+              <option value="CONTROL">Control</option>
+            </select>
+          </div>
+        </div>
+        <p id="ayuda-modo" class="campo-ayuda">Solo lectura: el MikroTik solo informa, la web no le envía cambios.
+          Control: la web también le envía los cambios de las colas de los clientes.</p>
+
+        <!-- Solo al crear -->
+        <fieldset id="grupo-token" class="campo">
+          <legend>Token del MikroTik</legend>
+          <label><input type="radio" name="origenToken" value="generar" checked> Generar uno nuevo</label>
+          <label><input type="radio" name="origenToken" value="propio"> Usar una clave que ya tengo</label>
+          <div id="campo-token-propio" class="campo campo-password" hidden>
+            <label for="token-propio">Clave existente</label>
+            <input id="token-propio" name="token" type="password" maxlength="128" autocomplete="off"
+                   autocapitalize="none" spellcheck="false" aria-describedby="ayuda-token">
+            <button type="button" class="boton-ojo" data-mostrar="token-propio" aria-pressed="false" aria-label="Mostrar contraseña">Mostrar</button>
+            <p id="ayuda-token" class="campo-ayuda">20 a 128 caracteres: letras, números y . _ ~ + / = -
+              Es la misma clave que usa el script "puente" del router. Solo se guarda su hash.</p>
+          </div>
+        </fieldset>
+
+        <div class="acciones">
+          <button type="submit" id="boton-guardar" class="boton boton-primario">Guardar red</button>
+          <button type="button" id="boton-cancelar" class="boton boton-secundario">Cancelar</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Cambiar token -->
+    <section id="panel-cambiar-token" class="panel" hidden aria-labelledby="titulo-cambiar-token">
+      <h2 id="titulo-cambiar-token" class="panel-titulo">Cambiar token</h2>
+      <div class="aviso aviso-error" role="note">
+        El token actual deja de funcionar al instante, también para el script "puente" del MikroTik.
+        Si solo entras al router por el puente, <strong>perderás el acceso remoto</strong> hasta poner la nueva clave en el router.
+      </div>
+      <div id="error-cambiar-token" class="aviso aviso-error" role="alert" hidden></div>
+      <form id="form-cambiar-token" novalidate>
+        <div class="campo campo-password">
+          <label for="token-nuevo">Clave nueva <span class="opcional">(vacío = generar una)</span></label>
+          <input id="token-nuevo" name="token" type="password" maxlength="128" autocomplete="off"
+                 autocapitalize="none" spellcheck="false">
+          <button type="button" class="boton-ojo" data-mostrar="token-nuevo" aria-pressed="false" aria-label="Mostrar contraseña">Mostrar</button>
+        </div>
+        <div class="acciones">
+          <button type="submit" id="boton-cambiar-token" class="boton boton-peligro">Cambiar token</button>
+          <button type="button" id="boton-cancelar-token" class="boton boton-secundario">Cancelar</button>
+        </div>
+      </form>
+    </section>
+
+    <p id="cargando" class="saludo-sub">Cargando redes…</p>
+    <p id="vacio" class="vacio" hidden>Aún no tienes redes. Toca “Nueva red” para registrar tu MikroTik.</p>
+    <ul id="lista-redes" class="lista-planes" aria-label="Lista de redes"></ul>
+  </main>
+
+  <!-- Confirmación antes de acciones importantes -->
+  <dialog id="dialogo" class="dialogo" aria-labelledby="dialogo-titulo" aria-describedby="dialogo-texto">
+    <form method="dialog">
+      <h2 id="dialogo-titulo" class="panel-titulo"></h2>
+      <p id="dialogo-texto"></p>
+      <div class="acciones">
+        <button type="submit" value="si" id="dialogo-si" class="boton boton-peligro"></button>
+        <button type="submit" value="no" class="boton boton-secundario">Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

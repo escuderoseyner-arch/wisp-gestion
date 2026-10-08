@@ -9,8 +9,10 @@ import com.escuderoseyner.wisp.dto.SiguienteCodigoResponse;
 import com.escuderoseyner.wisp.model.Cliente;
 import com.escuderoseyner.wisp.model.EstadoCliente;
 import com.escuderoseyner.wisp.model.Plan;
+import com.escuderoseyner.wisp.model.Red;
 import com.escuderoseyner.wisp.model.Usuario;
 import com.escuderoseyner.wisp.repository.ClienteRepository;
+import com.escuderoseyner.wisp.repository.RedRepository;
 import com.escuderoseyner.wisp.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +37,9 @@ public class ClienteService {
     private static final Pattern FORMATO_IPV4 = Pattern.compile(
             "^((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)$");
 
+    // Nombre de cola en el MikroTik: sin espacios ni caracteres que rompan los scripts de RouterOS
+    private static final Pattern FORMATO_NOMBRE_COLA = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$");
+
     public static final List<EstadoCliente> VIGENTES = List.of(EstadoCliente.ACTIVO, EstadoCliente.SUSPENDIDO);
     private static final int MAX_LARGO_BUSQUEDA = 100;
 
@@ -48,12 +53,14 @@ public class ClienteService {
     private final ClienteRepository clienteRepository;
     private final UsuarioRepository usuarioRepository;
     private final PlanService planService;
+    private final RedRepository redRepository;
 
     public ClienteService(ClienteRepository clienteRepository, UsuarioRepository usuarioRepository,
-                          PlanService planService) {
+                          PlanService planService, RedRepository redRepository) {
         this.clienteRepository = clienteRepository;
         this.usuarioRepository = usuarioRepository;
         this.planService = planService;
+        this.redRepository = redRepository;
     }
 
     // ---------- Consultas ----------
@@ -204,6 +211,31 @@ public class ClienteService {
             problemas.add(e.getMessage());
         }
 
+        // Red (MikroTik) y nombre de su cola. Sin nombre, la cola se llama como el código.
+        Red red = null;
+        String nombreCola = null;
+        if (datos.redId() != null) {
+            red = redRepository.findById(datos.redId()).orElse(null);
+            if (red == null) {
+                problemas.add("No existe la red elegida.");
+            } else {
+                if (ip == null) {
+                    problemas.add("Para asignarlo a una red, el cliente necesita una IP.");
+                }
+                nombreCola = limpiarTexto(datos.nombreCola());
+                if (nombreCola == null) {
+                    nombreCola = codigo;
+                }
+                if (!FORMATO_NOMBRE_COLA.matcher(nombreCola).matches()) {
+                    problemas.add("El nombre de la cola solo puede tener letras, números, punto, guion y guion bajo (sin espacios).");
+                } else if (RedService.esColaProtegida(red, nombreCola)) {
+                    problemas.add("La cola \"" + nombreCola + "\" es la cola padre o una cola protegida de la red: elige otro nombre.");
+                } else if (clienteRepository.colaEnUso(red.getId(), nombreCola, idExcluir)) {
+                    problemas.add("La cola \"" + nombreCola + "\" ya la usa otro cliente vigente de esa red.");
+                }
+            }
+        }
+
         if (!problemas.isEmpty()) {
             throw new ReglaNegocioException("Revisa los datos del cliente.", problemas);
         }
@@ -217,6 +249,8 @@ public class ClienteService {
         cliente.setDiaPago(datos.diaPago());
         cliente.setFechaInicio(datos.fechaInicio());
         cliente.setIp(ip);
+        cliente.setRed(red);
+        cliente.setNombreCola(nombreCola);
     }
 
     private boolean codigoEnUso(String codigo, Integer idExcluir) {
@@ -311,6 +345,9 @@ public class ClienteService {
                         plan.getActivo()),
                 c.getDiaPago(), c.getFechaInicio(), c.getFechaRetiro(), c.getIp(), c.getEstado(),
                 cuenta.map(u -> new ClienteDetalleResponse.CuentaDelCliente(u.getUsername(), u.getActivo(),
-                        u.getDebeCambiarPassword())).orElse(null));
+                        u.getDebeCambiarPassword())).orElse(null),
+                c.getRed() == null ? null
+                        : new ClienteDetalleResponse.RedDelCliente(c.getRed().getId(), c.getRed().getNombre()),
+                c.getNombreCola(), c.getCorteManual());
     }
 }

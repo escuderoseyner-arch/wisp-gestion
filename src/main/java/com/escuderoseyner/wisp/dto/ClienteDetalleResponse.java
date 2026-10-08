@@ -18,8 +18,14 @@ public record ClienteDetalleResponse(
         LocalDate fechaRetiro,
         String ip,
         EstadoCliente estado,
-        CuentaDelCliente cuenta      // null si no tiene cuenta en el portal
+        CuentaDelCliente cuenta,     // null si no tiene cuenta en el portal
+        RedDelCliente red,           // null si no está en ninguna red (MikroTik)
+        String nombreCola,
+        boolean corteManual
 ) {
+
+    public record RedDelCliente(Integer id, String nombre) {
+    }
 
     public record PlanDelCliente(Integer id, String nombre, BigDecimal precio, boolean activo) {
     }

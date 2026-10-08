@@ -13,10 +13,12 @@
 
   const URL_CLIENTES = '/api/admin/clientes';
   const URL_PLANES_ACTIVOS = '/api/admin/planes?activos=true';
+  const URL_REDES = '/api/admin/redes';
 
   const ETIQUETA_ESTADO = { ACTIVO: 'Activo', SUSPENDIDO: 'Suspendido', RETIRADO: 'Retirado' };
   const FORMATO_CODIGO = /^C-\d{2,8}$/;
   const FORMATO_CELULAR = /^9\d{8}$/;
+  const FORMATO_NOMBRE_COLA = /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/;
   const FORMATO_IPV4 = /^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/;
 
   const $ = (id) => document.getElementById(id);
@@ -410,6 +412,8 @@
       ['Día de pago', 'Día ' + cliente.diaPago + ' de cada mes'],
       ['Fecha de inicio', formatearFecha(cliente.fechaInicio)],
       ['IP', cliente.ip],
+      ['Red', cliente.red ? cliente.red.nombre : null],
+      ['Cola', cliente.red ? cliente.nombreCola : null],
     ];
     if (retirado) filas.push(['Fecha de retiro', formatearFecha(cliente.fechaRetiro)]);
     $('det-datos').replaceChildren(...filas.map(([etiqueta, valor]) => crearDato(etiqueta, valor)));
@@ -544,17 +548,19 @@
     estadoFormulario = null;
 
     try {
-      const [planes, cliente, sugerido] = await Promise.all([
+      const [planes, cliente, sugerido, redes] = await Promise.all([
         Sesion.api(URL_PLANES_ACTIVOS),
         id ? Sesion.api(URL_CLIENTES + '/' + id) : null,
         modo === 'crear' ? Sesion.api(URL_CLIENTES + '/siguiente-codigo') : null,
         cargarZonas(),
+        Sesion.api(URL_REDES),
       ]);
       if (cliente && cliente.estado === 'RETIRADO') {
         irA('#cliente/' + cliente.id);
         return;
       }
       estadoFormulario = { modo, cliente };
+      form.redId.replaceChildren(new Option('Ninguna', ''), ...redes.map((r) => new Option(r.nombre, r.id)));
       prepararFormulario(modo, cliente, planes, sugerido);
       form.hidden = false;
       (modo === 'editar' ? form.codigo : form.nombres).focus({ preventScroll: true });
@@ -600,6 +606,8 @@
       form.zona.value = cliente.zona || '';
       form.referencia.value = cliente.referencia || '';
       form.ip.value = cliente.ip || '';
+      form.redId.value = cliente.red ? cliente.red.id : '';
+      form.nombreCola.value = cliente.red ? cliente.nombreCola : '';
       if (cliente.plan.activo) form.planId.value = cliente.plan.id;
       $('boton-guardar').textContent = 'Reasignar código';
     }
@@ -615,6 +623,8 @@
     form.diaPago.value = cliente.diaPago;
     form.fechaInicio.value = cliente.fechaInicio;
     form.ip.value = cliente.ip || '';
+    form.redId.value = cliente.red ? cliente.red.id : '';
+    form.nombreCola.value = cliente.red ? cliente.nombreCola : '';
   }
 
   async function guardarFormulario(evento) {
@@ -636,6 +646,8 @@
       diaPago: form.diaPago.value ? Number(form.diaPago.value) : null,
       fechaInicio: form.fechaInicio.value || null,
       ip: form.ip.value.trim(),
+      redId: form.redId.value ? Number(form.redId.value) : null,
+      nombreCola: form.nombreCola.value.trim(),
     };
 
     const problemas = validar(datos);
@@ -700,6 +712,10 @@
     }
     if (!d.fechaInicio) problemas.push('La fecha de inicio es obligatoria.');
     if (d.ip && !FORMATO_IPV4.test(d.ip)) problemas.push('La IP no es una IPv4 válida (ej: 192.168.1.20).');
+    if (d.redId && !d.ip) problemas.push('Para asignarlo a una red, el cliente necesita una IP.');
+    if (d.redId && d.nombreCola && !FORMATO_NOMBRE_COLA.test(d.nombreCola)) {
+      problemas.push('El nombre de la cola solo puede tener letras, números, punto, guion y guion bajo (sin espacios).');
+    }
     return problemas;
   }
 

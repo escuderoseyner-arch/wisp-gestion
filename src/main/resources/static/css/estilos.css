@@ -1278,6 +1278,32 @@ body.con-nav-admin {
   letter-spacing: 0.08em;
 }
 
+/* Token de una red: largo, se parte en varias líneas en el celular */
+.token-red {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 1rem;
+  word-break: break-all;
+}
+
+#grupo-token {
+  border: 0;
+  padding: 0;
+  margin-inline: 0;
+}
+
+#grupo-token legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+#grupo-token > label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-block: 6px;
+}
+
 /* ---------- Pantallas más anchas ---------- */
 
 @media (min-width: 480px) {

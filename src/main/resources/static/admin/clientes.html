@@ -226,6 +226,20 @@
                  spellcheck="false" placeholder="192.168.1.20">
         </div>
 
+        <div class="fila-campos">
+          <div class="campo">
+            <label for="red">Red (MikroTik) <span class="opcional">(opcional)</span></label>
+            <select id="red" name="redId">
+              <option value="">Ninguna</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="nombre-cola">Nombre de la cola <span class="opcional">(vacío = el código)</span></label>
+            <input id="nombre-cola" name="nombreCola" type="text" maxlength="40" autocomplete="off"
+                   spellcheck="false" placeholder="Ej: C-07">
+          </div>
+        </div>
+
         <div class="acciones">
           <button type="submit" id="boton-guardar" class="boton boton-primario">Guardar</button>
           <a id="boton-cancelar" class="boton boton-secundario" href="#">Cancelar</a>

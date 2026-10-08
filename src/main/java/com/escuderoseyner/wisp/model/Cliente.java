@@ -57,6 +57,19 @@ public class Cliente {
     @Column(length = 15)
     private String ip;
 
+    // MikroTik al que pertenece (script 005). null = no se gestiona desde la web.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "red_id")
+    private Red red;
+
+    // Nombre de su cola en el MikroTik. Por defecto, el código (ej: C-07).
+    @Column(name = "nombre_cola", length = 40)
+    private String nombreCola;
+
+    // Corte manual desde la web: su cola queda deshabilitada aunque esté ACTIVO
+    @Column(name = "corte_manual", nullable = false)
+    private Boolean corteManual = false;
+
     // STRING: guarda el texto "ACTIVO" y no un número (0, 1, 2)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

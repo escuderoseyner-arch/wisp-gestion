@@ -44,4 +44,22 @@ public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
     boolean existsByIpAndEstadoNot(String ip, EstadoCliente estado);
 
     boolean existsByIpAndEstadoNotAndIdNot(String ip, EstadoCliente estado, Integer id);
+
+    // ¿Otro cliente vigente de la misma red usa este nombre de cola?
+    @Query("""
+            SELECT COUNT(c) > 0 FROM Cliente c
+            WHERE c.red.id = :redId AND LOWER(c.nombreCola) = LOWER(:nombreCola)
+              AND c.estado <> com.escuderoseyner.wisp.model.EstadoCliente.RETIRADO
+              AND (:idExcluir IS NULL OR c.id <> :idExcluir)
+            """)
+    boolean colaEnUso(Integer redId, String nombreCola, Integer idExcluir);
+
+    // Nombres de cola de los clientes vigentes de una red
+    @Query("""
+            SELECT c.nombreCola FROM Cliente c
+            WHERE c.red.id = :redId AND c.estado <> com.escuderoseyner.wisp.model.EstadoCliente.RETIRADO
+            """)
+    List<String> findNombresColaVigentes(Integer redId);
+
+    long countByRedIdAndEstadoNot(Integer redId, EstadoCliente estado);
 }
