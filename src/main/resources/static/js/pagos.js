@@ -1,4 +1,4 @@
-// Pagos de un mes para ADMIN: totales, estado de cada cliente vigente y "Registrar pago".
+// Pagos de un mes para ADMIN: totales, estado de cada cliente de ese mes (incluye retirados después) y "Registrar pago".
 
 (() => {
   const datosSesion = Sesion.requerir({ rol: document.body.dataset.rol });
@@ -89,7 +89,8 @@
 
     const plan = document.createElement('p');
     plan.className = 'tarjeta-plan-velocidad';
-    plan.textContent = [fila.zona || 'Sin zona', fila.planNombre].join(' · ');
+    // Un retirado aparece si ese mes todavía era cliente o si pagó ese mes
+    plan.textContent = [fila.zona || 'Sin zona', fila.planNombre].concat(fila.retirado ? ['Retirado'] : []).join(' · ');
 
     const detalle = document.createElement('p');
     detalle.className = 'tarjeta-cliente-pago';

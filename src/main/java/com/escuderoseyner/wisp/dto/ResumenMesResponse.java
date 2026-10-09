@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-// Pantalla de pagos de un mes: totales y estado de cada cliente vigente
+// Pantalla de pagos de un mes: totales y estado de cada cliente que lo era ese mes (incluye retirados después)
 public record ResumenMesResponse(
         String periodo,           // "2026-10"
         String moneda,
@@ -25,7 +25,8 @@ public record ResumenMesResponse(
             BigDecimal precioPlan,
             EstadoMes estado,
             LocalDate vence,
-            PagoResponse pago     // null si no pagó ese mes
+            PagoResponse pago,    // null si no pagó ese mes
+            boolean retirado      // hoy está retirado (ese mes todavía era cliente, o pagó ese mes)
     ) {
     }
 }

@@ -7,6 +7,7 @@ import com.escuderoseyner.wisp.dto.PagoResponse;
 import com.escuderoseyner.wisp.dto.RegistrarPagoRequest;
 import com.escuderoseyner.wisp.dto.ResumenMesResponse;
 import com.escuderoseyner.wisp.model.Cliente;
+import com.escuderoseyner.wisp.model.EstadoCliente;
 import com.escuderoseyner.wisp.model.Pago;
 import com.escuderoseyner.wisp.model.Usuario;
 import com.escuderoseyner.wisp.repository.ClienteRepository;
@@ -76,10 +77,13 @@ public class PagoService {
         int pendientes = 0;
         int vencidos = 0;
 
-        List<Cliente> vigentes = clienteRepository.buscar(ClienteService.VIGENTES, null, null).stream()
+        // Los que eran clientes ESE mes (incluye retirados después) y cualquiera con un pago de ese mes.
+        // Así un retirado que pagó agosto cuenta en cobrado y esperado, y uno retirado en septiembre
+        // que no pagó agosto cuenta como pendiente de agosto.
+        List<Cliente> delMes = clienteRepository.findParaResumenDelMes(mes.atDay(1)).stream()
                 .sorted(ClienteService.POR_CODIGO)
                 .toList();
-        for (Cliente cliente : vigentes) {
+        for (Cliente cliente : delMes) {
             Pago pago = pagoPorCliente.get(cliente.getId());
             EstadoMes estado = estadoDe(cliente, mes, pago != null, tolerancia, hoy);
             switch (estado) {
@@ -98,7 +102,8 @@ public class PagoService {
             }
             filas.add(new ResumenMesResponse.FilaMes(cliente.getId(), cliente.getCodigo(), cliente.getNombres(),
                     cliente.getZona(), cliente.getPlan().getNombre(), cliente.getPlan().getPrecio(), estado,
-                    vencimiento(cliente, mes, tolerancia), pago == null ? null : aResponse(pago)));
+                    vencimiento(cliente, mes, tolerancia), pago == null ? null : aResponse(pago),
+                    cliente.getEstado() == EstadoCliente.RETIRADO));
         }
 
         return new ResumenMesResponse(mes.toString(), configuracionService.moneda(), cobrado, pendiente,

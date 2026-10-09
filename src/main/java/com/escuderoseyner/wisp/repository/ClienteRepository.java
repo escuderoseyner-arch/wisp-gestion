@@ -5,6 +5,7 @@ import com.escuderoseyner.wisp.model.EstadoCliente;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 
@@ -26,6 +27,17 @@ public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
                    OR LOWER(c.nombres) LIKE :busqueda ESCAPE '!')
             """)
     List<Cliente> buscar(Collection<EstadoCliente> estados, String zona, String busqueda);
+
+    // Clientes que cuentan en el resumen de un mes: los vigentes hoy, los retirados en ese mes o después
+    // (ese mes todavía eran clientes) y cualquiera que tenga un pago de ese mes.
+    // Si de verdad le tocaba pagar ese mes lo decide CalculadoraEstadoMes (inicio y retiro).
+    @Query("""
+            SELECT c FROM Cliente c JOIN FETCH c.plan
+            WHERE c.estado <> com.escuderoseyner.wisp.model.EstadoCliente.RETIRADO
+               OR c.fechaRetiro >= :inicioMes
+               OR c.id IN (SELECT p.cliente.id FROM Pago p WHERE p.periodo = :inicioMes)
+            """)
+    List<Cliente> findParaResumenDelMes(LocalDate inicioMes);
 
     // Zonas ya usadas, para el filtro y para sugerirlas al escribir
     @Query("SELECT DISTINCT c.zona FROM Cliente c WHERE c.zona IS NOT NULL ORDER BY c.zona")
