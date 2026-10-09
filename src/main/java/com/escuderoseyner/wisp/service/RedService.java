@@ -4,6 +4,7 @@ import com.escuderoseyner.wisp.dto.CrearRedRequest;
 import com.escuderoseyner.wisp.dto.DatosRed;
 import com.escuderoseyner.wisp.dto.RedRequest;
 import com.escuderoseyner.wisp.dto.RedResponse;
+import com.escuderoseyner.wisp.dto.ScriptRedResponse;
 import com.escuderoseyner.wisp.dto.TokenRedResponse;
 import com.escuderoseyner.wisp.model.EstadoCliente;
 import com.escuderoseyner.wisp.model.MotivoAccion;
@@ -34,13 +35,15 @@ public class RedService {
     private final ClienteRepository clienteRepository;
     private final TokenRed tokenRed;
     private final SincronizacionService sincronizacionService;
+    private final ScriptRouterOsService scriptRouterOsService;
 
     public RedService(RedRepository redRepository, ClienteRepository clienteRepository, TokenRed tokenRed,
-                      SincronizacionService sincronizacionService) {
+                      SincronizacionService sincronizacionService, ScriptRouterOsService scriptRouterOsService) {
         this.redRepository = redRepository;
         this.clienteRepository = clienteRepository;
         this.tokenRed = tokenRed;
         this.sincronizacionService = sincronizacionService;
+        this.scriptRouterOsService = scriptRouterOsService;
     }
 
     @Transactional(readOnly = true)
@@ -96,6 +99,28 @@ public class RedService {
         String token = tokenPropio != null ? tokenPropio : tokenRed.generar();
         red.setTokenHash(TokenRed.hash(token));
         return new TokenRedResponse(aResponse(red), tokenPropio != null ? null : token);
+    }
+
+    // Script para pegar en el MikroTik. Solo si el token escrito corresponde a esta red
+    // (así nunca se instala un script con un token equivocado).
+    @Transactional(readOnly = true)
+    public ScriptRedResponse generarScript(Integer id, String tokenRecibido, String urlDePeticion) {
+        Red red = buscar(id);
+        String token = tokenRecibido == null ? "" : tokenRecibido.trim();
+        if (!TokenRed.formatoValido(token) || !TokenRed.hash(token).equals(red.getTokenHash())) {
+            throw new ReglaNegocioException("Ese token no corresponde a la red \"" + red.getNombre() + "\".");
+        }
+        String url = scriptRouterOsService.urlBase(urlDePeticion);
+        return new ScriptRedResponse(scriptRouterOsService.generar(red, token, urlDePeticion), url,
+                url.startsWith("https://"));
+    }
+
+    // El script "puente" volverá a descargar la instalación (ej: después de actualizar la web)
+    @Transactional
+    public RedResponse marcarReinstalacion(Integer id) {
+        Red red = buscar(id);
+        red.setInstalacionPendiente(true);
+        return aResponse(red);
     }
 
     // Para ClienteService

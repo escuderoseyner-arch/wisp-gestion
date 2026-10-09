@@ -14,6 +14,7 @@ import com.escuderoseyner.wisp.repository.ConsumoMensualRepository;
 import com.escuderoseyner.wisp.repository.RedRepository;
 import com.escuderoseyner.wisp.security.ControlTokensRed;
 import com.escuderoseyner.wisp.security.TokenRed;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,7 @@ import java.util.Map;
 //   M|CONTROL                     modo de la red
 //   P|<cola padre>                el script nunca la modifica
 //   I|<segundos>                  intervalo de consulta
+//   X|<cola protegida>            el script nunca la modifica
 //   R|<nombre>|<ip>               colas que debe reportar (y a qué IP hacer ping)
 //   Q|<id>|<nombre>|<target>|<max-limit>|<parent>|<queue>|<yes/no disabled>|<comentario>   (solo en CONTROL)
 //   C|<id>                        comando de la terminal (solo en CONTROL); el texto se pide aparte
@@ -39,6 +41,7 @@ import java.util.Map;
 //
 // Reporte (POST /api/mikrotik/reporte), una línea por cola:
 //   Q|<nombre>|<existe 1/0>|<target>|<max-limit>|<parent>|<queue>|<disabled>|<rate>|<bytes>|<ping 1/0>|<comentario>
+@Slf4j
 @Service
 public class MikrotikService {
 
@@ -54,11 +57,12 @@ public class MikrotikService {
     private final SincronizacionService sincronizacionService;
     private final ControlTokensRed controlTokensRed;
     private final TerminalService terminalService;
+    private final ScriptRouterOsService scriptRouterOsService;
 
     public MikrotikService(RedRepository redRepository, ColaRepository colaRepository,
                            AccionColaRepository accionColaRepository, ConsumoMensualRepository consumoMensualRepository,
                            SincronizacionService sincronizacionService, ControlTokensRed controlTokensRed,
-                           TerminalService terminalService) {
+                           TerminalService terminalService, ScriptRouterOsService scriptRouterOsService) {
         this.redRepository = redRepository;
         this.colaRepository = colaRepository;
         this.accionColaRepository = accionColaRepository;
@@ -66,6 +70,7 @@ public class MikrotikService {
         this.sincronizacionService = sincronizacionService;
         this.controlTokensRed = controlTokensRed;
         this.terminalService = terminalService;
+        this.scriptRouterOsService = scriptRouterOsService;
     }
 
     // ---------- Autenticación ----------
@@ -102,6 +107,10 @@ public class MikrotikService {
         linea(texto, "M|" + red.getModo());
         linea(texto, "P|" + red.getColaPadre());
         linea(texto, "I|" + red.getIntervaloSegundos());
+        // Colas protegidas: el script del router se niega a tocarlas aunque llegue una acción
+        for (String protegida : RedService.separarProtegidas(red.getColasProtegidas())) {
+            linea(texto, "X|" + protegida);
+        }
 
         for (Cola cola : colaRepository.findByRedId(red.getId())) {
             if (!RedService.esColaProtegida(red, cola.getNombre())) {
@@ -138,6 +147,31 @@ public class MikrotikService {
 
         linea(texto, FIN);
         return texto.toString();
+    }
+
+    // ---------- Instalación por el script "puente" ----------
+
+    // El puente consulta cada 2 minutos y SOLO ejecuta la respuesta si empieza con su marcador.
+    // Token inválido o nada pendiente -> respuesta vacía (el puente no hace nada).
+    // La instalación se entrega hasta que llega el primer reporte del script instalado.
+    @Transactional
+    public String bootstrap(String token, String ip, String urlDePeticion) {
+        Red red;
+        try {
+            red = autenticar(token, ip);
+        } catch (TokenRedInvalidoException e) {
+            return "";
+        }
+        if (!red.getInstalacionPendiente()) {
+            return "";
+        }
+        try {
+            return scriptRouterOsService.generarParaPuente(red, token.trim(), urlDePeticion);
+        } catch (ReglaNegocioException e) {
+            // Ej: APP_URL_PUBLICA mal configurada. Mejor no entregar nada que un script roto.
+            log.warn("No se pudo generar la instalación para la red {}: {}", red.getId(), e.getMessage());
+            return "";
+        }
     }
 
     // ---------- Terminal remota ----------

@@ -45,6 +45,7 @@
       </dl>
       <div class="acciones">
         <button type="button" id="boton-copiar" class="boton boton-primario"><span data-icono="copiar"></span>Copiar token</button>
+        <button type="button" id="boton-script-token" class="boton boton-secundario">Generar script con este token</button>
         <button type="button" id="boton-ocultar-token" class="boton boton-secundario"><span data-icono="check"></span>Ya lo guardé, ocultar</button>
       </div>
     </section>
@@ -132,6 +133,37 @@
           <button type="button" id="boton-cancelar-token" class="boton boton-secundario">Cancelar</button>
         </div>
       </form>
+    </section>
+
+    <!-- Script para instalar en el MikroTik -->
+    <section id="panel-script" class="panel" hidden aria-labelledby="titulo-script">
+      <h2 id="titulo-script" class="panel-titulo">Script para el MikroTik</h2>
+      <p class="campo-ayuda">Crea (o reemplaza) solo el script y la tarea programada <code>wisp-sync</code>.
+        No toca el script puente, el firewall ni otras colas. Antes, instala los certificados raíz (ver MIKROTIK.md).</p>
+      <div id="error-script" class="aviso aviso-error" role="alert" hidden></div>
+      <form id="form-script" novalidate>
+        <div class="campo campo-password">
+          <label for="token-script">Token de la red</label>
+          <input id="token-script" name="token" type="password" maxlength="128" required autocomplete="off"
+                 autocapitalize="none" spellcheck="false" aria-describedby="ayuda-token-script">
+          <button type="button" class="boton-ojo" data-mostrar="token-script" aria-pressed="false" aria-label="Mostrar contraseña">Mostrar</button>
+          <p id="ayuda-token-script" class="campo-ayuda">La web solo guarda su hash: escríbelo para incluirlo en el script.</p>
+        </div>
+        <div class="acciones">
+          <button type="submit" id="boton-generar-script" class="boton boton-primario">Generar script</button>
+          <button type="button" id="boton-reinstalar" class="boton boton-secundario">Que el puente lo reinstale</button>
+          <button type="button" id="boton-cerrar-script" class="boton boton-secundario">Cerrar</button>
+        </div>
+      </form>
+      <div id="resultado-script" hidden>
+        <p id="aviso-http" class="aviso aviso-error" hidden>La URL no es HTTPS: el router no podrá verificar el
+          certificado. Solo sirve para pruebas locales. Configura APP_URL_PUBLICA en Render.</p>
+        <p class="campo-ayuda">Pégalo completo en la terminal del MikroTik (New Terminal en Winbox). Contiene el token: no lo compartas.</p>
+        <pre id="texto-script" class="salida-terminal"></pre>
+        <div class="acciones">
+          <button type="button" id="boton-copiar-script" class="boton boton-primario"><span data-icono="copiar"></span>Copiar script</button>
+        </div>
+      </div>
     </section>
 
     <!-- Colas de una red: web vs MikroTik -->

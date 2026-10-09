@@ -20,6 +20,10 @@
   let redCambioToken = null;
   // Red cuyas colas se están mostrando
   let redColas = null;
+  // Red cuyo script se está generando
+  let redScript = null;
+  // Último token mostrado (solo en memoria, para generar el script sin volver a escribirlo)
+  let ultimoToken = null;
 
   const formatoFecha = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -31,6 +35,13 @@
   $('boton-cancelar-token').addEventListener('click', cerrarCambioToken);
   $('boton-copiar').addEventListener('click', copiarToken);
   $('boton-ocultar-token').addEventListener('click', ocultarToken);
+  $('form-script').addEventListener('submit', generarScript);
+  $('boton-copiar-script').addEventListener('click', copiarScript);
+  $('boton-reinstalar').addEventListener('click', marcarReinstalacion);
+  $('boton-cerrar-script').addEventListener('click', cerrarScript);
+  $('boton-script-token').addEventListener('click', () => {
+    if (ultimoToken) abrirScript(ultimoToken.red, ultimoToken.token);
+  });
   $('boton-aplicar').addEventListener('click', aplicarDiferencias);
   $('boton-recargar-colas').addEventListener('click', cargarColas);
   $('boton-cerrar-colas').addEventListener('click', cerrarColas);
@@ -132,9 +143,99 @@
     Iconos.en(enlaceTerminal, 'router');
     enlaceTerminal.setAttribute('aria-label', 'Abrir la terminal remota de la red ' + red.nombre);
 
-    acciones.append(botonColas, enlaceTerminal, botonEditar, botonToken);
+    const botonScript = document.createElement('button');
+    botonScript.type = 'button';
+    botonScript.className = 'boton boton-secundario boton-compacto';
+    botonScript.textContent = 'Script';
+    Iconos.en(botonScript, 'copiar');
+    botonScript.setAttribute('aria-label', 'Generar el script de instalación de la red ' + red.nombre);
+    botonScript.addEventListener('click', () => abrirScript(red, null));
+
+    acciones.append(botonColas, enlaceTerminal, botonScript, botonEditar, botonToken);
     item.append(cabecera, lista, acciones);
     return item;
+  }
+
+  // ---------- Script para el MikroTik ----------
+
+  // token: el que se acaba de mostrar al crear o cambiar (así no hay que volver a escribirlo)
+  function abrirScript(red, token) {
+    limpiarAvisos();
+    redScript = red;
+    $('titulo-script').textContent = 'Script para el MikroTik de ' + red.nombre;
+    $('form-script').reset();
+    $('form-script').token.value = token || '';
+    ocultarResultadoScript();
+    Sesion.ocultar($('error-script'));
+    $('panel-script').hidden = false;
+    $('panel-script').scrollIntoView({ block: 'start', behavior: 'smooth' });
+    if (token) generarScript(new Event('submit'));
+  }
+
+  function cerrarScript() {
+    redScript = null;
+    $('form-script').reset();
+    ocultarResultadoScript();
+    $('panel-script').hidden = true;
+  }
+
+  function ocultarResultadoScript() {
+    $('resultado-script').hidden = true;
+    $('texto-script').textContent = '';
+  }
+
+  async function generarScript(evento) {
+    evento.preventDefault();
+    const red = redScript;
+    if (!red) return;
+    const cajaErrorScript = $('error-script');
+    Sesion.ocultar(cajaErrorScript);
+    ocultarResultadoScript();
+    const token = $('form-script').token.value.trim();
+    if (!FORMATO_TOKEN.test(token)) {
+      Sesion.mostrarMensaje(cajaErrorScript, 'Escribe el token de la red (20 a 128 caracteres).');
+      return;
+    }
+    const boton = $('boton-generar-script');
+    boton.disabled = true;
+    try {
+      const respuesta = await Sesion.api(URL_REDES + '/' + red.id + '/script', { method: 'POST', body: { token } });
+      $('texto-script').textContent = respuesta.script;
+      $('aviso-http').hidden = respuesta.https;
+      $('resultado-script').hidden = false;
+    } catch (error) {
+      Sesion.mostrarError(cajaErrorScript, error);
+    } finally {
+      boton.disabled = false;
+    }
+  }
+
+  async function copiarScript() {
+    try {
+      await navigator.clipboard.writeText($('texto-script').textContent);
+      Sesion.mostrarMensaje(cajaExito, 'Script copiado. Pégalo en la terminal del MikroTik.');
+    } catch {
+      Sesion.mostrarMensaje(cajaExito, 'No se pudo copiar automáticamente: selecciona el texto y cópialo a mano.');
+    }
+  }
+
+  async function marcarReinstalacion() {
+    const red = redScript;
+    if (!red) return;
+    const confirmado = await confirmar({
+      titulo: '¿Reinstalar por el puente en ' + red.nombre + '?',
+      texto: 'En su próxima consulta (cada 2 minutos), el script puente descargará e instalará de nuevo '
+        + 'el script wisp-sync con la versión actual de la web. El puente no se modifica.',
+      boton: 'Sí, reinstalar',
+    });
+    if (!confirmado) return;
+    try {
+      await Sesion.api(URL_REDES + '/' + red.id + '/reinstalar', { method: 'POST' });
+      Sesion.mostrarMensaje(cajaExito, 'Listo: el puente descargará la instalación en su próxima consulta.');
+      await recargar();
+    } catch (error) {
+      Sesion.mostrarError($('error-script'), error);
+    }
   }
 
   // ---------- Colas: web vs MikroTik ----------
@@ -427,11 +528,13 @@
   function mostrarToken(red, token) {
     $('token-red').textContent = red.nombre;
     $('token-valor').textContent = token;
+    ultimoToken = { red, token };
     $('panel-token').hidden = false;
     $('panel-token').scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
 
   function ocultarToken() {
+    ultimoToken = null;
     $('panel-token').hidden = true;
     $('token-red').textContent = '';
     $('token-valor').textContent = '';

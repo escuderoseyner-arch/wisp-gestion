@@ -193,6 +193,15 @@ class SeguridadRutasTest {
     }
 
     @Test
+    @DisplayName("Bootstrap del puente: sin login, y con token inválido o nada pendiente responde 200 vacío")
+    void bootstrapVacio() throws Exception {
+        when(mikrotikService.bootstrap(any(), any(), any())).thenReturn("");
+        mockMvc.perform(get("/api/mikrotik/bootstrap").header("X-Red-Token", "token-que-no-existe-0000"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(""));
+    }
+
+    @Test
     @DisplayName("El MikroTik con token válido recibe texto plano")
     void mikrotikTokenValido() throws Exception {
         String respuesta = "# wisp-sync v1\n# fin\n";

@@ -2,8 +2,10 @@ package com.escuderoseyner.wisp.controller;
 
 import com.escuderoseyner.wisp.dto.CambiarTokenRedRequest;
 import com.escuderoseyner.wisp.dto.CrearRedRequest;
+import com.escuderoseyner.wisp.dto.GenerarScriptRequest;
 import com.escuderoseyner.wisp.dto.RedRequest;
 import com.escuderoseyner.wisp.dto.RedResponse;
+import com.escuderoseyner.wisp.dto.ScriptRedResponse;
 import com.escuderoseyner.wisp.dto.TokenRedResponse;
 import com.escuderoseyner.wisp.service.RedService;
 import jakarta.validation.Valid;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 
@@ -55,5 +58,17 @@ public class RedController {
     @PostMapping("/{id}/token")
     public TokenRedResponse cambiarToken(@PathVariable Integer id, @Valid @RequestBody CambiarTokenRedRequest request) {
         return redService.cambiarToken(id, request.token());
+    }
+
+    // POST (no GET) para que el token viaje en el cuerpo y no quede en la URL ni en los registros
+    @PostMapping("/{id}/script")
+    public ScriptRedResponse script(@PathVariable Integer id, @Valid @RequestBody GenerarScriptRequest request) {
+        return redService.generarScript(id, request.token(),
+                ServletUriComponentsBuilder.fromCurrentContextPath().toUriString());
+    }
+
+    @PostMapping("/{id}/reinstalar")
+    public RedResponse reinstalar(@PathVariable Integer id) {
+        return redService.marcarReinstalacion(id);
     }
 }

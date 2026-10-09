@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +37,14 @@ public class MikrotikController {
 
     public MikrotikController(MikrotikService mikrotikService) {
         this.mikrotikService = mikrotikService;
+    }
+
+    // Para el script "puente": instalación completa (empieza con su marcador) o vacío
+    @GetMapping("/bootstrap")
+    public String bootstrap(@RequestHeader(value = HEADER_TOKEN, required = false) String token,
+                            HttpServletRequest http) {
+        return mikrotikService.bootstrap(token, http.getRemoteAddr(),
+                ServletUriComponentsBuilder.fromCurrentContextPath().toUriString());
     }
 
     @GetMapping("/acciones")

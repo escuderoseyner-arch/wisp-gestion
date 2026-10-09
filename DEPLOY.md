@@ -22,6 +22,8 @@ Variables de entorno:
 | `ADMIN_USERNAME` | usuario del primer admin | Solo el primer despliegue |
 | `ADMIN_PASSWORD` | contraseña inicial del primer admin (8 a 72 caracteres) | Solo el primer despliegue |
 | `JWT_EXPIRACION_MINUTOS` | duración de la sesión (por defecto 60) | No |
+| `APP_URL_PUBLICA` | URL pública con `https://`, sin `/` al final (va en el script del MikroTik, ver MIKROTIK.md) | Si usas MikroTik |
+| `MIKROTIK_MARCADOR_PUENTE` | primera línea que exige el script puente (por defecto `# astranet-ok`) | No |
 
 - `PORT` la pone Render sola: no la agregues.
 - Si `DB_URL` trae `sslMode=DISABLED`, `PREFERRED` o `useSSL=false`, la app no arranca a propósito.
