@@ -85,10 +85,33 @@ verificar: justamente aún no hay cómo verificar).
 Debe terminar con `status: finished`. Si dice algo como *certificate not trusted* o
 *unable to get local issuer*, falta la raíz correcta (vuelve al paso a).
 
-> RouterOS 7 recientes pueden traer un almacén de raíces incorporado (revisa `/certificate settings print`).
-> Si tu versión lo tiene, puedes activarlo; igual haz la prueba del paso f.
+> **Atajo en RouterOS 7.20:** el router trae raíces incorporadas. Revisa:
+> ```
+> /certificate/settings print
+> ```
+> Si muestra `builtin-trust-anchors=trusted`, el router ya confía en las autoridades raíz comunes
+> (Let's Encrypt, Google, etc.) y **no hace falta importar nada** (pasos a-e): ve directo a la prueba del paso f.
+> Si dice otra cosa: `/certificate/settings set builtin-trust-anchors=trusted`.
+> (En 7.20 el parámetro se llama `builtin-trust-anchors`; `builtin-trust-store` no existe.)
 
-### 1.4 Tipos de cola
+### 1.4 Device-mode (fetch y scheduler)
+
+En RouterOS 7 el *device-mode* puede bloquear `/tool fetch` y el *scheduler*; sin ellos no funcionan
+ni el puente ni `wisp-sync`. Revisa:
+
+```
+/system/device-mode/print
+```
+
+Si `fetch` o `scheduler` dicen `no`, habilítalos. **Requiere confirmación física**: tras el comando
+hay que presionar el botón del router (o desconectar y conectar la energía) dentro del tiempo que indica,
+así que hazlo con alguien en el lugar:
+
+```
+/system/device-mode/update fetch=yes scheduler=yes
+```
+
+### 1.5 Tipos de cola
 
 Las colas de clientes usan `queue=fq-codel-up/fq-codel-down`. Si esos tipos no existen:
 
