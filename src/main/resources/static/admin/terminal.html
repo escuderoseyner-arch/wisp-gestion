@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>Terminal</title>
+  <link rel="icon" href="data:,">
+  <script src="/js/tema.js"></script>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <script src="/js/sesion.js" defer></script>
+  <script src="/js/iconos.js" defer></script>
+  <script src="/js/nav-admin.js" defer></script>
+  <script src="/js/terminal.js" defer></script>
+</head>
+<!-- data-rol: terminal.js solo deja entrar a usuarios con este rol -->
+<body data-rol="ADMIN">
+  <header class="barra">
+    <div class="barra-marca">
+      <img data-logo alt="" hidden>
+      <span class="barra-nombre" data-empresa>Gestión WISP</span>
+    </div>
+    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto" aria-label="Cerrar sesión"><span data-icono="salir"></span>Salir</button>
+  </header>
+
+  <main class="contenido">
+    <a href="/admin/redes.html" class="enlace-volver"><span data-icono="atras"></span>Redes</a>
+    <div class="encabezado-seccion">
+      <div>
+        <h1 class="saludo">Terminal remota</h1>
+        <p class="saludo-sub">El MikroTik ejecuta el comando en su próxima consulta y devuelve la salida.</p>
+      </div>
+    </div>
+
+    <div class="aviso aviso-error" role="note">
+      <strong>Atención: el comando se ejecuta en el router REAL</strong>, con todos los permisos del script.
+      Un comando equivocado puede dejar sin internet a los clientes o cortar el acceso remoto al MikroTik
+      (por ejemplo, tocar el firewall, las rutas, el script "puente" o sus tareas programadas).
+      Revisa bien antes de enviar. No se aceptan comandos que mencionen fasttrack.
+    </div>
+
+    <div id="exito" class="aviso aviso-info" role="status" hidden></div>
+    <div id="error" class="aviso aviso-error" role="alert" hidden></div>
+
+    <section class="panel" aria-labelledby="titulo-enviar">
+      <h2 id="titulo-enviar" class="panel-titulo">Nuevo comando</h2>
+      <form id="form-comando" novalidate>
+        <div class="campo">
+          <label for="red">Red (MikroTik)</label>
+          <select id="red" name="red" required></select>
+          <p id="aviso-modo" class="campo-ayuda" hidden>Esta red está en Solo lectura: la web no le envía comandos.
+            Cámbiala a Control en “Redes” para usar la terminal.</p>
+        </div>
+        <div class="campo">
+          <label for="comando">Comando de RouterOS</label>
+          <textarea id="comando" name="comando" rows="3" maxlength="2000" required spellcheck="false"
+                    autocapitalize="none" class="entrada-terminal" placeholder="/queue simple print where name=C-07"></textarea>
+          <p class="campo-ayuda">Se ejecuta una sola vez. Si el MikroTik no lo recoge en 10 minutos, expira y ya no se ejecuta.</p>
+        </div>
+        <div class="acciones">
+          <button type="submit" id="boton-enviar" class="boton boton-peligro">Enviar al MikroTik</button>
+        </div>
+      </form>
+    </section>
+
+    <h2 class="panel-titulo">Historial</h2>
+    <p id="cargando" class="saludo-sub">Cargando…</p>
+    <p id="vacio" class="vacio" hidden>Aún no se han enviado comandos a esta red.</p>
+    <ul id="historial" class="lista-tarjetas" aria-label="Historial de comandos" aria-live="polite"></ul>
+  </main>
+
+  <!-- Confirmación antes de encolar -->
+  <dialog id="dialogo" class="dialogo" aria-labelledby="dialogo-titulo" aria-describedby="dialogo-texto">
+    <form method="dialog">
+      <h2 id="dialogo-titulo" class="panel-titulo"></h2>
+      <p id="dialogo-texto"></p>
+      <pre id="dialogo-comando" class="salida-terminal"></pre>
+      <div class="acciones">
+        <button type="submit" value="si" id="dialogo-si" class="boton boton-peligro"></button>
+        <button type="submit" value="no" class="boton boton-secundario">Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

@@ -1285,6 +1285,34 @@ body.con-nav-admin {
   word-break: break-all;
 }
 
+/* Terminal remota: comando y salida del MikroTik en monoespaciado, con scroll horizontal si es ancha */
+.entrada-terminal,
+.salida-terminal {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.875rem;
+}
+
+.entrada-terminal {
+  width: 100%;
+  resize: vertical;
+}
+
+.salida-terminal {
+  max-height: 360px;
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  overflow: auto;
+  white-space: pre;
+  color: var(--texto);
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+}
+
+.comando-terminal {
+  font-weight: 600;
+}
+
 #grupo-token {
   border: 0;
   padding: 0;

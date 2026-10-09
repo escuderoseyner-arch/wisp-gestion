@@ -125,7 +125,14 @@
     botonColas.setAttribute('aria-label', 'Ver las colas de la red ' + red.nombre);
     botonColas.addEventListener('click', () => abrirColas(red));
 
-    acciones.append(botonColas, botonEditar, botonToken);
+    const enlaceTerminal = document.createElement('a');
+    enlaceTerminal.className = 'boton boton-secundario boton-compacto';
+    enlaceTerminal.href = '/admin/terminal.html?red=' + encodeURIComponent(red.id);
+    enlaceTerminal.textContent = 'Terminal';
+    Iconos.en(enlaceTerminal, 'router');
+    enlaceTerminal.setAttribute('aria-label', 'Abrir la terminal remota de la red ' + red.nombre);
+
+    acciones.append(botonColas, enlaceTerminal, botonEditar, botonToken);
     item.append(cabecera, lista, acciones);
     return item;
   }

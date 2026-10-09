@@ -8,6 +8,7 @@ import com.escuderoseyner.wisp.controller.PagoController;
 import com.escuderoseyner.wisp.controller.PlanController;
 import com.escuderoseyner.wisp.controller.PortalClienteController;
 import com.escuderoseyner.wisp.controller.RedController;
+import com.escuderoseyner.wisp.controller.TerminalController;
 import com.escuderoseyner.wisp.model.Rol;
 import com.escuderoseyner.wisp.model.Usuario;
 import com.escuderoseyner.wisp.service.AdministradorService;
@@ -20,6 +21,7 @@ import com.escuderoseyner.wisp.service.PagoService;
 import com.escuderoseyner.wisp.service.PlanService;
 import com.escuderoseyner.wisp.service.PortalClienteService;
 import com.escuderoseyner.wisp.service.RedService;
+import com.escuderoseyner.wisp.service.TerminalService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,7 +46,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // Prueba las reglas de acceso con tokens JWT REALES (firmados con JwtService y validados por
 // el JwtDecoder de SecurityConfig). Los servicios son simulados: aquí solo importa quién entra.
 @WebMvcTest(controllers = {AdministradorController.class, ClienteController.class, PagoController.class, PlanController.class,
-        PortalClienteController.class, RedController.class, ColaController.class, MikrotikController.class})
+        PortalClienteController.class, RedController.class, ColaController.class, MikrotikController.class,
+        TerminalController.class})
 @Import({SecurityConfig.class, RespuestasSeguridad.class, JwtService.class})
 @TestPropertySource(properties = {
         // Clave SOLO para pruebas (32 bytes en Base64). La real viene de JWT_SECRET.
@@ -93,6 +96,9 @@ class SeguridadRutasTest {
     @MockitoBean
     private MikrotikService mikrotikService;
 
+    @MockitoBean
+    private TerminalService terminalService;
+
     @BeforeEach
     void usuarioVigente() {
         when(usuarioVigenteValidator.validate(any())).thenReturn(OAuth2TokenValidatorResult.success());
@@ -135,10 +141,12 @@ class SeguridadRutasTest {
         String cliente = tokenCliente();
         for (String ruta : new String[]{"/api/admin/clientes", "/api/admin/clientes/2", "/api/admin/pagos/cliente/2",
                 "/api/admin/pagos/mes", "/api/admin/planes", "/api/admin/administradores", "/api/admin/redes",
-                "/api/admin/redes/1/colas", "/api/admin/clientes/2/cola"}) {
+                "/api/admin/redes/1/colas", "/api/admin/clientes/2/cola",
+                "/api/admin/redes/1/comandos"}) {
             mockMvc.perform(get(ruta).header("Authorization", cliente)).andExpect(status().isForbidden());
         }
-        verifyNoInteractions(clienteService, pagoService, planService, administradorService, redService, colaService);
+        verifyNoInteractions(clienteService, pagoService, planService, administradorService, redService, colaService,
+                terminalService);
     }
 
     @Test

@@ -29,6 +29,8 @@ public class MikrotikController {
 
     public static final String HEADER_TOKEN = "X-Red-Token";
     private static final int MAX_BYTES_CUERPO = 512 * 1024;
+    // Un poco más que el tope guardado (16 KB), para saber si la salida venía más larga y marcarla truncada
+    private static final int MAX_BYTES_SALIDA = 64 * 1024;
 
     private final MikrotikService mikrotikService;
 
@@ -64,6 +66,34 @@ public class MikrotikController {
                           HttpServletRequest http) throws IOException {
         int colas = mikrotikService.recibirReporte(token, http.getRemoteAddr(), leerCuerpo(http, MAX_BYTES_CUERPO));
         return "ok " + colas + "\n";
+    }
+
+    // ---------- Terminal remota ----------
+
+    // Texto del comando a ejecutar (solo mientras espera su salida)
+    @GetMapping("/comandos/{id}")
+    public String comando(@PathVariable Long id,
+                          @RequestHeader(value = HEADER_TOKEN, required = false) String token,
+                          HttpServletRequest http) {
+        return mikrotikService.textoComando(token, http.getRemoteAddr(), id);
+    }
+
+    // Cuerpo: la salida del comando
+    @PostMapping("/comandos/{id}/salida")
+    public String salidaComando(@PathVariable Long id,
+                                @RequestHeader(value = HEADER_TOKEN, required = false) String token,
+                                HttpServletRequest http) throws IOException {
+        mikrotikService.resultadoComando(token, http.getRemoteAddr(), id, true, leerCuerpo(http, MAX_BYTES_SALIDA));
+        return "ok\n";
+    }
+
+    // Cuerpo: el mensaje de error de RouterOS
+    @PostMapping("/comandos/{id}/error")
+    public String errorComando(@PathVariable Long id,
+                               @RequestHeader(value = HEADER_TOKEN, required = false) String token,
+                               HttpServletRequest http) throws IOException {
+        mikrotikService.resultadoComando(token, http.getRemoteAddr(), id, false, leerCuerpo(http, MAX_BYTES_SALIDA));
+        return "ok\n";
     }
 
     // Token inválido: 401 sin ningún detalle

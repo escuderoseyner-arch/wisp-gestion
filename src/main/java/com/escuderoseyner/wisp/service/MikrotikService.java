@@ -2,6 +2,7 @@ package com.escuderoseyner.wisp.service;
 
 import com.escuderoseyner.wisp.model.AccionCola;
 import com.escuderoseyner.wisp.model.Cola;
+import com.escuderoseyner.wisp.model.ComandoTerminal;
 import com.escuderoseyner.wisp.model.ConsumoMensual;
 import com.escuderoseyner.wisp.model.EstadoAccion;
 import com.escuderoseyner.wisp.model.ModoRed;
@@ -33,6 +34,7 @@ import java.util.Map;
 //   I|<segundos>                  intervalo de consulta
 //   R|<nombre>|<ip>               colas que debe reportar (y a qué IP hacer ping)
 //   Q|<id>|<nombre>|<target>|<max-limit>|<parent>|<queue>|<yes/no disabled>|<comentario>   (solo en CONTROL)
+//   C|<id>                        comando de la terminal (solo en CONTROL); el texto se pide aparte
 //   # fin                         si no llega, el script descarta la respuesta
 //
 // Reporte (POST /api/mikrotik/reporte), una línea por cola:
@@ -51,16 +53,19 @@ public class MikrotikService {
     private final ConsumoMensualRepository consumoMensualRepository;
     private final SincronizacionService sincronizacionService;
     private final ControlTokensRed controlTokensRed;
+    private final TerminalService terminalService;
 
     public MikrotikService(RedRepository redRepository, ColaRepository colaRepository,
                            AccionColaRepository accionColaRepository, ConsumoMensualRepository consumoMensualRepository,
-                           SincronizacionService sincronizacionService, ControlTokensRed controlTokensRed) {
+                           SincronizacionService sincronizacionService, ControlTokensRed controlTokensRed,
+                           TerminalService terminalService) {
         this.redRepository = redRepository;
         this.colaRepository = colaRepository;
         this.accionColaRepository = accionColaRepository;
         this.consumoMensualRepository = consumoMensualRepository;
         this.sincronizacionService = sincronizacionService;
         this.controlTokensRed = controlTokensRed;
+        this.terminalService = terminalService;
     }
 
     // ---------- Autenticación ----------
@@ -126,8 +131,25 @@ public class MikrotikService {
             }
         }
 
+        // Terminal remota: cada comando se anuncia una sola vez (tomarParaEnviar lo marca ENVIADO)
+        for (ComandoTerminal comando : terminalService.tomarParaEnviar(red)) {
+            linea(texto, "C|" + comando.getId());
+        }
+
         linea(texto, FIN);
         return texto.toString();
+    }
+
+    // ---------- Terminal remota ----------
+
+    @Transactional
+    public String textoComando(String token, String ip, Long comandoId) {
+        return terminalService.textoParaEjecutar(autenticar(token, ip), comandoId);
+    }
+
+    @Transactional
+    public void resultadoComando(String token, String ip, Long comandoId, boolean exito, String salida) {
+        terminalService.recibirResultado(autenticar(token, ip), comandoId, exito, salida);
     }
 
     // ---------- Confirmación de una acción ----------
