@@ -62,4 +62,11 @@ public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
     List<String> findNombresColaVigentes(Integer redId);
 
     long countByRedIdAndEstadoNot(Integer redId, EstadoCliente estado);
+
+    // Clientes vigentes de una red, con su plan (para calcular sus colas)
+    @Query("""
+            SELECT c FROM Cliente c JOIN FETCH c.plan
+            WHERE c.red.id = :redId AND c.estado <> com.escuderoseyner.wisp.model.EstadoCliente.RETIRADO
+            """)
+    List<Cliente> findVigentesDeRed(Integer redId);
 }

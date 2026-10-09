@@ -18,6 +18,8 @@
   let redEnEdicion = null;
   // Red a la que se le cambia el token
   let redCambioToken = null;
+  // Red cuyas colas se están mostrando
+  let redColas = null;
 
   const formatoFecha = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -29,6 +31,9 @@
   $('boton-cancelar-token').addEventListener('click', cerrarCambioToken);
   $('boton-copiar').addEventListener('click', copiarToken);
   $('boton-ocultar-token').addEventListener('click', ocultarToken);
+  $('boton-aplicar').addEventListener('click', aplicarDiferencias);
+  $('boton-recargar-colas').addEventListener('click', cargarColas);
+  $('boton-cerrar-colas').addEventListener('click', cerrarColas);
   form.addEventListener('submit', guardar);
   formToken.addEventListener('submit', cambiarToken);
   form.querySelectorAll('input[name="origenToken"]').forEach((radio) => {
@@ -112,9 +117,137 @@
     botonToken.setAttribute('aria-label', 'Cambiar el token de la red ' + red.nombre);
     botonToken.addEventListener('click', () => abrirCambioToken(red));
 
-    acciones.append(botonEditar, botonToken);
+    const botonColas = document.createElement('button');
+    botonColas.type = 'button';
+    botonColas.className = 'boton boton-secundario boton-compacto';
+    botonColas.textContent = 'Colas';
+    Iconos.en(botonColas, 'ojo');
+    botonColas.setAttribute('aria-label', 'Ver las colas de la red ' + red.nombre);
+    botonColas.addEventListener('click', () => abrirColas(red));
+
+    acciones.append(botonColas, botonEditar, botonToken);
     item.append(cabecera, lista, acciones);
     return item;
+  }
+
+  // ---------- Colas: web vs MikroTik ----------
+
+  const ETIQUETA_ACCION = {
+    PENDIENTE: 'pendiente', ENVIADA: 'enviada, sin confirmar', APLICADA: 'aplicada',
+    ERROR: 'con error', REEMPLAZADA: 'reemplazada',
+  };
+  const ETIQUETA_MOTIVO = { CAMBIO: 'Cambio', CORTE: 'Corte', RECONEXION: 'Reconexión', SINCRONIZACION: 'Sincronización' };
+
+  async function abrirColas(red) {
+    limpiarAvisos();
+    redColas = red;
+    $('titulo-colas').textContent = 'Colas de ' + red.nombre;
+    $('boton-aplicar').hidden = red.modo !== 'CONTROL';
+    $('panel-colas').hidden = false;
+    $('panel-colas').scrollIntoView({ block: 'start', behavior: 'smooth' });
+    await cargarColas();
+  }
+
+  function cerrarColas() {
+    redColas = null;
+    $('panel-colas').hidden = true;
+    $('lista-colas').replaceChildren();
+  }
+
+  async function cargarColas() {
+    if (!redColas) return;
+    const cajaErrorColas = $('error-colas');
+    Sesion.ocultar(cajaErrorColas);
+    try {
+      const colas = await Sesion.api(URL_REDES + '/' + redColas.id + '/colas');
+      const conDiferencias = colas.filter((c) => c.diferencias.length > 0).length;
+      const sinReporte = colas.filter((c) => !c.reportado).length;
+      $('colas-resumen').textContent = colas.length + ' colas gestionadas · '
+        + conDiferencias + ' con diferencias · ' + sinReporte + ' sin reporte del MikroTik'
+        + (redColas.modo === 'CONTROL' ? '' : ' · Solo lectura: la web no envía cambios.');
+      $('lista-colas').replaceChildren(...colas.map(crearTarjetaCola));
+    } catch (error) {
+      Sesion.mostrarError(cajaErrorColas, error);
+    }
+  }
+
+  function crearTarjetaCola(cola) {
+    const item = document.createElement('li');
+    item.className = 'tarjeta-plan';
+
+    const cabecera = document.createElement('div');
+    cabecera.className = 'tarjeta-plan-cabecera';
+    const nombre = document.createElement('h3');
+    nombre.className = 'tarjeta-plan-nombre';
+    nombre.textContent = cola.nombre + ' · ' + cola.cliente.codigo + ' ' + cola.cliente.nombres;
+    const estado = document.createElement('span');
+    const iguales = cola.reportado && cola.diferencias.length === 0;
+    estado.className = 'estado ' + (!cola.reportado ? 'estado-inactivo' : iguales ? 'estado-activo' : 'estado-vencido');
+    estado.textContent = !cola.reportado ? 'Sin reporte' : iguales ? 'Coincide' : 'Diferente';
+    cabecera.append(nombre, estado);
+
+    const d = cola.deseado;
+    const r = cola.reportado;
+    const filas = [
+      ['Web', d.target + ' · ' + d.maxLimit + ' · ' + (d.deshabilitada ? 'deshabilitada' : 'habilitada')
+        + (cola.cliente.vigente ? '' : ' (sin dueño vigente)')],
+      ['MikroTik', !r ? '—' : !r.existe ? 'No existe' : (r.target || '—') + ' · ' + (r.maxLimit || '—') + ' · '
+        + (r.deshabilitada ? 'deshabilitada' : 'habilitada')],
+      ['Ping', !r || r.pingOk === null ? '—' : r.pingOk ? 'Responde' : 'No responde'],
+      ['Última acción', cola.ultimaAccion
+        ? ETIQUETA_MOTIVO[cola.ultimaAccion.motivo] + ': ' + ETIQUETA_ACCION[cola.ultimaAccion.estado]
+          + (cola.ultimaAccion.error ? ' — ' + cola.ultimaAccion.error : '')
+        : 'Ninguna'],
+    ];
+    const lista = document.createElement('dl');
+    lista.className = 'datos';
+    filas.forEach(([etiqueta, valor]) => {
+      const fila = document.createElement('div');
+      const dt = document.createElement('dt');
+      dt.textContent = etiqueta;
+      const dd = document.createElement('dd');
+      dd.textContent = valor;
+      fila.append(dt, dd);
+      lista.appendChild(fila);
+    });
+    item.append(cabecera, lista);
+
+    if (cola.diferencias.length > 0) {
+      const diferencias = document.createElement('ul');
+      diferencias.className = 'campo-ayuda';
+      cola.diferencias.forEach((texto) => {
+        const li = document.createElement('li');
+        li.textContent = texto;
+        diferencias.appendChild(li);
+      });
+      item.appendChild(diferencias);
+    }
+    return item;
+  }
+
+  async function aplicarDiferencias() {
+    const red = redColas;
+    if (!red) return;
+    const confirmado = await confirmar({
+      titulo: '¿Aplicar diferencias en ' + red.nombre + '?',
+      texto: 'El MikroTik real dejará cada cola de cliente como dice la web (velocidad, target, cola padre, '
+        + 'habilitada o deshabilitada). Se aplica en su próxima consulta. La cola padre y las protegidas no se tocan.',
+      boton: 'Sí, aplicar',
+    });
+    if (!confirmado) return;
+    const boton = $('boton-aplicar');
+    boton.disabled = true;
+    try {
+      const respuesta = await Sesion.api(URL_REDES + '/' + red.id + '/aplicar-diferencias', { method: 'POST' });
+      Sesion.mostrarMensaje(cajaExito, respuesta.accionesCreadas === 0
+        ? 'No había diferencias por aplicar (o ya hay acciones pendientes).'
+        : respuesta.accionesCreadas + ' acciones creadas. El MikroTik las aplicará en su próxima consulta.');
+      await cargarColas();
+    } catch (error) {
+      Sesion.mostrarError($('error-colas'), error);
+    } finally {
+      boton.disabled = false;
+    }
   }
 
   // ---------- Crear / editar ----------

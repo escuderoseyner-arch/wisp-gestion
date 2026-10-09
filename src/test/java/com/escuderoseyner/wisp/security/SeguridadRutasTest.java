@@ -2,6 +2,8 @@ package com.escuderoseyner.wisp.security;
 
 import com.escuderoseyner.wisp.controller.AdministradorController;
 import com.escuderoseyner.wisp.controller.ClienteController;
+import com.escuderoseyner.wisp.controller.ColaController;
+import com.escuderoseyner.wisp.controller.MikrotikController;
 import com.escuderoseyner.wisp.controller.PagoController;
 import com.escuderoseyner.wisp.controller.PlanController;
 import com.escuderoseyner.wisp.controller.PortalClienteController;
@@ -10,6 +12,9 @@ import com.escuderoseyner.wisp.model.Rol;
 import com.escuderoseyner.wisp.model.Usuario;
 import com.escuderoseyner.wisp.service.AdministradorService;
 import com.escuderoseyner.wisp.service.ClienteService;
+import com.escuderoseyner.wisp.service.ColaService;
+import com.escuderoseyner.wisp.service.MikrotikService;
+import com.escuderoseyner.wisp.service.TokenRedInvalidoException;
 import com.escuderoseyner.wisp.service.CuentaClienteService;
 import com.escuderoseyner.wisp.service.PagoService;
 import com.escuderoseyner.wisp.service.PlanService;
@@ -33,12 +38,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // Prueba las reglas de acceso con tokens JWT REALES (firmados con JwtService y validados por
 // el JwtDecoder de SecurityConfig). Los servicios son simulados: aquí solo importa quién entra.
 @WebMvcTest(controllers = {AdministradorController.class, ClienteController.class, PagoController.class, PlanController.class,
-        PortalClienteController.class, RedController.class})
+        PortalClienteController.class, RedController.class, ColaController.class, MikrotikController.class})
 @Import({SecurityConfig.class, RespuestasSeguridad.class, JwtService.class})
 @TestPropertySource(properties = {
         // Clave SOLO para pruebas (32 bytes en Base64). La real viene de JWT_SECRET.
@@ -81,6 +87,12 @@ class SeguridadRutasTest {
     @MockitoBean
     private RedService redService;
 
+    @MockitoBean
+    private ColaService colaService;
+
+    @MockitoBean
+    private MikrotikService mikrotikService;
+
     @BeforeEach
     void usuarioVigente() {
         when(usuarioVigenteValidator.validate(any())).thenReturn(OAuth2TokenValidatorResult.success());
@@ -122,10 +134,11 @@ class SeguridadRutasTest {
     void clienteNoEntraAAdmin() throws Exception {
         String cliente = tokenCliente();
         for (String ruta : new String[]{"/api/admin/clientes", "/api/admin/clientes/2", "/api/admin/pagos/cliente/2",
-                "/api/admin/pagos/mes", "/api/admin/planes", "/api/admin/administradores", "/api/admin/redes"}) {
+                "/api/admin/pagos/mes", "/api/admin/planes", "/api/admin/administradores", "/api/admin/redes",
+                "/api/admin/redes/1/colas", "/api/admin/clientes/2/cola"}) {
             mockMvc.perform(get(ruta).header("Authorization", cliente)).andExpect(status().isForbidden());
         }
-        verifyNoInteractions(clienteService, pagoService, planService, administradorService, redService);
+        verifyNoInteractions(clienteService, pagoService, planService, administradorService, redService, colaService);
     }
 
     @Test
@@ -160,5 +173,25 @@ class SeguridadRutasTest {
         mockMvc.perform(get("/api/cliente/resumen").header("Authorization", tokenCliente()))
                 .andExpect(status().isUnauthorized());
         verifyNoInteractions(portalClienteService);
+    }
+
+    @Test
+    @DisplayName("El MikroTik entra sin login, pero con un token de red inválido recibe 401 vacío")
+    void mikrotikTokenInvalido() throws Exception {
+        when(mikrotikService.consultar(any(), any())).thenThrow(new TokenRedInvalidoException());
+        mockMvc.perform(get("/api/mikrotik/acciones").header("X-Red-Token", "token-que-no-existe-0000"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().string(""));
+    }
+
+    @Test
+    @DisplayName("El MikroTik con token válido recibe texto plano")
+    void mikrotikTokenValido() throws Exception {
+        String respuesta = "# wisp-sync v1\n# fin\n";
+        when(mikrotikService.consultar(any(), any())).thenReturn(respuesta);
+        mockMvc.perform(get("/api/mikrotik/acciones").header("X-Red-Token", "token-valido-0000000000"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("text/plain"))
+                .andExpect(content().string(respuesta));
     }
 }

@@ -6,6 +6,7 @@ import com.escuderoseyner.wisp.dto.RedRequest;
 import com.escuderoseyner.wisp.dto.RedResponse;
 import com.escuderoseyner.wisp.dto.TokenRedResponse;
 import com.escuderoseyner.wisp.model.EstadoCliente;
+import com.escuderoseyner.wisp.model.MotivoAccion;
 import com.escuderoseyner.wisp.model.Red;
 import com.escuderoseyner.wisp.repository.ClienteRepository;
 import com.escuderoseyner.wisp.repository.RedRepository;
@@ -32,11 +33,14 @@ public class RedService {
     private final RedRepository redRepository;
     private final ClienteRepository clienteRepository;
     private final TokenRed tokenRed;
+    private final SincronizacionService sincronizacionService;
 
-    public RedService(RedRepository redRepository, ClienteRepository clienteRepository, TokenRed tokenRed) {
+    public RedService(RedRepository redRepository, ClienteRepository clienteRepository, TokenRed tokenRed,
+                      SincronizacionService sincronizacionService) {
         this.redRepository = redRepository;
         this.clienteRepository = clienteRepository;
         this.tokenRed = tokenRed;
+        this.sincronizacionService = sincronizacionService;
     }
 
     @Transactional(readOnly = true)
@@ -72,6 +76,8 @@ public class RedService {
     public RedResponse editar(Integer id, RedRequest request) {
         Red red = buscar(id);
         validarYAplicar(red, request, id, new ArrayList<>());
+        // Si cambió la cola padre, cambia el parent de todas sus colas
+        sincronizacionService.recalcularRed(red, MotivoAccion.CAMBIO, null);
         return aResponse(red);
     }
 

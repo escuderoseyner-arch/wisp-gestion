@@ -61,6 +61,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers("/error").permitAll()
+                        // El MikroTik no usa el login: se autentica con el token de su red (ver MikrotikService)
+                        .requestMatchers("/api/mikrotik/**").permitAll()
                         // Cualquier usuario con token válido, incluso si debe cambiar su contraseña
                         .requestMatchers(HttpMethod.POST, "/api/auth/cambiar-password").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/auth/me").hasAnyRole("ADMIN", "CLIENTE")

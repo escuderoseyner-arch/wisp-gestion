@@ -15,9 +15,11 @@ import java.util.List;
 public class PlanService {
 
     private final PlanRepository planRepository;
+    private final SincronizacionService sincronizacionService;
 
-    public PlanService(PlanRepository planRepository) {
+    public PlanService(PlanRepository planRepository, SincronizacionService sincronizacionService) {
         this.planRepository = planRepository;
+        this.sincronizacionService = sincronizacionService;
     }
 
     @Transactional(readOnly = true)
@@ -49,6 +51,8 @@ public class PlanService {
             throw nombreRepetido(nombre);
         }
         aplicarDatos(plan, request, nombre);
+        // Si cambió la velocidad, cambia el max-limit de las colas de sus clientes en el MikroTik
+        sincronizacionService.recalcularTodas();
         return aResponse(plan); // JPA guarda los cambios al terminar la transacción
     }
 

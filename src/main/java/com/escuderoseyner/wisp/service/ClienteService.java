@@ -8,6 +8,7 @@ import com.escuderoseyner.wisp.dto.ReasignarCodigoRequest;
 import com.escuderoseyner.wisp.dto.SiguienteCodigoResponse;
 import com.escuderoseyner.wisp.model.Cliente;
 import com.escuderoseyner.wisp.model.EstadoCliente;
+import com.escuderoseyner.wisp.model.MotivoAccion;
 import com.escuderoseyner.wisp.model.Plan;
 import com.escuderoseyner.wisp.model.Red;
 import com.escuderoseyner.wisp.model.Usuario;
@@ -54,13 +55,16 @@ public class ClienteService {
     private final UsuarioRepository usuarioRepository;
     private final PlanService planService;
     private final RedRepository redRepository;
+    private final SincronizacionService sincronizacionService;
 
     public ClienteService(ClienteRepository clienteRepository, UsuarioRepository usuarioRepository,
-                          PlanService planService, RedRepository redRepository) {
+                          PlanService planService, RedRepository redRepository,
+                          SincronizacionService sincronizacionService) {
         this.clienteRepository = clienteRepository;
         this.usuarioRepository = usuarioRepository;
         this.planService = planService;
         this.redRepository = redRepository;
+        this.sincronizacionService = sincronizacionService;
     }
 
     // ---------- Consultas ----------
@@ -114,7 +118,9 @@ public class ClienteService {
     public ClienteDetalleResponse crear(ClienteRequest request) {
         Cliente cliente = new Cliente();
         validarYAplicar(cliente, request.codigo(), request, null, null, new ArrayList<>());
-        return aDetalle(clienteRepository.save(cliente), Optional.empty());
+        clienteRepository.save(cliente);
+        actualizarColas(cliente);
+        return aDetalle(cliente, Optional.empty());
     }
 
     @Transactional
@@ -123,6 +129,7 @@ public class ClienteService {
         Optional<Usuario> cuenta = usuarioRepository.findByClienteId(id);
 
         validarYAplicar(cliente, request.codigo(), request, id, cliente.getPlan(), new ArrayList<>());
+        actualizarColas(cliente);
 
         // El usuario de acceso NO cambia con el celular: se cambia aparte ("Cambiar usuario")
         cuenta.ifPresent(usuario -> usuario.setNombreMostrar(cliente.getNombres()));
@@ -138,6 +145,7 @@ public class ClienteService {
             throw new ReglaNegocioException("Solo se puede suspender a un cliente activo.");
         }
         cliente.setEstado(EstadoCliente.SUSPENDIDO);
+        actualizarColas(cliente);
         return aDetalle(cliente);
     }
 
@@ -148,6 +156,7 @@ public class ClienteService {
             throw new ReglaNegocioException("Solo se puede reactivar a un cliente suspendido.");
         }
         cliente.setEstado(EstadoCliente.ACTIVO);
+        actualizarColas(cliente);
         return aDetalle(cliente);
     }
 
@@ -155,6 +164,7 @@ public class ClienteService {
     public ClienteDetalleResponse retirar(Integer id) {
         Cliente cliente = buscarVigente(id);
         marcarRetirado(cliente);
+        actualizarColas(cliente);
         return aDetalle(cliente);
     }
 
@@ -171,7 +181,11 @@ public class ClienteService {
         // flush: guarda YA el retiro, para que MySQL libere codigo_vigente antes de insertar
         // al nuevo. Sin esto, el UNIQUE de codigo_vigente rechazaría el INSERT.
         clienteRepository.saveAndFlush(anterior);
-        return aDetalle(clienteRepository.save(nuevo), Optional.empty());
+        clienteRepository.save(nuevo);
+        // La cola (mismo nombre) pasa a la persona nueva; si cambió de red, la anterior se deshabilita
+        actualizarColas(nuevo);
+        actualizarColas(anterior);
+        return aDetalle(nuevo, Optional.empty());
     }
 
     // ---------- Validación ----------
@@ -266,6 +280,11 @@ public class ClienteService {
     }
 
     // ---------- Utilidades ----------
+
+    // Estado deseado de sus colas en el MikroTik (y acciones, si la red está en modo Control)
+    private void actualizarColas(Cliente cliente) {
+        sincronizacionService.alCambiarCliente(cliente, MotivoAccion.CAMBIO, null);
+    }
 
     // Estado RETIRADO + fecha de retiro (MySQL exige las dos juntas) + cuenta desactivada
     private void marcarRetirado(Cliente cliente) {

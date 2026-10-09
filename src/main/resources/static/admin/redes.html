@@ -134,6 +134,19 @@
       </form>
     </section>
 
+    <!-- Colas de una red: web vs MikroTik -->
+    <section id="panel-colas" class="panel" hidden aria-labelledby="titulo-colas">
+      <h2 id="titulo-colas" class="panel-titulo">Colas</h2>
+      <p id="colas-resumen" class="campo-ayuda"></p>
+      <div id="error-colas" class="aviso aviso-error" role="alert" hidden></div>
+      <div class="acciones">
+        <button type="button" id="boton-aplicar" class="boton boton-peligro" hidden>Aplicar diferencias en el MikroTik</button>
+        <button type="button" id="boton-recargar-colas" class="boton boton-secundario">Actualizar</button>
+        <button type="button" id="boton-cerrar-colas" class="boton boton-secundario">Cerrar</button>
+      </div>
+      <ul id="lista-colas" class="lista-tarjetas" aria-label="Colas de la red"></ul>
+    </section>
+
     <p id="cargando" class="saludo-sub">Cargando redes…</p>
     <p id="vacio" class="vacio" hidden>Aún no tienes redes. Toca “Nueva red” para registrar tu MikroTik.</p>
     <ul id="lista-redes" class="lista-planes" aria-label="Lista de redes"></ul>
