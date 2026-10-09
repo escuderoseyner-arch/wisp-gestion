@@ -102,6 +102,22 @@
         <dl id="det-datos" class="datos"></dl>
       </section>
 
+      <!-- Solo si el cliente está en una red (MikroTik) -->
+      <section id="panel-mikrotik" class="panel" hidden aria-labelledby="titulo-mikrotik">
+        <div class="encabezado-panel">
+          <h2 id="titulo-mikrotik" class="panel-titulo">Conexión</h2>
+          <span id="mikrotik-conexion" class="estado"></span>
+        </div>
+        <div id="error-mikrotik" class="aviso aviso-error" role="alert" hidden></div>
+        <dl id="mikrotik-datos" class="datos"></dl>
+        <p id="mikrotik-nota" class="campo-ayuda" hidden></p>
+        <div class="acciones">
+          <button type="button" id="boton-cortar" class="boton boton-peligro" hidden>Cortar</button>
+          <button type="button" id="boton-reconectar" class="boton boton-primario" hidden>Reconectar</button>
+          <button type="button" id="boton-actualizar-mikrotik" class="boton boton-secundario">Actualizar</button>
+        </div>
+      </section>
+
       <section class="panel" aria-labelledby="titulo-pagos">
         <div class="encabezado-panel">
           <h2 id="titulo-pagos" class="panel-titulo">Pagos</h2>

@@ -142,7 +142,7 @@ class SeguridadRutasTest {
         for (String ruta : new String[]{"/api/admin/clientes", "/api/admin/clientes/2", "/api/admin/pagos/cliente/2",
                 "/api/admin/pagos/mes", "/api/admin/planes", "/api/admin/administradores", "/api/admin/redes",
                 "/api/admin/redes/1/colas", "/api/admin/clientes/2/cola",
-                "/api/admin/redes/1/comandos"}) {
+                "/api/admin/redes/1/comandos", "/api/admin/redes/1/panel"}) {
             mockMvc.perform(get(ruta).header("Authorization", cliente)).andExpect(status().isForbidden());
         }
         verifyNoInteractions(clienteService, pagoService, planService, administradorService, redService, colaService,

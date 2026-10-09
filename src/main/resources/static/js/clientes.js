@@ -187,6 +187,113 @@
     $('boton-cambiar-usuario').addEventListener('click', abrirFormularioUsuario);
     $('boton-cancelar-usuario').addEventListener('click', cerrarFormularioUsuario);
     $('form-usuario').addEventListener('submit', cambiarUsuario);
+    $('boton-cortar').addEventListener('click', () => cortarOReconectar(true));
+    $('boton-reconectar').addEventListener('click', () => cortarOReconectar(false));
+    $('boton-actualizar-mikrotik').addEventListener('click', () => {
+      if (clienteActual) cargarConexion(clienteActual.id);
+    });
+  }
+
+  // ---------- Conexión en el MikroTik ----------
+
+  const ETIQUETA_CONEXION = { CONECTADO: 'Conectado', SIN_CONEXION: 'Sin conexión', SIN_DATOS: 'Sin datos recientes' };
+  const CLASE_CONEXION = { CONECTADO: 'estado-activo', SIN_CONEXION: 'estado-vencido', SIN_DATOS: 'estado-inactivo' };
+  const ETIQUETA_ESTADO_ACCION = {
+    PENDIENTE: 'pendiente (esperando al MikroTik)', ENVIADA: 'enviada, esperando confirmación',
+    APLICADA: 'aplicado', ERROR: 'con error', REEMPLAZADA: 'reemplazado por un cambio más nuevo',
+  };
+  const INTERVALO_REVISION_CORTE_MS = 10000;
+  let temporizadorConexion = null;
+
+  async function cargarConexion(clienteId) {
+    clearTimeout(temporizadorConexion);
+    const cajaErrorMikrotik = $('error-mikrotik');
+    Sesion.ocultar(cajaErrorMikrotik);
+    try {
+      const estado = await Sesion.api(URL_CLIENTES + '/' + clienteId + '/cola');
+      if (!clienteActual || clienteActual.id !== clienteId) return; // se cambió de cliente mientras cargaba
+      dibujarConexion(estado);
+      // Mientras el corte o la reconexión no se confirme, se revisa cada 10 segundos
+      const pendiente = estado.ultimoCorte
+        && (estado.ultimoCorte.estado === 'PENDIENTE' || estado.ultimoCorte.estado === 'ENVIADA');
+      if (pendiente && !$('vista-detalle').hidden) {
+        temporizadorConexion = setTimeout(() => cargarConexion(clienteId), INTERVALO_REVISION_CORTE_MS);
+      }
+    } catch (error) {
+      Sesion.mostrarError(cajaErrorMikrotik, error);
+    }
+  }
+
+  function dibujarConexion(estado) {
+    const cola = estado.cola;
+    const r = cola && cola.reportado;
+    const insignia = $('mikrotik-conexion');
+    insignia.hidden = !estado.conexion;
+    if (estado.conexion) {
+      insignia.className = 'estado ' + CLASE_CONEXION[estado.conexion];
+      insignia.textContent = ETIQUETA_CONEXION[estado.conexion];
+    }
+
+    const consumo = estado.consumoMes;
+    const filas = [
+      ['Red', estado.nombreRed + (estado.modoRed === 'CONTROL' ? '' : ' (solo lectura)')],
+      ['Cola', cola ? cola.nombre + ' · ' + cola.deseado.maxLimit + (cola.deseado.deshabilitada ? ' · deshabilitada' : '') : null],
+      ['Velocidad actual', r && r.existe && r.rateSubidaBps !== null
+        ? '↓ ' + Formato.velocidad(r.rateBajadaBps) + ' · ↑ ' + Formato.velocidad(r.rateSubidaBps) : null],
+      ['Consumo del mes', '↓ ' + Formato.bytes(consumo.bytesBajada) + ' · ↑ ' + Formato.bytes(consumo.bytesSubida)],
+      ['Última actualización', r ? Formato.fechaHora(r.reportadoEn) : 'El MikroTik aún no reporta esta cola'],
+      ['Corte manual', estado.corteManual ? 'Sí' : 'No'],
+    ];
+    if (estado.ultimoCorte) {
+      const u = estado.ultimoCorte;
+      filas.push(['Último ' + (u.motivo === 'CORTE' ? 'corte' : 'reconexión'),
+        ETIQUETA_ESTADO_ACCION[u.estado] + (u.error ? ' — ' + u.error : '')]);
+    }
+    if (cola && cola.diferencias.length > 0) {
+      filas.push(['Diferencias', cola.diferencias.join(' · ')]);
+    }
+    $('mikrotik-datos').replaceChildren(...filas.map(([etiqueta, valor]) => crearDato(etiqueta, valor)));
+
+    const control = estado.modoRed === 'CONTROL';
+    const vigente = clienteActual.estado !== 'RETIRADO';
+    $('boton-cortar').hidden = !vigente || estado.corteManual;
+    $('boton-reconectar').hidden = !vigente || !estado.corteManual;
+    $('boton-cortar').disabled = !control;
+    $('boton-reconectar').disabled = !control;
+
+    let nota = '';
+    if (!control) nota = 'La red está en Solo lectura: para cortar o reconectar, cámbiala a Control en “Redes”.';
+    else if (estado.corteManual && clienteActual.estado === 'SUSPENDIDO') {
+      nota = 'Aunque lo reconectes, su cola seguirá deshabilitada mientras esté suspendido.';
+    }
+    $('mikrotik-nota').textContent = nota;
+    $('mikrotik-nota').hidden = !nota;
+  }
+
+  async function cortarOReconectar(cortar) {
+    const c = clienteActual;
+    if (!c) return;
+    const confirmado = await confirmar({
+      titulo: (cortar ? '¿Cortar el internet de ' : '¿Reconectar a ') + c.codigo + '?',
+      texto: cortar
+        ? 'Su cola se deshabilitará en el MikroTik real en la próxima consulta del router. Se mantiene hasta que lo reconectes.'
+        : 'Su cola se volverá a habilitar en el MikroTik real en la próxima consulta del router (si está activo).',
+      boton: cortar ? 'Sí, cortar' : 'Sí, reconectar',
+    });
+    if (!confirmado) return;
+    limpiarAvisos();
+    const boton = $(cortar ? 'boton-cortar' : 'boton-reconectar');
+    boton.disabled = true;
+    try {
+      dibujarConexion(await Sesion.api(URL_CLIENTES + '/' + c.id + '/' + (cortar ? 'cortar' : 'reconectar'), { method: 'POST' }));
+      Sesion.mostrarMensaje(cajaExito, cortar
+        ? 'Corte enviado. Se aplicará cuando el MikroTik consulte.'
+        : 'Reconexión enviada. Se aplicará cuando el MikroTik consulte.');
+      cargarConexion(c.id);
+    } catch (error) {
+      Sesion.mostrarError($('error-mikrotik'), error);
+      boton.disabled = false;
+    }
   }
 
   // ---------- Pagos del cliente ----------
@@ -448,6 +555,12 @@
     $('accion-suspender').hidden = cliente.estado !== 'ACTIVO';
     $('accion-reactivar').hidden = cliente.estado !== 'SUSPENDIDO';
     document.querySelectorAll('#vista-detalle button').forEach((b) => { b.disabled = false; });
+
+    // Conexión en el MikroTik: solo si está en una red
+    clearTimeout(temporizadorConexion);
+    $('panel-mikrotik').hidden = !cliente.red;
+    $('mikrotik-datos').replaceChildren();
+    if (cliente.red) cargarConexion(cliente.id);
   }
 
   // Suspender y reactivar: se pueden deshacer, así que no piden confirmación

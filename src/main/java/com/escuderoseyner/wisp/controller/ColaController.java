@@ -2,6 +2,7 @@ package com.escuderoseyner.wisp.controller;
 
 import com.escuderoseyner.wisp.dto.ColaClienteResponse;
 import com.escuderoseyner.wisp.dto.ColaResponse;
+import com.escuderoseyner.wisp.dto.PanelRedResponse;
 import com.escuderoseyner.wisp.service.ColaService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -23,6 +24,12 @@ public class ColaController {
 
     public ColaController(ColaService colaService) {
         this.colaService = colaService;
+    }
+
+    // Resumen: última conexión del MikroTik, clientes sin conexión, consumo del mes y diferencias
+    @GetMapping("/redes/{id}/panel")
+    public PanelRedResponse panel(@PathVariable Integer id) {
+        return colaService.panel(id);
     }
 
     // Colas de la red con lo que quiere la web, lo que reportó el MikroTik y sus diferencias

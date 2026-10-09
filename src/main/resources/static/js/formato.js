@@ -70,5 +70,36 @@ const Formato = (() => {
     return 'https://wa.me/' + pais + digitos + (texto ? '?text=' + encodeURIComponent(texto) : '');
   }
 
-  return { dinero, nombreMes, fecha, hoy, mesActual, mesesEnTexto, rellenarPlantilla, enlaceWhatsApp };
+  // 1536000000 -> "1.5 GB" (consumo del MikroTik)
+  function bytes(n) {
+    const unidades = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let valor = Number(n) || 0;
+    let i = 0;
+    while (valor >= 1000 && i < unidades.length - 1) {
+      valor /= 1000;
+      i++;
+    }
+    return valor.toLocaleString(undefined, { maximumFractionDigits: i === 0 ? 0 : 1 }) + ' ' + unidades[i];
+  }
+
+  // 3400000 -> "3.4 Mbps" (velocidad actual de una cola)
+  function velocidad(bps) {
+    const unidades = ['bps', 'kbps', 'Mbps', 'Gbps'];
+    let valor = Number(bps) || 0;
+    let i = 0;
+    while (valor >= 1000 && i < unidades.length - 1) {
+      valor /= 1000;
+      i++;
+    }
+    return valor.toLocaleString(undefined, { maximumFractionDigits: 1 }) + ' ' + unidades[i];
+  }
+
+  // "2026-10-08T14:05:00" -> fecha y hora cortas del navegador
+  function fechaHora(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
+  }
+
+  return { dinero, nombreMes, fecha, hoy, mesActual, mesesEnTexto, rellenarPlantilla, enlaceWhatsApp,
+    bytes, velocidad, fechaHora };
 })();

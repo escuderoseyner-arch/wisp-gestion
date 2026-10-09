@@ -2,6 +2,7 @@ package com.escuderoseyner.wisp.repository;
 
 import com.escuderoseyner.wisp.model.AccionCola;
 import com.escuderoseyner.wisp.model.EstadoAccion;
+import com.escuderoseyner.wisp.model.MotivoAccion;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -23,4 +24,10 @@ public interface AccionColaRepository extends JpaRepository<AccionCola, Long> {
 
     // Última acción de una cola (para mostrar si un corte está pendiente, aplicado o con error)
     Optional<AccionCola> findFirstByColaIdOrderByIdDesc(Integer colaId);
+
+    // Último Cortar/Reconectar de una cola
+    Optional<AccionCola> findFirstByColaIdAndMotivoInOrderByIdDesc(Integer colaId, Collection<MotivoAccion> motivos);
+
+    @Query("SELECT COUNT(a) FROM AccionCola a WHERE a.cola.red.id = :redId AND a.estado IN :estados")
+    long contarPorRedYEstados(Integer redId, Collection<EstadoAccion> estados);
 }

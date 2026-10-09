@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>Panel de la red</title>
+  <link rel="icon" href="data:,">
+  <script src="/js/tema.js"></script>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <script src="/js/sesion.js" defer></script>
+  <script src="/js/iconos.js" defer></script>
+  <script src="/js/formato.js" defer></script>
+  <script src="/js/nav-admin.js" defer></script>
+  <script src="/js/red.js" defer></script>
+</head>
+<!-- data-rol: red.js solo deja entrar a usuarios con este rol -->
+<body data-rol="ADMIN">
+  <header class="barra">
+    <div class="barra-marca">
+      <img data-logo alt="" hidden>
+      <span class="barra-nombre" data-empresa>Gestión WISP</span>
+    </div>
+    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto" aria-label="Cerrar sesión"><span data-icono="salir"></span>Salir</button>
+  </header>
+
+  <main class="contenido">
+    <a href="/admin/redes.html" class="enlace-volver"><span data-icono="atras"></span>Redes</a>
+    <div class="encabezado-seccion">
+      <div>
+        <h1 id="titulo" class="saludo">Red</h1>
+        <p id="subtitulo" class="saludo-sub"></p>
+      </div>
+      <span id="estado-mikrotik" class="estado" hidden></span>
+    </div>
+
+    <div id="exito" class="aviso aviso-info" role="status" hidden></div>
+    <div id="error" class="aviso aviso-error" role="alert" hidden></div>
+    <p id="cargando" class="saludo-sub">Cargando…</p>
+
+    <div id="contenido-panel" hidden>
+      <div class="totales totales-3">
+        <div class="total">
+          <span class="total-etiqueta">Clientes conectados</span>
+          <strong id="total-conectados" class="total-valor"></strong>
+          <span id="detalle-conectados" class="total-detalle"></span>
+        </div>
+        <div class="total">
+          <span class="total-etiqueta">Consumo del mes</span>
+          <strong id="total-consumo" class="total-valor"></strong>
+          <span id="detalle-consumo" class="total-detalle"></span>
+        </div>
+        <div class="total">
+          <span class="total-etiqueta">Acciones</span>
+          <strong id="total-acciones" class="total-valor"></strong>
+          <span id="detalle-acciones" class="total-detalle"></span>
+        </div>
+      </div>
+
+      <div class="acciones">
+        <a id="enlace-terminal" class="boton boton-secundario" href="/admin/terminal.html"><span data-icono="router"></span>Terminal</a>
+        <button type="button" id="boton-aplicar" class="boton boton-peligro" hidden>Aplicar diferencias en el MikroTik</button>
+        <button type="button" id="boton-actualizar" class="boton boton-secundario">Actualizar</button>
+      </div>
+
+      <section class="panel" aria-labelledby="titulo-sin-conexion">
+        <h2 id="titulo-sin-conexion" class="panel-titulo">Clientes sin conexión</h2>
+        <p id="vacio-sin-conexion" class="vacio" hidden>Todos los clientes con datos recientes responden al ping.</p>
+        <ul id="lista-sin-conexion" class="lista-filas" aria-label="Clientes sin conexión"></ul>
+      </section>
+
+      <section class="panel" aria-labelledby="titulo-diferencias">
+        <h2 id="titulo-diferencias" class="panel-titulo">Diferencias entre la web y el MikroTik</h2>
+        <p id="vacio-diferencias" class="vacio" hidden>Todo lo reportado coincide con la web.</p>
+        <ul id="lista-diferencias" class="lista-tarjetas" aria-label="Colas con diferencias"></ul>
+      </section>
+
+      <section class="panel" aria-labelledby="titulo-colas">
+        <div class="encabezado-panel">
+          <h2 id="titulo-colas" class="panel-titulo">Todas las colas</h2>
+          <button type="button" id="boton-ver-colas" class="boton boton-secundario boton-compacto" aria-expanded="false">Mostrar</button>
+        </div>
+        <ul id="lista-colas" class="lista-tarjetas" aria-label="Colas de la red" hidden></ul>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="dialogo" class="dialogo" aria-labelledby="dialogo-titulo" aria-describedby="dialogo-texto">
+    <form method="dialog">
+      <h2 id="dialogo-titulo" class="panel-titulo"></h2>
+      <p id="dialogo-texto"></p>
+      <div class="acciones">
+        <button type="submit" value="si" id="dialogo-si" class="boton boton-peligro"></button>
+        <button type="submit" value="no" class="boton boton-secundario">Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>
