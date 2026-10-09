@@ -548,7 +548,8 @@
     estadoFormulario = null;
 
     try {
-      const [planes, cliente, sugerido, redes] = await Promise.all([
+      // El orden de las variables debe coincidir con el de las promesas (cargarZonas no devuelve nada)
+      const [planes, cliente, sugerido, , redes] = await Promise.all([
         Sesion.api(URL_PLANES_ACTIVOS),
         id ? Sesion.api(URL_CLIENTES + '/' + id) : null,
         modo === 'crear' ? Sesion.api(URL_CLIENTES + '/siguiente-codigo') : null,
