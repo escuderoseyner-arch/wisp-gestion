@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>Caja</title>
+  <link rel="icon" href="data:,">
+  <script src="/js/tema.js"></script>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <script src="/js/sesion.js" defer></script>
+  <script src="/js/iconos.js" defer></script>
+  <script src="/js/nav-admin.js" defer></script>
+  <script src="/js/formato.js" defer></script>
+  <script src="/js/caja.js" defer></script>
+</head>
+<!-- data-rol: caja.js solo deja entrar a usuarios con este rol -->
+<body data-rol="ADMIN">
+  <header class="barra">
+    <div class="barra-marca">
+      <img data-logo alt="" hidden>
+      <span class="barra-nombre" data-empresa>Gestión WISP</span>
+    </div>
+    <button type="button" id="cerrar-sesion" class="boton boton-secundario boton-compacto" aria-label="Cerrar sesión"><span data-icono="salir"></span>Salir</button>
+  </header>
+
+  <main class="contenido">
+    <div class="encabezado-seccion">
+      <div>
+        <h1 class="saludo">Caja</h1>
+        <p class="saludo-sub">Dinero acumulado de cada red: suma los pagos de sus clientes y resta la cuota mensual y los retiros.</p>
+      </div>
+    </div>
+
+    <div id="exito" class="aviso aviso-info" role="status" hidden></div>
+    <div id="error" class="aviso aviso-error" role="alert" hidden></div>
+    <p id="cargando" class="saludo-sub">Cargando cajas…</p>
+    <p id="sin-cajas" class="vacio" hidden>Todavía no hay cajas. Se crean con un script de base de datos (ver 006_caja.sql).</p>
+
+    <div id="vista" hidden>
+      <div class="campo" id="campo-red">
+        <label for="red">Red</label>
+        <select id="red"></select>
+      </div>
+
+      <!-- Saldo y resumen del mes -->
+      <section class="panel" aria-labelledby="titulo-saldo">
+        <div class="encabezado-panel">
+          <h2 id="titulo-saldo" class="panel-titulo">Saldo de la caja</h2>
+          <button type="button" id="boton-retiro" class="boton boton-primario boton-compacto"><span data-icono="dinero"></span>Registrar retiro</button>
+        </div>
+        <strong id="saldo" class="monto-grande saldo-caja" aria-live="polite">—</strong>
+        <p id="saldo-aviso" class="campo-ayuda" hidden>La caja está en negativo.</p>
+
+        <h3 id="titulo-mes" class="subtitulo-caja"></h3>
+        <div class="totales totales-3">
+          <div class="total">
+            <span class="total-etiqueta">Ingresos por pagos</span>
+            <strong id="mes-ingresos" class="total-valor monto-ingreso">—</strong>
+          </div>
+          <div class="total">
+            <span class="total-etiqueta">Cuota mensual</span>
+            <strong id="mes-descuentos" class="total-valor monto-egreso">—</strong>
+          </div>
+          <div class="total">
+            <span class="total-etiqueta">Retiros</span>
+            <strong id="mes-retiros" class="total-valor monto-egreso">—</strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- Registrar retiro -->
+      <section id="panel-retiro" class="panel" hidden aria-labelledby="titulo-retiro">
+        <h2 id="titulo-retiro" class="panel-titulo">Registrar retiro</h2>
+        <div id="error-retiro" class="aviso aviso-error" role="alert" hidden></div>
+        <form id="form-retiro" novalidate>
+          <div class="fila-campos">
+            <div class="campo">
+              <label for="retiro-monto">Monto</label>
+              <input id="retiro-monto" name="monto" type="number" inputmode="decimal" min="0.01" step="0.01" required>
+            </div>
+            <div class="campo">
+              <label for="retiro-fecha">Fecha</label>
+              <input id="retiro-fecha" name="fecha" type="date" required>
+            </div>
+          </div>
+          <div class="campo">
+            <label for="retiro-descripcion">Descripción</label>
+            <input id="retiro-descripcion" name="descripcion" type="text" maxlength="255" required autocomplete="off"
+                   placeholder="Ej: Compra de antena para la torre">
+          </div>
+          <div class="acciones">
+            <button type="submit" id="boton-guardar-retiro" class="boton boton-primario">Guardar retiro</button>
+            <button type="button" id="boton-cancelar-retiro" class="boton boton-secundario">Cancelar</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Descuento mensual -->
+      <section class="panel" aria-labelledby="titulo-descuento">
+        <h2 id="titulo-descuento" class="panel-titulo">Descuento mensual (cuota del préstamo)</h2>
+        <p id="descuento-estado" class="campo-ayuda"></p>
+        <div id="error-descuento" class="aviso aviso-error" role="alert" hidden></div>
+        <form id="form-descuento" novalidate>
+          <div class="fila-campos">
+            <div class="campo">
+              <label for="descuento-monto">Monto</label>
+              <input id="descuento-monto" name="monto" type="number" inputmode="decimal" min="0" step="0.01" required>
+            </div>
+            <div class="campo">
+              <label for="descuento-dia">Día del mes (1 a 28)</label>
+              <input id="descuento-dia" name="dia" type="number" inputmode="numeric" min="1" max="28" step="1" required>
+            </div>
+          </div>
+          <div class="campo">
+            <label><input id="descuento-activo" name="activo" type="checkbox"> Descontar automáticamente cada mes</label>
+            <p class="campo-ayuda">Si lo pausas y luego lo reactivas, no se cobran los meses en pausa: empieza en la próxima fecha.</p>
+          </div>
+          <div class="acciones">
+            <button type="submit" id="boton-guardar-descuento" class="boton boton-primario">Guardar descuento</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Historial -->
+      <section class="panel" aria-labelledby="titulo-historial">
+        <div class="encabezado-panel">
+          <h2 id="titulo-historial" class="panel-titulo">Historial</h2>
+          <button type="button" id="boton-ver-todo" class="boton boton-secundario boton-compacto">Ver todo</button>
+        </div>
+        <div class="navegador-mes" id="navegador-mes" role="group" aria-label="Mes">
+          <button type="button" id="mes-anterior" class="boton boton-secundario boton-compacto" aria-label="Mes anterior"><span data-icono="atras"></span></button>
+          <div class="navegador-mes-centro">
+            <label for="mes" class="etiqueta-suave">Mes</label>
+            <input id="mes" type="month">
+            <p id="mes-nombre" class="navegador-mes-nombre" aria-live="polite"></p>
+          </div>
+          <button type="button" id="mes-siguiente" class="boton boton-secundario boton-compacto" aria-label="Mes siguiente"><span data-icono="adelante"></span></button>
+        </div>
+        <p id="historial-vacio" class="vacio" hidden>No hay movimientos en este periodo.</p>
+        <div class="tabla-contenedor">
+          <table id="tabla-historial" class="tabla" hidden>
+            <thead>
+              <tr>
+                <th scope="col">Fecha</th>
+                <th scope="col">Tipo</th>
+                <th scope="col">Descripción</th>
+                <th scope="col" class="numero">Monto</th>
+                <th scope="col" class="numero">Saldo</th>
+                <th scope="col">Hecho por</th>
+                <th scope="col"><span class="etiqueta-suave">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody id="filas-historial"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Confirmación antes de acciones importantes -->
+  <dialog id="dialogo" class="dialogo" aria-labelledby="dialogo-titulo" aria-describedby="dialogo-texto">
+    <form method="dialog">
+      <h2 id="dialogo-titulo" class="panel-titulo"></h2>
+      <p id="dialogo-texto"></p>
+      <div class="acciones">
+        <button type="submit" value="si" id="dialogo-si" class="boton boton-primario"></button>
+        <button type="submit" value="no" class="boton boton-secundario">Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

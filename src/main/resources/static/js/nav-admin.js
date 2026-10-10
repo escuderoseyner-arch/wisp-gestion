@@ -7,6 +7,7 @@
     { ruta: '/admin/inicio.html', texto: 'Inicio', icono: 'inicio' },
     { ruta: '/admin/clientes.html', texto: 'Clientes', icono: 'clientes' },
     { ruta: '/admin/pagos.html', texto: 'Pagos', icono: 'pagos' },
+    { ruta: '/admin/caja.html', texto: 'Caja', icono: 'dinero' },
     { ruta: '/admin/planes.html', texto: 'Planes', icono: 'planes' },
     { ruta: '/admin/redes.html', texto: 'Redes', icono: 'router' },
     { ruta: '/admin/administradores.html', texto: 'Admins', icono: 'escudo' },

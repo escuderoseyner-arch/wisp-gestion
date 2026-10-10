@@ -2,9 +2,9 @@
 --  SISTEMA DE GESTIÓN PARA PROVEEDORES DE INTERNET (WISP)
 --  INSTALACIÓN COMPLETA para una base de datos NUEVA (MySQL 8.x)
 --
---  Equivale a wisp_db.sql + 002 + 003 + 004 + 005, con los cambios ya
+--  Equivale a wisp_db.sql + 002 + 003 + 004 + 005 + 006, con los cambios ya
 --  integrados en cada tabla (sin los pagos de ejemplo).
---  Si tu base ya existe, NO uses este archivo: usa los scripts 002-005.
+--  Si tu base ya existe, NO uses este archivo: usa los scripts 002-006.
 --
 --  Ejecutar UNA sola vez con el usuario administrador del servidor
 --  (root en local; avnadmin en Aiven).
@@ -282,6 +282,49 @@ CREATE TABLE consumo_mensual (
   CONSTRAINT uk_consumo_mes     UNIQUE (cliente_id, periodo),
   CONSTRAINT chk_consumo_periodo CHECK (DAY(periodo) = 1)
 );
+
+-- ---------------------------------------------------------------------
+-- 10. CAJA POR RED: sube con los pagos, baja con la cuota mensual y
+--     con retiros. El saldo no se guarda: es la suma de movimientos.
+--     La caja de cada red se crea con un INSERT (ver 006_caja.sql).
+-- ---------------------------------------------------------------------
+CREATE TABLE cajas (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  red_id            INT          NOT NULL,
+  descuento_monto   DECIMAL(8,2) NOT NULL DEFAULT 0.00,
+  descuento_dia     TINYINT      NOT NULL DEFAULT 1,
+  descuento_activo  BOOLEAN      NOT NULL DEFAULT FALSE,
+  descuento_desde   DATE         NOT NULL,
+  creado_en         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_caja_red          FOREIGN KEY (red_id) REFERENCES redes(id),
+  CONSTRAINT uk_caja_red          UNIQUE (red_id),
+  CONSTRAINT chk_caja_dia         CHECK (descuento_dia BETWEEN 1 AND 28),
+  CONSTRAINT chk_caja_monto       CHECK (descuento_monto >= 0)
+);
+
+CREATE TABLE caja_movimientos (
+  id                 INT AUTO_INCREMENT PRIMARY KEY,
+  caja_id            INT          NOT NULL,
+  tipo               ENUM('INGRESO_PAGO','DESCUENTO_MENSUAL','RETIRO') NOT NULL,
+  monto              DECIMAL(8,2) NOT NULL,
+  fecha              DATE         NOT NULL,
+  descripcion        VARCHAR(255) NOT NULL,
+  pago_id            INT          NULL,
+  periodo            DATE         NULL,
+  usuario_id         INT          NULL,                    -- NULL = automático
+  creado_en          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  periodo_descuento  DATE GENERATED ALWAYS AS
+    (IF(tipo = 'DESCUENTO_MENSUAL', periodo, NULL)) STORED,
+  CONSTRAINT fk_movimiento_caja    FOREIGN KEY (caja_id)    REFERENCES cajas(id),
+  CONSTRAINT fk_movimiento_pago    FOREIGN KEY (pago_id)    REFERENCES pagos(id),
+  CONSTRAINT fk_movimiento_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+  CONSTRAINT uk_movimiento_pago    UNIQUE (pago_id),
+  CONSTRAINT uk_movimiento_descuento UNIQUE (caja_id, periodo_descuento),
+  CONSTRAINT chk_movimiento_monto  CHECK (monto > 0),
+  CONSTRAINT chk_movimiento_periodo CHECK (periodo IS NULL OR DAY(periodo) = 1)
+);
+
+CREATE INDEX idx_movimientos_caja_fecha ON caja_movimientos (caja_id, fecha, id);
 
 -- =====================================================================
 --  DATOS INICIALES

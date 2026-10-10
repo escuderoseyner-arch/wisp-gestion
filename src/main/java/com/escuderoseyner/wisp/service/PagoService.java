@@ -47,13 +47,16 @@ public class PagoService {
     private final ClienteRepository clienteRepository;
     private final UsuarioRepository usuarioRepository;
     private final ConfiguracionService configuracionService;
+    private final CajaService cajaService;
 
     public PagoService(PagoRepository pagoRepository, ClienteRepository clienteRepository,
-                       UsuarioRepository usuarioRepository, ConfiguracionService configuracionService) {
+                       UsuarioRepository usuarioRepository, ConfiguracionService configuracionService,
+                       CajaService cajaService) {
         this.pagoRepository = pagoRepository;
         this.clienteRepository = clienteRepository;
         this.usuarioRepository = usuarioRepository;
         this.configuracionService = configuracionService;
+        this.cajaService = cajaService;
     }
 
     // ---------- Pantalla de pagos de un mes ----------
@@ -217,6 +220,7 @@ public class PagoService {
             pago.setObservacion(observacion);
             pago.setRegistradoPor(admin);
             pagoRepository.save(pago);
+            cajaService.registrarIngresoDePago(pago); // misma transacción: entra a la caja de su red
         }
         return estadoDeCuenta(cliente.getId());
     }
@@ -226,6 +230,7 @@ public class PagoService {
     public void eliminar(Integer pagoId) {
         Pago pago = pagoRepository.findById(pagoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe un pago con el id " + pagoId + "."));
+        cajaService.eliminarIngresoDePago(pago.getId()); // primero el ingreso de la caja (FK al pago)
         pagoRepository.delete(pago);
     }
 

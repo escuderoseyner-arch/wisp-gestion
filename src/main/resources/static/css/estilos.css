@@ -1476,3 +1476,60 @@ body.con-nav-admin {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* ---------- Caja ---------- */
+
+.saldo-caja {
+  display: block;
+  margin: 4px 0 8px;
+  white-space: nowrap;
+}
+
+.subtitulo-caja {
+  margin: 16px 0 10px;
+  font-size: 1rem;
+  color: var(--texto-suave);
+}
+
+.monto-ingreso {
+  color: var(--ok-texto);
+}
+
+.monto-egreso {
+  color: var(--error-texto);
+}
+
+/* La tabla puede ser más ancha que el celular: solo ella se desplaza de lado */
+.tabla-contenedor {
+  overflow-x: auto;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.tabla th,
+.tabla td {
+  padding: 10px 8px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--borde);
+}
+
+.tabla th {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.tabla .numero {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabla .sin-salto {
+  white-space: nowrap;
+}
