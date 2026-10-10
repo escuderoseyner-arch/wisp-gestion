@@ -6,7 +6,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-// Aplica la cuota mensual de cada caja. Corre cada hora y también al arrancar,
+// Aplica el descuento mensual (pago de Starlink) de cada caja. Corre cada hora y también al arrancar,
 // porque en Render la app se duerme y puede no estar despierta justo el día del descuento.
 // Si estuvo dormida varios días, crea los descuentos con la fecha que les correspondía.
 @Slf4j

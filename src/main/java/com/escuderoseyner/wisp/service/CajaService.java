@@ -30,7 +30,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-// Caja de una red: sube con cada pago de sus clientes, baja con la cuota mensual y con retiros.
+// Caja de una red: sube con cada pago de sus clientes, baja con el pago mensual de Starlink y con retiros.
 // El saldo nunca se guarda: siempre es la suma de los movimientos.
 @Service
 public class CajaService {
@@ -38,7 +38,8 @@ public class CajaService {
     // Las fechas de la caja (hoy, día del descuento) son siempre las de Perú, aunque el servidor esté en UTC
     public static final ZoneId ZONA = ZoneId.of("America/Lima");
 
-    private static final String DESCRIPCION_DESCUENTO = "Cuota mensual préstamo";
+    // Solo para los descuentos nuevos: los que ya existen conservan su texto
+    private static final String DESCRIPCION_DESCUENTO = "Pago mensual de Starlink";
     private static final DateTimeFormatter MES_CORTO = DateTimeFormatter.ofPattern("MM/yyyy");
 
     private final CajaRepository cajaRepository;

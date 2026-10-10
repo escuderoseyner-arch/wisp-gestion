@@ -28,7 +28,7 @@
     <div class="encabezado-seccion">
       <div>
         <h1 class="saludo">Caja</h1>
-        <p class="saludo-sub">Dinero acumulado de cada red: suma los pagos de sus clientes y resta la cuota mensual y los retiros.</p>
+        <p class="saludo-sub">Dinero acumulado de cada red: suma los pagos de sus clientes y resta el pago mensual de Starlink y los retiros.</p>
       </div>
     </div>
 
@@ -59,7 +59,7 @@
             <strong id="mes-ingresos" class="total-valor monto-ingreso">—</strong>
           </div>
           <div class="total">
-            <span class="total-etiqueta">Cuota mensual</span>
+            <span class="total-etiqueta">Starlink</span>
             <strong id="mes-descuentos" class="total-valor monto-egreso">—</strong>
           </div>
           <div class="total">
@@ -67,6 +67,38 @@
             <strong id="mes-retiros" class="total-valor monto-egreso">—</strong>
           </div>
         </div>
+      </section>
+
+      <!-- Pago mensual de Starlink: una línea; el formulario se despliega con "Editar" -->
+      <div class="linea-starlink">
+        <p id="starlink-resumen" class="linea-starlink-texto"></p>
+        <button type="button" id="boton-editar-starlink" class="boton boton-secundario boton-compacto"
+                aria-expanded="false" aria-controls="panel-starlink"><span data-icono="editar"></span>Editar</button>
+      </div>
+
+      <section id="panel-starlink" class="panel" hidden aria-labelledby="titulo-descuento">
+        <h2 id="titulo-descuento" class="panel-titulo">Pago mensual de Starlink</h2>
+        <div id="error-descuento" class="aviso aviso-error" role="alert" hidden></div>
+        <form id="form-descuento" novalidate>
+          <div class="fila-campos">
+            <div class="campo">
+              <label for="descuento-monto">Monto</label>
+              <input id="descuento-monto" name="monto" type="number" inputmode="decimal" min="0" step="0.01" required>
+            </div>
+            <div class="campo">
+              <label for="descuento-dia">Día del mes (1 a 28)</label>
+              <input id="descuento-dia" name="dia" type="number" inputmode="numeric" min="1" max="28" step="1" required>
+            </div>
+          </div>
+          <div class="campo">
+            <label class="check-linea"><input id="descuento-activo" name="activo" type="checkbox"><span>Descontar automáticamente cada mes</span></label>
+            <p class="campo-ayuda">Si lo pausas y luego lo reactivas, no se cobran los meses en pausa: empieza en la próxima fecha.</p>
+          </div>
+          <div class="acciones">
+            <button type="submit" id="boton-guardar-descuento" class="boton boton-primario">Guardar</button>
+            <button type="button" id="boton-cancelar-starlink" class="boton boton-secundario">Cancelar</button>
+          </div>
+        </form>
       </section>
 
       <!-- Registrar retiro -->
@@ -92,32 +124,6 @@
           <div class="acciones">
             <button type="submit" id="boton-guardar-retiro" class="boton boton-primario">Guardar retiro</button>
             <button type="button" id="boton-cancelar-retiro" class="boton boton-secundario">Cancelar</button>
-          </div>
-        </form>
-      </section>
-
-      <!-- Descuento mensual -->
-      <section class="panel" aria-labelledby="titulo-descuento">
-        <h2 id="titulo-descuento" class="panel-titulo">Descuento mensual (cuota del préstamo)</h2>
-        <p id="descuento-estado" class="campo-ayuda"></p>
-        <div id="error-descuento" class="aviso aviso-error" role="alert" hidden></div>
-        <form id="form-descuento" novalidate>
-          <div class="fila-campos">
-            <div class="campo">
-              <label for="descuento-monto">Monto</label>
-              <input id="descuento-monto" name="monto" type="number" inputmode="decimal" min="0" step="0.01" required>
-            </div>
-            <div class="campo">
-              <label for="descuento-dia">Día del mes (1 a 28)</label>
-              <input id="descuento-dia" name="dia" type="number" inputmode="numeric" min="1" max="28" step="1" required>
-            </div>
-          </div>
-          <div class="campo">
-            <label><input id="descuento-activo" name="activo" type="checkbox"> Descontar automáticamente cada mes</label>
-            <p class="campo-ayuda">Si lo pausas y luego lo reactivas, no se cobran los meses en pausa: empieza en la próxima fecha.</p>
-          </div>
-          <div class="acciones">
-            <button type="submit" id="boton-guardar-descuento" class="boton boton-primario">Guardar descuento</button>
           </div>
         </form>
       </section>

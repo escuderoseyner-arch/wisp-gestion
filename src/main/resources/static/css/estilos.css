@@ -1533,3 +1533,42 @@ body.con-nav-admin {
 .tabla .sin-salto {
   white-space: nowrap;
 }
+
+/* Línea "Starlink: S/ 180.00 el día 27 · próximo: ..." debajo del saldo */
+.linea-starlink {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin: -4px 0 16px;
+  padding: 0 4px;
+}
+
+.linea-starlink-texto {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+}
+
+/* Casilla de tamaño normal, a la izquierda y en la misma línea que su texto */
+.campo .check-linea {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.campo .check-linea input {
+  width: 20px;
+  height: 20px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+  border: 0;
+  box-shadow: none;
+  accent-color: var(--primario);
+}

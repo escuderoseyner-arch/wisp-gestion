@@ -25,7 +25,7 @@ public class Caja {
     @JoinColumn(name = "red_id", nullable = false, unique = true)
     private Red red;
 
-    // Cuota mensual del préstamo que se descuenta sola
+    // Pago mensual (ej: Starlink) que se descuenta solo
     @Column(name = "descuento_monto", nullable = false, precision = 8, scale = 2)
     private BigDecimal descuentoMonto = BigDecimal.ZERO;
 

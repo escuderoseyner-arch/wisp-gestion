@@ -1,7 +1,7 @@
 -- =====================================================================
 --  006 - Caja por red
 --  Cada red puede tener una caja: sube sola con los pagos de sus
---  clientes, baja sola con una cuota mensual (préstamo) y admite
+--  clientes, baja sola con el pago mensual de Starlink y admite
 --  retiros manuales. El saldo NO se guarda: es la suma de los
 --  movimientos, así nunca se descuadra.
 --

@@ -284,7 +284,7 @@ CREATE TABLE consumo_mensual (
 );
 
 -- ---------------------------------------------------------------------
--- 10. CAJA POR RED: sube con los pagos, baja con la cuota mensual y
+-- 10. CAJA POR RED: sube con los pagos, baja con el pago mensual (Starlink) y
 --     con retiros. El saldo no se guarda: es la suma de movimientos.
 --     La caja de cada red se crea con un INSERT (ver 006_caja.sql).
 -- ---------------------------------------------------------------------

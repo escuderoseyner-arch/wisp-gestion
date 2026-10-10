@@ -8,7 +8,7 @@
   const URL_CAJAS = '/api/admin/cajas';
   const TIPOS = {
     INGRESO_PAGO: 'Pago de cliente',
-    DESCUENTO_MENSUAL: 'Cuota mensual',
+    DESCUENTO_MENSUAL: 'Starlink',
     RETIRO: 'Retiro',
   };
   const $ = (id) => document.getElementById(id);
@@ -29,6 +29,8 @@
   $('boton-cancelar-retiro').addEventListener('click', cerrarRetiro);
   $('form-retiro').addEventListener('submit', guardarRetiro);
   $('form-descuento').addEventListener('submit', guardarDescuento);
+  $('boton-editar-starlink').addEventListener('click', () => mostrarStarlink($('panel-starlink').hidden));
+  $('boton-cancelar-starlink').addEventListener('click', () => mostrarStarlink(false));
   $('mes-anterior').addEventListener('click', () => moverMes(-1));
   $('mes-siguiente').addEventListener('click', () => moverMes(1));
   inputMes.addEventListener('change', () => { if (inputMes.value) cargarHistorial(); });
@@ -70,6 +72,7 @@
     Sesion.ocultar(cajaExito);
     Sesion.ocultar(cajaError);
     cerrarRetiro();
+    mostrarStarlink(false);
     await Promise.all([cargarDetalle(), cargarHistorial()]);
   }
 
@@ -95,13 +98,26 @@
     $('mes-retiros').textContent = '− ' + Formato.dinero(m, detalle.retirosMes);
 
     const d = detalle.descuento;
-    $('descuento-monto').value = Number(d.monto).toFixed(2);
-    $('descuento-dia').value = d.dia;
-    $('descuento-activo').checked = d.activo;
-    $('descuento-estado').textContent = d.activo
-      ? 'Activo: ' + Formato.dinero(m, d.monto) + ' el día ' + d.dia + ' de cada mes.'
-        + (d.proximaFecha ? ' Próximo descuento: ' + Formato.fecha(d.proximaFecha) + '.' : '')
-      : 'Pausado: no se descuenta nada hasta que lo actives.';
+    $('starlink-resumen').textContent = d.activo
+      ? 'Starlink: ' + Formato.dinero(m, d.monto) + ' el día ' + d.dia
+        + (d.proximaFecha ? ' · próximo: ' + Formato.fecha(d.proximaFecha) : '')
+      : 'Starlink: pausado (no se descuenta)';
+  }
+
+  // ---------- Pago mensual de Starlink ----------
+
+  // Despliega u oculta el formulario. Al abrirlo muestra los valores guardados.
+  function mostrarStarlink(visible) {
+    if (visible && caja) {
+      const d = caja.descuento;
+      $('descuento-monto').value = Number(d.monto).toFixed(2);
+      $('descuento-dia').value = d.dia;
+      $('descuento-activo').checked = d.activo;
+      Sesion.ocultar($('error-descuento'));
+    }
+    $('panel-starlink').hidden = !visible;
+    $('boton-editar-starlink').setAttribute('aria-expanded', String(visible));
+    if (visible) $('descuento-monto').focus();
   }
 
   // ---------- Historial ----------
@@ -280,7 +296,8 @@
         body: { monto, dia, activo },
       });
       dibujarDetalle(detalle);
-      Sesion.mostrarMensaje(cajaExito, 'Descuento mensual guardado.');
+      mostrarStarlink(false);
+      Sesion.mostrarMensaje(cajaExito, 'Pago mensual de Starlink guardado.');
       await cargarHistorial(); // por si se aplicó un descuento al cambiar el día
     } catch (error) {
       Sesion.mostrarError(errorDescuento, error);
