@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 
 public interface PagoRepository extends JpaRepository<Pago, Integer> {
@@ -32,6 +33,10 @@ public interface PagoRepository extends JpaRepository<Pago, Integer> {
             ORDER BY p.fechaPago DESC, p.id DESC
             """)
     List<Pago> findRecibidosEntre(LocalDate desde, LocalDate hasta);
+
+    // [id del pago, nombre del admin que lo registró] (para el historial de la caja)
+    @Query("SELECT p.id, u.nombreMostrar FROM Pago p JOIN p.registradoPor u WHERE p.id IN :ids")
+    List<Object[]> findNombreRegistradorDe(Collection<Integer> ids);
 
     // Solo [id del cliente, periodo] de todos los pagos: liviano, para calcular los atrasados
     @Query("SELECT p.cliente.id, p.periodo FROM Pago p")

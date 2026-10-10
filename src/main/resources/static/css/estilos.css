@@ -1541,8 +1541,8 @@ body.con-nav-admin {
   align-items: center;
   justify-content: space-between;
   gap: 8px 12px;
-  margin: -4px 0 16px;
-  padding: 0 4px;
+  margin: 20px 0 4px; /* + 16px del panel siguiente: separada arriba y abajo */
+  padding: 0 8px;
 }
 
 .linea-starlink-texto {

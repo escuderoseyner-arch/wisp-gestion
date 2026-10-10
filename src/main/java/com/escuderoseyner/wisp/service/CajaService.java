@@ -14,6 +14,7 @@ import com.escuderoseyner.wisp.model.TipoMovimientoCaja;
 import com.escuderoseyner.wisp.model.Usuario;
 import com.escuderoseyner.wisp.repository.CajaMovimientoRepository;
 import com.escuderoseyner.wisp.repository.CajaRepository;
+import com.escuderoseyner.wisp.repository.PagoRepository;
 import com.escuderoseyner.wisp.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,13 +47,16 @@ public class CajaService {
     private final CajaRepository cajaRepository;
     private final CajaMovimientoRepository movimientoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final PagoRepository pagoRepository;
     private final ConfiguracionService configuracionService;
 
     public CajaService(CajaRepository cajaRepository, CajaMovimientoRepository movimientoRepository,
-                       UsuarioRepository usuarioRepository, ConfiguracionService configuracionService) {
+                       UsuarioRepository usuarioRepository, PagoRepository pagoRepository,
+                       ConfiguracionService configuracionService) {
         this.cajaRepository = cajaRepository;
         this.movimientoRepository = movimientoRepository;
         this.usuarioRepository = usuarioRepository;
+        this.pagoRepository = pagoRepository;
         this.configuracionService = configuracionService;
     }
 
@@ -107,16 +112,34 @@ public class CajaService {
         }
         BigDecimal saldoInicial = saldo;
 
+        // Ingresos por pago: los hizo el admin que registró el pago (pagos.registrado_por),
+        // aunque el movimiento no tenga usuario_id (ej: cargados a mano en la base)
+        Map<Integer, String> registradorDePago = new HashMap<>();
+        List<Integer> pagoIds = movimientos.stream().map(CajaMovimiento::getPagoId).filter(id -> id != null).toList();
+        if (!pagoIds.isEmpty()) {
+            for (Object[] fila : pagoRepository.findNombreRegistradorDe(pagoIds)) {
+                registradorDePago.put((Integer) fila[0], (String) fila[1]);
+            }
+        }
+
         List<MovimientoCajaResponse> filas = new ArrayList<>();
         for (CajaMovimiento m : movimientos) {
             saldo = m.getTipo().suma() ? saldo.add(m.getMonto()) : saldo.subtract(m.getMonto());
             filas.add(new MovimientoCajaResponse(m.getId(), m.getFecha(), m.getTipo(), m.getDescripcion(),
-                    m.getMonto(), saldo, m.getUsuario() == null ? null : m.getUsuario().getNombreMostrar(),
+                    m.getMonto(), saldo, hechoPor(m, registradorDePago),
                     m.getTipo() == TipoMovimientoCaja.RETIRO));
         }
         Collections.reverse(filas);
         return new HistorialCajaResponse(mes == null ? null : mes.toString(), configuracionService.moneda(),
                 saldoInicial, filas);
+    }
+
+    // null = automático (solo el descuento de Starlink)
+    private static String hechoPor(CajaMovimiento m, Map<Integer, String> registradorDePago) {
+        if (m.getPagoId() != null && registradorDePago.containsKey(m.getPagoId())) {
+            return registradorDePago.get(m.getPagoId());
+        }
+        return m.getUsuario() == null ? null : m.getUsuario().getNombreMostrar();
     }
 
     // ---------- Retiros ----------
