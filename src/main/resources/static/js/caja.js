@@ -4,6 +4,8 @@
 (() => {
   const datos = Sesion.requerir({ rol: document.body.dataset.rol });
   if (!datos) return; // ya se está redirigiendo
+  // El OPERADOR ve la caja y registra retiros; no los elimina ni edita Starlink (el servidor lo valida igual)
+  const esAdmin = datos.rol === 'ADMIN';
 
   const URL_CAJAS = '/api/admin/cajas';
   const TIPOS = {
@@ -163,7 +165,7 @@
       const saldo = Number(mov.saldo);
 
       const acciones = document.createElement('td');
-      if (mov.eliminable) {
+      if (mov.eliminable && esAdmin) {
         const boton = document.createElement('button');
         boton.type = 'button';
         boton.className = 'boton boton-secundario boton-compacto';

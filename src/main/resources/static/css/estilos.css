@@ -1572,3 +1572,13 @@ body.con-nav-admin {
   box-shadow: none;
   accent-color: var(--primario);
 }
+
+/* El OPERADOR no ve lo que solo puede hacer el ADMIN (el servidor también lo rechaza) */
+.rol-operador [data-solo-admin] {
+  display: none !important;
+}
+
+/* Botón "Generar una segura" debajo del campo de contraseña */
+.boton-generar {
+  margin: -6px 0 18px;
+}

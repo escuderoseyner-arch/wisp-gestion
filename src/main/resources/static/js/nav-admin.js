@@ -3,11 +3,12 @@
 // Se carga después de iconos.js.
 
 (() => {
+  // operador: true = también la ve el OPERADOR (las demás son solo del ADMIN)
   const SECCIONES = [
-    { ruta: '/admin/inicio.html', texto: 'Inicio', icono: 'inicio' },
-    { ruta: '/admin/clientes.html', texto: 'Clientes', icono: 'clientes' },
-    { ruta: '/admin/pagos.html', texto: 'Pagos', icono: 'pagos' },
-    { ruta: '/admin/caja.html', texto: 'Caja', icono: 'dinero' },
+    { ruta: '/admin/inicio.html', texto: 'Inicio', icono: 'inicio', operador: true },
+    { ruta: '/admin/clientes.html', texto: 'Clientes', icono: 'clientes', operador: true },
+    { ruta: '/admin/pagos.html', texto: 'Pagos', icono: 'pagos', operador: true },
+    { ruta: '/admin/caja.html', texto: 'Caja', icono: 'dinero', operador: true },
     { ruta: '/admin/planes.html', texto: 'Planes', icono: 'planes' },
     { ruta: '/admin/redes.html', texto: 'Redes', icono: 'router' },
     { ruta: '/admin/administradores.html', texto: 'Admins', icono: 'escudo' },
@@ -15,14 +16,16 @@
   ];
 
   const barra = document.querySelector('header.barra');
-  if (!barra) return;
+  const sesion = Sesion.obtener();
+  if (!barra || !sesion) return;
+  const esAdmin = sesion.datos.rol === 'ADMIN';
 
   const nav = document.createElement('nav');
   nav.className = 'nav-admin';
   nav.setAttribute('aria-label', 'Menú principal');
   const lista = document.createElement('ul');
 
-  SECCIONES.forEach((seccion) => {
+  SECCIONES.filter((seccion) => esAdmin || seccion.operador).forEach((seccion) => {
     const item = document.createElement('li');
     const enlace = document.createElement('a');
     enlace.href = seccion.ruta;

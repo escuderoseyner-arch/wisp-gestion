@@ -4,7 +4,8 @@ import com.escuderoseyner.wisp.dto.CambiarUsuarioRequest;
 import com.escuderoseyner.wisp.dto.ClienteDetalleResponse;
 import com.escuderoseyner.wisp.dto.ClienteRequest;
 import com.escuderoseyner.wisp.dto.ClienteResumenResponse;
-import com.escuderoseyner.wisp.dto.CuentaTemporalResponse;
+import com.escuderoseyner.wisp.dto.CuentaResponse;
+import com.escuderoseyner.wisp.dto.PasswordInicialRequest;
 import com.escuderoseyner.wisp.dto.ReasignarCodigoRequest;
 import com.escuderoseyner.wisp.dto.SiguienteCodigoResponse;
 import com.escuderoseyner.wisp.model.EstadoCliente;
@@ -26,7 +27,7 @@ import java.util.List;
 
 // No hay DELETE: los clientes se retiran, nunca se borran
 @RestController
-@RequestMapping("/api/admin/clientes") // /api/admin/**: solo ADMIN (ver SecurityConfig)
+@RequestMapping("/api/admin/clientes") // OPERADOR solo puede leer (ver SecurityConfig)
 public class ClienteController {
 
     private final ClienteService clienteService;
@@ -97,13 +98,14 @@ public class ClienteController {
 
     @PostMapping("/{id}/cuenta")
     @ResponseStatus(HttpStatus.CREATED)
-    public CuentaTemporalResponse crearCuenta(@PathVariable Integer id) {
-        return cuentaClienteService.crearCuenta(id);
+    public CuentaResponse crearCuenta(@PathVariable Integer id, @Valid @RequestBody PasswordInicialRequest request) {
+        return cuentaClienteService.crearCuenta(id, request.password());
     }
 
     @PostMapping("/{id}/cuenta/restablecer-password")
-    public CuentaTemporalResponse restablecerPassword(@PathVariable Integer id) {
-        return cuentaClienteService.restablecerPassword(id);
+    public CuentaResponse restablecerPassword(@PathVariable Integer id,
+                                              @Valid @RequestBody PasswordInicialRequest request) {
+        return cuentaClienteService.restablecerPassword(id, request.password());
     }
 
     @PutMapping("/{id}/cuenta/usuario")

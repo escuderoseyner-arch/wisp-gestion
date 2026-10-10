@@ -2,7 +2,8 @@ package com.escuderoseyner.wisp.controller;
 
 import com.escuderoseyner.wisp.dto.AdministradorResponse;
 import com.escuderoseyner.wisp.dto.CrearAdministradorRequest;
-import com.escuderoseyner.wisp.dto.CuentaTemporalResponse;
+import com.escuderoseyner.wisp.dto.CuentaResponse;
+import com.escuderoseyner.wisp.dto.PasswordInicialRequest;
 import com.escuderoseyner.wisp.service.AdministradorService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -18,7 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-// No hay DELETE: los admins se desactivan. El admin que hace la acción sale del token.
+// Cuentas del personal (ADMIN y OPERADOR). No hay DELETE ni cambio de rol: se desactivan.
+// El admin que hace la acción sale del token.
 @RestController
 @RequestMapping("/api/admin/administradores") // /api/admin/**: solo ADMIN (ver SecurityConfig)
 public class AdministradorController {
@@ -36,7 +38,7 @@ public class AdministradorController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CuentaTemporalResponse crear(@Valid @RequestBody CrearAdministradorRequest request) {
+    public CuentaResponse crear(@Valid @RequestBody CrearAdministradorRequest request) {
         return administradorService.crear(request);
     }
 
@@ -51,7 +53,8 @@ public class AdministradorController {
     }
 
     @PostMapping("/{id}/restablecer-password")
-    public CuentaTemporalResponse restablecerPassword(@PathVariable Integer id, @AuthenticationPrincipal Jwt jwt) {
-        return administradorService.restablecerPassword(id, jwt.getSubject());
+    public CuentaResponse restablecerPassword(@PathVariable Integer id, @AuthenticationPrincipal Jwt jwt,
+                                              @Valid @RequestBody PasswordInicialRequest request) {
+        return administradorService.restablecerPassword(id, request.password(), jwt.getSubject());
     }
 }

@@ -12,11 +12,12 @@
   <script src="/js/iconos.js" defer></script>
   <script src="/js/nav-admin.js" defer></script>
   <script src="/js/formato.js" defer></script>
+  <script src="/js/clave.js" defer></script>
   <script src="/js/pagos-comun.js" defer></script>
   <script src="/js/clientes.js" defer></script>
 </head>
 <!-- data-rol: clientes.js solo deja entrar a usuarios con este rol -->
-<body data-rol="ADMIN">
+<body data-rol="ADMIN OPERADOR">
   <header class="barra">
     <div class="barra-marca">
       <img data-logo alt="" hidden>
@@ -36,7 +37,7 @@
           <h1 id="titulo-lista" class="saludo">Clientes</h1>
           <p id="contador" class="saludo-sub" aria-live="polite"></p>
         </div>
-        <a href="#nuevo" class="boton boton-primario boton-compacto"><span data-icono="mas"></span>Nuevo cliente</a>
+        <a href="#nuevo" class="boton boton-primario boton-compacto" data-solo-admin><span data-icono="mas"></span>Nuevo cliente</a>
       </div>
 
       <form id="filtros" class="filtros" role="search" novalidate>
@@ -83,8 +84,9 @@
 
       <!-- Contraseña temporal: se muestra una sola vez y se borra al salir de esta vista -->
       <section id="panel-password" class="panel panel-destacado" hidden aria-labelledby="titulo-password">
-        <h2 id="titulo-password" class="panel-titulo">Contraseña temporal</h2>
-        <p>Envíasela al cliente por WhatsApp. <strong>Solo se muestra esta vez</strong>: si la pierdes, usa “Restablecer contraseña”.</p>
+        <h2 id="titulo-password" class="panel-titulo">Contraseña inicial</h2>
+        <p>Envíasela al cliente por WhatsApp. <strong>Solo se muestra esta vez</strong>: si la pierdes, usa “Restablecer contraseña”.
+          Al ingresar, el sistema le pedirá crear una propia.</p>
         <dl class="datos">
           <div><dt>Usuario</dt><dd id="pass-usuario"></dd></div>
           <div><dt>Contraseña</dt><dd id="pass-valor" class="password-temporal"></dd></div>
@@ -112,8 +114,8 @@
         <dl id="mikrotik-datos" class="datos"></dl>
         <p id="mikrotik-nota" class="campo-ayuda" hidden></p>
         <div class="acciones">
-          <button type="button" id="boton-cortar" class="boton boton-peligro" hidden>Cortar</button>
-          <button type="button" id="boton-reconectar" class="boton boton-primario" hidden>Reconectar</button>
+          <button type="button" id="boton-cortar" class="boton boton-peligro" hidden data-solo-admin>Cortar</button>
+          <button type="button" id="boton-reconectar" class="boton boton-primario" hidden data-solo-admin>Reconectar</button>
           <button type="button" id="boton-actualizar-mikrotik" class="boton boton-secundario">Actualizar</button>
         </div>
       </section>
@@ -158,14 +160,14 @@
           </div>
         </form>
 
-        <div id="cuenta-botones" class="acciones">
+        <div id="cuenta-botones" class="acciones" data-solo-admin>
           <button type="button" id="boton-crear-cuenta" class="boton boton-primario" hidden><span data-icono="usuario"></span>Crear cuenta</button>
           <button type="button" id="boton-restablecer" class="boton boton-secundario" hidden><span data-icono="candado"></span>Restablecer contraseña</button>
           <button type="button" id="boton-cambiar-usuario" class="boton boton-secundario" hidden><span data-icono="editar"></span>Cambiar usuario</button>
         </div>
       </section>
 
-      <section id="panel-acciones" class="panel" aria-labelledby="titulo-acciones">
+      <section id="panel-acciones" class="panel" aria-labelledby="titulo-acciones" data-solo-admin>
         <h2 id="titulo-acciones" class="panel-titulo">Acciones</h2>
         <div class="acciones-detalle">
           <a id="accion-editar" class="boton boton-secundario" href="#"><span data-icono="editar"></span>Editar datos</a>

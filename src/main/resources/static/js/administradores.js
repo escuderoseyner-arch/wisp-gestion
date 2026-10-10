@@ -1,4 +1,5 @@
-// Administradores: listar, crear, desactivar/reactivar y restablecer contraseña.
+// Cuentas del personal (ADMIN y OPERADOR): listar, crear, desactivar/reactivar y restablecer contraseña.
+// La contraseña inicial la escribe el admin (o la genera aquí); la persona debe cambiarla al entrar.
 
 (() => {
   const datosSesion = Sesion.requerir({ rol: document.body.dataset.rol });
@@ -9,6 +10,8 @@
   const cajaExito = $('exito');
   const cajaError = $('error');
   const form = $('form-admin');
+  const ETIQUETA_ROL = { ADMIN: 'Administrador', OPERADOR: 'Operador' };
+  const campoPassword = Clave.conectar(form.password, $('mostrar-password-inicial'), $('generar-password-inicial'));
 
   Sesion.cargarEmpresa();
   $('cerrar-sesion').addEventListener('click', Sesion.cerrar);
@@ -48,12 +51,12 @@
 
     const usuario = document.createElement('p');
     usuario.className = 'tarjeta-plan-velocidad';
-    usuario.textContent = 'Usuario: ' + admin.username;
+    usuario.textContent = (ETIQUETA_ROL[admin.rol] || admin.rol) + ' · usuario: ' + admin.username;
 
     const acceso = document.createElement('p');
     acceso.className = 'campo-ayuda';
     acceso.textContent = admin.debeCambiarPassword
-      ? 'Aún no cambia su contraseña temporal.'
+      ? 'Aún no cambia su contraseña inicial.'
       : 'Último ingreso: ' + (admin.ultimoAcceso ? fechaHora(admin.ultimoAcceso) : 'nunca');
 
     item.append(cabecera, usuario, acceso);
@@ -102,14 +105,18 @@
   // ---------- Acciones ----------
 
   async function restablecer(admin, b) {
-    const ok = await confirmar({
-      titulo: '¿Restablecer la contraseña de ' + admin.nombreMostrar + '?',
-      texto: 'Su contraseña actual dejará de funcionar y se cerrará su sesión. Recibirás una contraseña temporal para entregarle.',
-      boton: 'Sí, restablecer',
+    const password = await Clave.pedir({
+      titulo: 'Restablecer la contraseña de ' + admin.nombreMostrar,
+      texto: 'Su contraseña actual dejará de funcionar, se cerrará su sesión y su cuenta se desbloquea. Al entrar deberá cambiarla.',
+      boton: 'Restablecer',
     });
-    if (!ok) return;
+    if (password === null) return;
     await accion(b, async () => {
-      mostrarPassword(await Sesion.api(URL_ADMINS + '/' + admin.id + '/restablecer-password', { method: 'POST' }));
+      const cuenta = await Sesion.api(URL_ADMINS + '/' + admin.id + '/restablecer-password', {
+        method: 'POST',
+        body: { password },
+      });
+      mostrarPassword(cuenta.username, password);
       Sesion.mostrarMensaje(cajaExito, 'Contraseña de ' + admin.nombreMostrar + ' restablecida.');
     });
   }
@@ -156,6 +163,7 @@
     Sesion.ocultar(cajaError);
     Sesion.ocultar($('error-formulario'));
     form.reset();
+    campoPassword.reiniciar();
     $('panel-formulario').hidden = false;
     $('boton-nuevo').hidden = true;
     form.nombreMostrar.focus();
@@ -163,6 +171,7 @@
 
   function cerrarFormulario() {
     form.reset();
+    campoPassword.reiniciar();
     $('panel-formulario').hidden = true;
     $('boton-nuevo').hidden = false;
   }
@@ -171,13 +180,20 @@
     evento.preventDefault();
     const cajaErrorForm = $('error-formulario');
     Sesion.ocultar(cajaErrorForm);
-    const datos = { nombreMostrar: form.nombreMostrar.value.trim(), username: form.username.value.trim() };
+    const datos = {
+      nombreMostrar: form.nombreMostrar.value.trim(),
+      username: form.username.value.trim(),
+      rol: form.rol.value,
+      password: form.password.value,
+    };
 
     const problemas = [];
     if (!datos.nombreMostrar) problemas.push('Escribe el nombre.');
     if (!/^[A-Za-z0-9._-]{3,50}$/.test(datos.username)) {
       problemas.push('El usuario debe tener de 3 a 50 caracteres: letras sin tildes, números, punto, guion o guion bajo.');
     }
+    const problemaPassword = Clave.validar(datos.password);
+    if (problemaPassword) problemas.push(problemaPassword);
     if (problemas.length > 0) {
       Sesion.mostrarMensaje(cajaErrorForm, 'Revisa los datos:', problemas);
       return;
@@ -188,8 +204,8 @@
     try {
       const cuenta = await Sesion.api(URL_ADMINS, { method: 'POST', body: datos });
       cerrarFormulario();
-      mostrarPassword(cuenta);
-      Sesion.mostrarMensaje(cajaExito, 'Administrador ' + datos.nombreMostrar + ' creado.');
+      mostrarPassword(cuenta.username, datos.password);
+      Sesion.mostrarMensaje(cajaExito, ETIQUETA_ROL[datos.rol] + ' ' + datos.nombreMostrar + ' creado.');
       await cargar();
     } catch (error) {
       Sesion.mostrarError(cajaErrorForm, error);
@@ -198,11 +214,11 @@
     }
   }
 
-  // ---------- Contraseña temporal (se muestra una sola vez) ----------
+  // ---------- Contraseña inicial (se muestra una sola vez para entregarla) ----------
 
-  function mostrarPassword(cuenta) {
-    $('pass-usuario').textContent = cuenta.username;
-    $('pass-valor').textContent = cuenta.passwordTemporal;
+  function mostrarPassword(username, password) {
+    $('pass-usuario').textContent = username;
+    $('pass-valor').textContent = password;
     $('panel-password').hidden = false;
     $('panel-password').scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
@@ -214,7 +230,7 @@
   }
 
   async function copiar() {
-    const texto = 'Usuario: ' + $('pass-usuario').textContent + '\nContraseña temporal: ' + $('pass-valor').textContent;
+    const texto = 'Usuario: ' + $('pass-usuario').textContent + '\nContraseña: ' + $('pass-valor').textContent;
     try {
       await navigator.clipboard.writeText(texto);
       Sesion.mostrarMensaje(cajaExito, 'Copiado.');

@@ -2,9 +2,9 @@
 --  SISTEMA DE GESTIÓN PARA PROVEEDORES DE INTERNET (WISP)
 --  INSTALACIÓN COMPLETA para una base de datos NUEVA (MySQL 8.x)
 --
---  Equivale a wisp_db.sql + 002 + 003 + 004 + 005 + 006, con los cambios ya
+--  Equivale a wisp_db.sql + 002 + 003 + 004 + 005 + 006 + 007, con los cambios ya
 --  integrados en cada tabla (sin los pagos de ejemplo).
---  Si tu base ya existe, NO uses este archivo: usa los scripts 002-006.
+--  Si tu base ya existe, NO uses este archivo: usa los scripts 002-007.
 --
 --  Ejecutar UNA sola vez con el usuario administrador del servidor
 --  (root en local; avnadmin en Aiven).
@@ -128,7 +128,7 @@ CREATE TABLE usuarios (
   email                 VARCHAR(100) NULL UNIQUE,
   password_hash         VARCHAR(100) NOT NULL,
   password_cambiado_en  DATETIME     NULL,           -- los tokens anteriores a esta fecha dejan de valer
-  rol                   ENUM('ADMIN','CLIENTE') NOT NULL,
+  rol                   ENUM('ADMIN','OPERADOR','CLIENTE') NOT NULL,
   cliente_id            INT          NULL UNIQUE,      -- solo si es CLIENTE
   nombre_mostrar        VARCHAR(100) NOT NULL,
   activo                BOOLEAN      NOT NULL DEFAULT TRUE,
@@ -141,7 +141,7 @@ CREATE TABLE usuarios (
   CONSTRAINT fk_usuario_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id),
   -- Un ADMIN no tiene cliente asociado; un CLIENTE siempre tiene uno
   CONSTRAINT chk_usuario_rol CHECK (
-    (rol = 'ADMIN'   AND cliente_id IS NULL) OR
+    (rol IN ('ADMIN','OPERADOR') AND cliente_id IS NULL) OR
     (rol = 'CLIENTE' AND cliente_id IS NOT NULL)
   )
 );

@@ -15,7 +15,7 @@
   <script src="/js/caja.js" defer></script>
 </head>
 <!-- data-rol: caja.js solo deja entrar a usuarios con este rol -->
-<body data-rol="ADMIN">
+<body data-rol="ADMIN OPERADOR">
   <header class="barra">
     <div class="barra-marca">
       <img data-logo alt="" hidden>
@@ -73,10 +73,10 @@
       <div class="linea-starlink">
         <p id="starlink-resumen" class="linea-starlink-texto"></p>
         <button type="button" id="boton-editar-starlink" class="boton boton-secundario boton-compacto"
-                aria-expanded="false" aria-controls="panel-starlink"><span data-icono="editar"></span>Editar</button>
+                aria-expanded="false" aria-controls="panel-starlink" data-solo-admin><span data-icono="editar"></span>Editar</button>
       </div>
 
-      <section id="panel-starlink" class="panel" hidden aria-labelledby="titulo-descuento">
+      <section id="panel-starlink" class="panel" hidden aria-labelledby="titulo-descuento" data-solo-admin>
         <h2 id="titulo-descuento" class="panel-titulo">Pago mensual de Starlink</h2>
         <div id="error-descuento" class="aviso aviso-error" role="alert" hidden></div>
         <form id="form-descuento" novalidate>

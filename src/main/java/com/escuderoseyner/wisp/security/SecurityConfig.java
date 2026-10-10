@@ -65,7 +65,18 @@ public class SecurityConfig {
                         .requestMatchers("/api/mikrotik/**").permitAll()
                         // Cualquier usuario con token válido, incluso si debe cambiar su contraseña
                         .requestMatchers(HttpMethod.POST, "/api/auth/cambiar-password").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/auth/me").hasAnyRole("ADMIN", "CLIENTE")
+                        .requestMatchers(HttpMethod.GET, "/api/auth/me").hasAnyRole("ADMIN", "OPERADOR", "CLIENTE")
+                        // OPERADOR (ayuda con los cobros): solo lo que está en esta lista. No edita ni borra nada.
+                        .requestMatchers(HttpMethod.GET, "/api/admin/panel",
+                                "/api/admin/clientes", "/api/admin/clientes/zonas", "/api/admin/clientes/{id}",
+                                "/api/admin/clientes/{id}/cola",          // estado de conexión, solo ver
+                                "/api/admin/configuracion",               // plantilla del recordatorio de WhatsApp
+                                "/api/admin/pagos/**",
+                                "/api/admin/cajas", "/api/admin/cajas/{id}", "/api/admin/cajas/{id}/movimientos")
+                            .hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.POST, "/api/admin/pagos", "/api/admin/cajas/{id}/retiros")
+                            .hasAnyRole("ADMIN", "OPERADOR")
+                        // Todo lo demás de /api/admin (editar, borrar, redes, configuración, cuentas): solo ADMIN
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/cliente/**").hasRole("CLIENTE")
                         // Todo lo que no esté en la lista queda prohibido
@@ -81,7 +92,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Convierte el token en permisos: el claim "rol" pasa a ser ROLE_ADMIN o ROLE_CLIENTE.
+    // Convierte el token en permisos: el claim "rol" pasa a ser ROLE_ADMIN, ROLE_OPERADOR o ROLE_CLIENTE.
     // Si el usuario debe cambiar su contraseña, NO recibe su rol, solo el permiso especial.
     private JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();

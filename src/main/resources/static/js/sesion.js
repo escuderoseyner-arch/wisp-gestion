@@ -10,6 +10,7 @@ const Sesion = (() => {
   const RUTA_CAMBIAR_PASSWORD = '/cambiar-password.html';
   const INICIO_POR_ROL = {
     ADMIN: '/admin/inicio.html',
+    OPERADOR: '/admin/inicio.html',
     CLIENTE: '/cliente/inicio.html',
   };
 
@@ -92,7 +93,8 @@ const Sesion = (() => {
   }
 
   // Protege una página. Devuelve los datos del token, o null si redirigió a otra página.
-  //  - rol: solo deja pasar a ese rol ('ADMIN' o 'CLIENTE')
+  //  - rol: roles que pueden entrar, separados por espacio (ej: 'ADMIN' o 'ADMIN OPERADOR').
+  //    Es solo para la navegación: el servidor vuelve a revisar el rol en cada petición.
   //  - esCambioPassword: true solo en cambiar-password.html
   function requerir({ rol = null, esCambioPassword = false } = {}) {
     const habiaToken = leerToken() !== null;
@@ -105,11 +107,13 @@ const Sesion = (() => {
       location.replace(RUTA_CAMBIAR_PASSWORD);
       return null;
     }
-    if (rol && sesion.datos.rol !== rol) {
+    if (rol && !rol.split(' ').includes(sesion.datos.rol)) {
       irAlInicio(sesion.datos); // un CLIENTE que abre una página de ADMIN va a la suya
       return null;
     }
     programarExpiracion(sesion.datos.exp);
+    // .rol-operador oculta lo marcado con data-solo-admin (ver estilos.css)
+    document.body.classList.add('rol-' + String(sesion.datos.rol).toLowerCase());
     return sesion.datos;
   }
 

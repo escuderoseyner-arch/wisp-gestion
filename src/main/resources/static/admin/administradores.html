@@ -12,6 +12,7 @@
   <script src="/js/iconos.js" defer></script>
   <script src="/js/nav-admin.js" defer></script>
   <script src="/js/formato.js" defer></script>
+  <script src="/js/clave.js" defer></script>
   <script src="/js/administradores.js" defer></script>
 </head>
 <!-- data-rol: administradores.js solo deja entrar a usuarios con este rol -->
@@ -27,10 +28,11 @@
   <main class="contenido">
     <div class="encabezado-seccion">
       <div>
-        <h1 class="saludo">Administradores</h1>
-        <p class="saludo-sub">Las personas que pueden entrar a este panel. No se borran: se desactivan.</p>
+        <h1 class="saludo">Administradores y operadores</h1>
+        <p class="saludo-sub">Las personas que pueden entrar a este panel. No se borran: se desactivan.
+          El operador solo ve el panel, los clientes y la caja, y registra pagos y retiros.</p>
       </div>
-      <button type="button" id="boton-nuevo" class="boton boton-primario boton-compacto"><span data-icono="mas"></span>Nuevo administrador</button>
+      <button type="button" id="boton-nuevo" class="boton boton-primario boton-compacto"><span data-icono="mas"></span>Nueva cuenta</button>
     </div>
 
     <div id="exito" class="aviso aviso-info" role="status" hidden></div>
@@ -38,7 +40,7 @@
 
     <!-- Contraseña temporal: se muestra una sola vez -->
     <section id="panel-password" class="panel panel-destacado" hidden aria-labelledby="titulo-password">
-      <h2 id="titulo-password" class="panel-titulo">Contraseña temporal</h2>
+      <h2 id="titulo-password" class="panel-titulo">Contraseña inicial</h2>
       <p>Entrégasela a la persona. <strong>Solo se muestra esta vez</strong>: al entrar, el sistema le pedirá crear una propia.</p>
       <dl class="datos">
         <div><dt>Usuario</dt><dd id="pass-usuario"></dd></div>
@@ -52,7 +54,7 @@
 
     <!-- Formulario de nuevo administrador -->
     <section id="panel-formulario" class="panel" hidden aria-labelledby="titulo-formulario">
-      <h2 id="titulo-formulario" class="panel-titulo">Nuevo administrador</h2>
+      <h2 id="titulo-formulario" class="panel-titulo">Nueva cuenta</h2>
       <div id="error-formulario" class="aviso aviso-error" role="alert" hidden></div>
       <form id="form-admin" novalidate>
         <div class="campo">
@@ -64,18 +66,33 @@
           <label for="usuario">Usuario para entrar</label>
           <input id="usuario" name="username" type="text" maxlength="50" required autocomplete="off"
                  autocapitalize="none" spellcheck="false" aria-describedby="ayuda-usuario">
-          <p id="ayuda-usuario" class="campo-ayuda">3 a 50 caracteres: letras sin tildes, números, punto, guion o guion bajo.
-            La contraseña la genera el sistema.</p>
+          <p id="ayuda-usuario" class="campo-ayuda">3 a 50 caracteres: letras sin tildes, números, punto, guion o guion bajo.</p>
         </div>
+        <div class="campo">
+          <label for="rol">Rol</label>
+          <select id="rol" name="rol" required aria-describedby="ayuda-rol">
+            <option value="OPERADOR">Operador (ayuda con los cobros)</option>
+            <option value="ADMIN">Administrador (ve y gestiona todo)</option>
+          </select>
+          <p id="ayuda-rol" class="campo-ayuda">El rol no se puede cambiar después.</p>
+        </div>
+        <div class="campo campo-password">
+          <label for="password-inicial">Contraseña inicial (mínimo 8 caracteres)</label>
+          <input id="password-inicial" name="password" type="password" maxlength="72" required
+                 autocomplete="new-password" autocapitalize="none" spellcheck="false">
+          <button type="button" id="mostrar-password-inicial" class="boton-ojo">Mostrar</button>
+        </div>
+        <button type="button" id="generar-password-inicial" class="boton boton-secundario boton-compacto boton-generar">Generar una segura</button>
+        <p class="campo-ayuda">Al entrar por primera vez, el sistema le pedirá crear una propia.</p>
         <div class="acciones">
-          <button type="submit" id="boton-guardar" class="boton boton-primario">Crear administrador</button>
+          <button type="submit" id="boton-guardar" class="boton boton-primario">Crear cuenta</button>
           <button type="button" id="boton-cancelar" class="boton boton-secundario">Cancelar</button>
         </div>
       </form>
     </section>
 
     <p id="cargando" class="saludo-sub">Cargando administradores…</p>
-    <ul id="lista-admins" class="lista-tarjetas" aria-label="Administradores"></ul>
+    <ul id="lista-admins" class="lista-tarjetas" aria-label="Administradores y operadores"></ul>
   </main>
 
   <!-- Confirmación antes de desactivar o restablecer -->

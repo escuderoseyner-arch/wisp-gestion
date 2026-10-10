@@ -10,6 +10,8 @@
 (() => {
   const datosSesion = Sesion.requerir({ rol: document.body.dataset.rol });
   if (!datosSesion) return; // ya se está redirigiendo
+  // El OPERADOR solo ve y registra pagos. El servidor lo valida igual; aquí solo se ocultan botones.
+  const esAdmin = datosSesion.rol === 'ADMIN';
 
   const URL_CLIENTES = '/api/admin/clientes';
   const URL_PLANES_ACTIVOS = '/api/admin/planes?activos=true';
@@ -59,6 +61,7 @@
 
     const ruta = location.hash.replace(/^#/, '');
     let partes;
+    if (!esAdmin && (ruta === 'nuevo' || /\/(editar|reasignar)$/.test(ruta))) return mostrarLista();
     if (ruta === 'nuevo') return abrirFormulario('crear');
     if ((partes = ruta.match(/^cliente\/(\d+)$/))) return mostrarDetalle(Number(partes[1]));
     if ((partes = ruta.match(/^cliente\/(\d+)\/editar$/))) return abrirFormulario('editar', Number(partes[1]));
@@ -179,8 +182,8 @@
     $('accion-suspender').addEventListener('click', (e) => accionSimple(e.currentTarget, 'suspender', 'Cliente suspendido.'));
     $('accion-reactivar').addEventListener('click', (e) => accionSimple(e.currentTarget, 'reactivar', 'Cliente reactivado.'));
     $('accion-retirar').addEventListener('click', retirar);
-    $('boton-crear-cuenta').addEventListener('click', (e) => generarPassword(e.currentTarget, 'crear'));
-    $('boton-restablecer').addEventListener('click', (e) => generarPassword(e.currentTarget, 'restablecer'));
+    $('boton-crear-cuenta').addEventListener('click', (e) => ponerPassword(e.currentTarget, 'crear'));
+    $('boton-restablecer').addEventListener('click', (e) => ponerPassword(e.currentTarget, 'restablecer'));
     $('boton-copiar').addEventListener('click', copiarMensaje);
     $('boton-ocultar-password').addEventListener('click', ocultarPassword);
     $('boton-registrar-pago').addEventListener('click', registrarPago);
@@ -372,6 +375,7 @@
       ];
       if (pago.observacion) partes.push(pago.observacion);
 
+      if (!esAdmin) return crearFila(Pagos.nombreMes(pago.periodo), partes.join(' · '), document.createElement('span'));
       const eliminar = document.createElement('button');
       eliminar.type = 'button';
       eliminar.className = 'boton boton-secundario boton-compacto';
@@ -532,7 +536,7 @@
     if (cuenta) {
       $('cuenta-usuario').textContent = cuenta.username;
       $('cuenta-estado').textContent = (cuenta.activa ? 'Activa' : 'Desactivada')
-        + (cuenta.debeCambiarPassword && cuenta.activa ? ' · aún no cambia su contraseña temporal' : '');
+        + (cuenta.debeCambiarPassword && cuenta.activa ? ' · aún no cambia su contraseña inicial' : '');
     } else if (retirado) {
       textoCuenta = 'No tiene cuenta.';
     } else if (cliente.celular) {
@@ -591,23 +595,25 @@
 
   // ---------- Cuenta del portal ----------
 
-  async function generarPassword(boton, tipo) {
+  // El admin escribe la contraseña inicial (o la genera); el cliente debe cambiarla al entrar
+  async function ponerPassword(boton, tipo) {
     const c = clienteActual;
-    if (tipo === 'restablecer') {
-      const confirmado = await confirmar({
-        titulo: '¿Restablecer la contraseña?',
-        texto: 'La contraseña actual de ' + c.nombres + ' dejará de funcionar y se generará una temporal nueva.',
-        boton: 'Sí, restablecer',
-      });
-      if (!confirmado) return;
-    }
+    const restablecer = tipo === 'restablecer';
+    const password = await Clave.pedir({
+      titulo: restablecer ? 'Restablecer la contraseña de ' + c.nombres : 'Crear la cuenta de ' + c.nombres,
+      texto: restablecer
+        ? 'Su contraseña actual dejará de funcionar, se cerrará su sesión y su cuenta se desbloquea. Al entrar deberá cambiarla.'
+        : 'Escribe su contraseña inicial. Al entrar por primera vez deberá cambiarla.',
+      boton: restablecer ? 'Restablecer' : 'Crear cuenta',
+    });
+    if (password === null) return;
 
     limpiarAvisos();
     boton.disabled = true;
     try {
-      const ruta = URL_CLIENTES + '/' + c.id + '/cuenta' + (tipo === 'restablecer' ? '/restablecer-password' : '');
-      const cuenta = await Sesion.api(ruta, { method: 'POST' });
-      mostrarPassword(c, cuenta);
+      const ruta = URL_CLIENTES + '/' + c.id + '/cuenta' + (restablecer ? '/restablecer-password' : '');
+      const cuenta = await Sesion.api(ruta, { method: 'POST', body: { password } });
+      mostrarPassword(c, cuenta.username, password);
       // Se recarga el detalle para ver el estado de la cuenta, sin borrar la contraseña de la pantalla
       dibujarDetalle(await Sesion.api(URL_CLIENTES + '/' + c.id));
     } catch (error) {
@@ -616,12 +622,12 @@
     }
   }
 
-  function mostrarPassword(cliente, cuenta) {
-    $('pass-usuario').textContent = cuenta.username;
-    $('pass-valor').textContent = cuenta.passwordTemporal;
+  function mostrarPassword(cliente, username, password) {
+    $('pass-usuario').textContent = username;
+    $('pass-valor').textContent = password;
     $('pass-mensaje').value = 'Hola ' + cliente.nombres + ', ya puedes ver tu servicio de internet en '
-      + location.origin + '/login.html\nUsuario: ' + cuenta.username
-      + '\nContraseña temporal: ' + cuenta.passwordTemporal
+      + location.origin + '/login.html\nUsuario: ' + username
+      + '\nContraseña: ' + password
       + '\nAl ingresar te pedirá crear una contraseña nueva.';
     $('panel-password').hidden = false;
     $('panel-password').scrollIntoView({ block: 'start', behavior: 'smooth' });
