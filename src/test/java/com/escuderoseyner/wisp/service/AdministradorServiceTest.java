@@ -5,15 +5,16 @@ import com.escuderoseyner.wisp.model.Rol;
 import com.escuderoseyner.wisp.model.Usuario;
 import com.escuderoseyner.wisp.repository.UsuarioRepository;
 import com.escuderoseyner.wisp.security.ControlIntentosLogin;
-import com.escuderoseyner.wisp.security.GeneradorPasswordTemporal;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,24 +35,25 @@ class AdministradorServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private GeneradorPasswordTemporal generadorPassword;
-
-    @Mock
     private ControlIntentosLogin controlIntentos;
 
     @InjectMocks
     private AdministradorService servicio;
 
-    private Usuario admin(int id, String username, boolean activo) {
+    private Usuario cuenta(int id, String username, Rol rol, boolean activo) {
         Usuario u = new Usuario();
         u.setId(id);
         u.setUsername(username);
         u.setNombreMostrar(username);
-        u.setRol(Rol.ADMIN);
+        u.setRol(rol);
         u.setActivo(activo);
         u.setDebeCambiarPassword(false);
         when(usuarioRepository.findById(id)).thenReturn(Optional.of(u));
         return u;
+    }
+
+    private Usuario admin(int id, String username, boolean activo) {
+        return cuenta(id, username, Rol.ADMIN, activo);
     }
 
     @Test
@@ -87,29 +89,43 @@ class AdministradorServiceTest {
     }
 
     @Test
+    @DisplayName("Desactivar a un operador no depende de cuántos admins quedan")
+    void desactivaOperador() {
+        Usuario operador = cuenta(3, "lucho", Rol.OPERADOR, true);
+
+        assertThat(servicio.desactivar(3, "admin").activo()).isFalse();
+        assertThat(operador.getActivo()).isFalse();
+        verify(usuarioRepository, never()).findActivosPorRolBloqueando(any());
+    }
+
+    @Test
     @DisplayName("No se puede usar esta pantalla para tocar la cuenta de un cliente")
-    void soloAdmins() {
+    void soloPersonal() {
         Usuario cliente = new Usuario();
         cliente.setRol(Rol.CLIENTE);
         when(usuarioRepository.findById(5)).thenReturn(Optional.of(cliente));
 
         assertThatThrownBy(() -> servicio.desactivar(5, "admin")).isInstanceOf(RecursoNoEncontradoException.class);
-        assertThatThrownBy(() -> servicio.restablecerPassword(5, "admin")).isInstanceOf(RecursoNoEncontradoException.class);
+        assertThatThrownBy(() -> servicio.restablecerPassword(5, "Nueva-clave-1", "admin"))
+                .isInstanceOf(RecursoNoEncontradoException.class);
     }
 
     @Test
-    @DisplayName("Restablecer: contraseña temporal, debe cambiarla, se cierran sus sesiones y se desbloquea")
+    @DisplayName("Restablecer: clave escrita por el admin, debe cambiarla, se cierran sus sesiones y se desbloquea")
     void restablecer() {
-        Usuario otro = admin(2, "rosa", true);
-        when(generadorPassword.generar()).thenReturn("Ab3dEf7h");
-        when(passwordEncoder.encode("Ab3dEf7h")).thenReturn("$2a$hash");
+        Usuario otro = cuenta(2, "rosa", Rol.OPERADOR, true);
+        otro.setIntentosFallidos(4);
+        otro.setBloqueadoHasta(LocalDateTime.now().plusMinutes(10));
+        when(passwordEncoder.encode("Nueva-clave-1")).thenReturn("$2a$hash");
 
-        var cuenta = servicio.restablecerPassword(2, "admin");
+        var respuesta = servicio.restablecerPassword(2, "Nueva-clave-1", "admin");
 
-        assertThat(cuenta.passwordTemporal()).isEqualTo("Ab3dEf7h");
+        assertThat(respuesta.username()).isEqualTo("rosa");
         assertThat(otro.getPasswordHash()).isEqualTo("$2a$hash");
         assertThat(otro.getDebeCambiarPassword()).isTrue();
         assertThat(otro.getPasswordCambiadoEn()).isNotNull(); // invalida sus tokens anteriores
+        assertThat(otro.getIntentosFallidos()).isZero();
+        assertThat(otro.getBloqueadoHasta()).isNull();
         verify(controlIntentos).desbloquearCuenta("rosa");
     }
 
@@ -117,23 +133,35 @@ class AdministradorServiceTest {
     @DisplayName("Un admin no restablece su propia contraseña desde aquí")
     void noRestableceLaPropia() {
         admin(1, "admin", true);
-        assertThatThrownBy(() -> servicio.restablecerPassword(1, "ADMIN")).isInstanceOf(ReglaNegocioException.class);
+        assertThatThrownBy(() -> servicio.restablecerPassword(1, "Nueva-clave-1", "ADMIN"))
+                .isInstanceOf(ReglaNegocioException.class);
     }
 
     @Test
-    @DisplayName("Crear: usuario repetido da error; si no, queda con contraseña temporal")
+    @DisplayName("Crear: usuario repetido da error; si no, queda con el rol elegido y debe cambiar la clave")
     void crear() {
         when(usuarioRepository.existsByUsername("rosa")).thenReturn(true);
-        assertThatThrownBy(() -> servicio.crear(new CrearAdministradorRequest("Rosa", " rosa ")))
+        assertThatThrownBy(() -> servicio.crear(new CrearAdministradorRequest("Rosa", " rosa ", Rol.ADMIN, "Clave-segura-1")))
                 .isInstanceOf(ReglaNegocioException.class);
 
         when(usuarioRepository.existsByUsername("lucho")).thenReturn(false);
-        when(generadorPassword.generar()).thenReturn("Xy7kLm2p");
-        when(passwordEncoder.encode("Xy7kLm2p")).thenReturn("$2a$otro");
-        var cuenta = servicio.crear(new CrearAdministradorRequest("Lucho", "lucho"));
+        when(passwordEncoder.encode("Clave-segura-1")).thenReturn("$2a$otro");
+        var respuesta = servicio.crear(new CrearAdministradorRequest("Lucho", "lucho", Rol.OPERADOR, "Clave-segura-1"));
 
-        assertThat(cuenta.username()).isEqualTo("lucho");
-        assertThat(cuenta.passwordTemporal()).isEqualTo("Xy7kLm2p");
-        verify(usuarioRepository).save(any(Usuario.class));
+        assertThat(respuesta.username()).isEqualTo("lucho");
+        ArgumentCaptor<Usuario> guardado = ArgumentCaptor.forClass(Usuario.class);
+        verify(usuarioRepository).save(guardado.capture());
+        assertThat(guardado.getValue().getRol()).isEqualTo(Rol.OPERADOR);
+        assertThat(guardado.getValue().getPasswordHash()).isEqualTo("$2a$otro");
+        assertThat(guardado.getValue().getDebeCambiarPassword()).isTrue();
+        assertThat(guardado.getValue().getCliente()).isNull();
+    }
+
+    @Test
+    @DisplayName("Desde la pestaña Admins no se crean cuentas de cliente")
+    void noCreaClientes() {
+        assertThatThrownBy(() -> servicio.crear(new CrearAdministradorRequest("X", "xx1", Rol.CLIENTE, "Clave-segura-1")))
+                .isInstanceOf(ReglaNegocioException.class);
+        verify(usuarioRepository, never()).save(any());
     }
 }

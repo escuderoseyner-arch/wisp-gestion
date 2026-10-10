@@ -1,6 +1,7 @@
 package com.escuderoseyner.wisp.security;
 
 import com.escuderoseyner.wisp.controller.AdministradorController;
+import com.escuderoseyner.wisp.controller.CajaController;
 import com.escuderoseyner.wisp.controller.ClienteController;
 import com.escuderoseyner.wisp.controller.ColaController;
 import com.escuderoseyner.wisp.controller.MikrotikController;
@@ -12,6 +13,7 @@ import com.escuderoseyner.wisp.controller.TerminalController;
 import com.escuderoseyner.wisp.model.Rol;
 import com.escuderoseyner.wisp.model.Usuario;
 import com.escuderoseyner.wisp.service.AdministradorService;
+import com.escuderoseyner.wisp.service.CajaService;
 import com.escuderoseyner.wisp.service.ClienteService;
 import com.escuderoseyner.wisp.service.ColaService;
 import com.escuderoseyner.wisp.service.MikrotikService;
@@ -36,16 +38,20 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // Prueba las reglas de acceso con tokens JWT REALES (firmados con JwtService y validados por
 // el JwtDecoder de SecurityConfig). Los servicios son simulados: aquí solo importa quién entra.
-@WebMvcTest(controllers = {AdministradorController.class, ClienteController.class, PagoController.class, PlanController.class,
+@WebMvcTest(controllers = {AdministradorController.class, CajaController.class, ClienteController.class, PagoController.class, PlanController.class,
         PortalClienteController.class, RedController.class, ColaController.class, MikrotikController.class,
         TerminalController.class})
 @Import({SecurityConfig.class, RespuestasSeguridad.class, JwtService.class})
@@ -99,6 +105,9 @@ class SeguridadRutasTest {
     @MockitoBean
     private TerminalService terminalService;
 
+    @MockitoBean
+    private CajaService cajaService;
+
     @BeforeEach
     void usuarioVigente() {
         when(usuarioVigenteValidator.validate(any())).thenReturn(OAuth2TokenValidatorResult.success());
@@ -118,6 +127,48 @@ class SeguridadRutasTest {
 
     private String tokenAdmin() {
         return token("admin", Rol.ADMIN, false);
+    }
+
+    private String tokenOperador() {
+        return token("lucho", Rol.OPERADOR, false);
+    }
+
+    @Test
+    @DisplayName("Un OPERADOR ve panel de cobros: clientes, su conexión, pagos y caja")
+    void operadorPuedeVer() throws Exception {
+        String operador = tokenOperador();
+        for (String ruta : new String[]{"/api/admin/clientes", "/api/admin/clientes/2", "/api/admin/clientes/2/cola",
+                "/api/admin/pagos/mes", "/api/admin/pagos/cliente/2", "/api/admin/cajas", "/api/admin/cajas/1",
+                "/api/admin/cajas/1/movimientos"}) {
+            mockMvc.perform(get(ruta).header("Authorization", operador)).andExpect(status().isOk());
+        }
+    }
+
+    @Test
+    @DisplayName("Un OPERADOR registra retiros, pero no edita ni borra nada")
+    void operadorNoEditaNiBorra() throws Exception {
+        String operador = tokenOperador();
+        mockMvc.perform(post("/api/admin/cajas/1/retiros").header("Authorization", operador)
+                        .contentType("application/json")
+                        .content("{\"monto\": 10.00, \"descripcion\": \"Compra de cable\"}"))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(delete("/api/admin/pagos/5").header("Authorization", operador)).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/admin/cajas/1/retiros/7").header("Authorization", operador)).andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/admin/cajas/1/descuento").header("Authorization", operador)
+                .contentType("application/json").content("{}")).andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/admin/clientes/2").header("Authorization", operador)
+                .contentType("application/json").content("{}")).andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/admin/clientes/2/retirar").header("Authorization", operador)).andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/admin/clientes/2/cortar").header("Authorization", operador)).andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/admin/clientes/2/cuenta/restablecer-password").header("Authorization", operador)
+                .contentType("application/json").content("{\"password\": \"Clave-nueva-1\"}")).andExpect(status().isForbidden());
+        for (String ruta : new String[]{"/api/admin/planes", "/api/admin/redes", "/api/admin/administradores",
+                "/api/admin/redes/1/comandos", "/api/admin/redes/1/panel"}) {
+            mockMvc.perform(get(ruta).header("Authorization", operador)).andExpect(status().isForbidden());
+        }
+        verify(cajaService, never()).eliminarRetiro(any(), any());
+        verifyNoInteractions(planService, redService, administradorService, terminalService, cuentaClienteService);
     }
 
     @Test
