@@ -263,99 +263,49 @@ a {
   color: var(--texto);
 }
 
-.nav-enlace[aria-current="page"],
-.nav-enlace.activo {
+.nav-enlace[aria-current="page"] {
   color: var(--primario-texto);
 }
 
-.nav-enlace[aria-current="page"] .icono,
-.nav-enlace.activo .icono {
+.nav-enlace[aria-current="page"] .icono {
   padding: 2px 10px;
   width: 44px;
   background: var(--primario-suave);
   border-radius: 999px;
 }
 
-/* Botón "Más": se ve igual que los enlaces de la barra */
-button.nav-enlace {
-  width: 100%;
-  font-family: inherit;
-  background: none;
-  border: 0;
-  cursor: pointer;
+/* Admin en celular: una sola fila que se desliza de lado. Caben 4 opciones y media,
+   así la última queda cortada y se nota que hay más */
+.nav-deslizable ul {
+  justify-content: flex-start;
+  overflow-x: auto;
+  scrollbar-width: none; /* sin barra de scroll visible */
+  -webkit-overflow-scrolling: touch;
 }
 
-/* En celular solo Inicio, Clientes, Pagos, Caja y "Más"; el resto va en el panel */
-.nav-admin .nav-solo-escritorio {
+.nav-deslizable ul::-webkit-scrollbar {
   display: none;
 }
 
-/* Panel de "Más": sube desde abajo de la pantalla */
-.panel-mas {
-  top: auto;
-  bottom: 0;
-  width: 100%;
-  max-width: 100%;
-  margin: 0;
-  padding: 8px 12px calc(12px + env(safe-area-inset-bottom, 0px));
-  color: var(--texto);
-  background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-bottom: 0;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.2);
+.nav-deslizable li {
+  flex: 0 0 calc((100vw - 8px) / 4.5);
 }
 
-.panel-mas[open] {
-  animation: panel-mas-subir 0.2s ease-out;
-}
-
-.panel-mas::backdrop {
-  background: rgba(20, 24, 27, 0.5);
-}
-
-.panel-mas::before {
+/* Leve degradado en el borde derecho */
+.nav-deslizable::after {
   content: "";
-  display: block;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
   width: 40px;
-  height: 4px;
-  margin: 4px auto 12px;
-  background: var(--borde);
-  border-radius: 999px;
+  background: linear-gradient(to right, transparent, var(--superficie));
+  pointer-events: none;
+  transition: opacity var(--transicion);
 }
 
-.panel-mas ul {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.panel-mas .nav-enlace {
-  flex-direction: row;
-  justify-content: flex-start;
-  gap: 10px;
-  min-height: 56px;
-  padding: 0 14px;
-  font-size: 0.95rem;
-  background: var(--superficie-2);
-}
-
-.panel-mas .nav-enlace[aria-current="page"] {
-  background: var(--primario-suave);
-}
-
-.panel-mas .nav-enlace[aria-current="page"] .icono {
-  width: 24px;
-  padding: 0;
-  background: none;
-}
-
-@keyframes panel-mas-subir {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+.nav-deslizable.al-final::after {
+  opacity: 0;
 }
 
 /* Botón de tema: en celular solo el ícono (el nombre lo lee el lector de pantalla) */
@@ -1512,12 +1462,15 @@ body.con-nav-admin {
     padding-bottom: 0;
   }
 
-  .nav-admin .nav-solo-escritorio {
-    display: block;
+  .nav-deslizable ul {
+    overflow-x: visible;
   }
 
-  .nav-admin .nav-solo-celular,
-  .panel-mas {
+  .nav-deslizable li {
+    flex: 0 0 auto;
+  }
+
+  .nav-deslizable::after {
     display: none;
   }
 

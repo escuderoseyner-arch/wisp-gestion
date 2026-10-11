@@ -21,83 +21,51 @@
   const esAdmin = sesion.datos.rol === 'ADMIN';
 
   const visibles = SECCIONES.filter((seccion) => esAdmin || seccion.operador);
-  // En celular, las secciones que no son del operador van dentro de "Más" (el operador no lo necesita)
-  const enMas = visibles.filter((seccion) => !seccion.operador);
-
-  function crearEnlace(seccion) {
-    const enlace = document.createElement('a');
-    enlace.href = seccion.ruta;
-    enlace.className = 'nav-enlace';
-    if (location.pathname === seccion.ruta) {
-      enlace.setAttribute('aria-current', 'page'); // la página actual se resalta
-    }
-    const texto = document.createElement('span');
-    texto.textContent = seccion.texto;
-    enlace.append(Iconos.crear(seccion.icono), texto);
-    return enlace;
-  }
 
   const nav = document.createElement('nav');
   nav.className = 'nav-admin';
   nav.setAttribute('aria-label', 'Menú principal');
   const lista = document.createElement('ul');
+  let activo = null;
 
   visibles.forEach((seccion) => {
     const item = document.createElement('li');
-    if (enMas.includes(seccion)) {
-      item.className = 'nav-solo-escritorio';
+    const enlace = document.createElement('a');
+    enlace.href = seccion.ruta;
+    enlace.className = 'nav-enlace';
+    if (location.pathname === seccion.ruta) {
+      enlace.setAttribute('aria-current', 'page'); // la página actual se resalta
+      activo = item;
     }
-    item.appendChild(crearEnlace(seccion));
+    const texto = document.createElement('span');
+    texto.textContent = seccion.texto;
+    enlace.append(Iconos.crear(seccion.icono), texto);
+    item.appendChild(enlace);
     lista.appendChild(item);
   });
-
-  if (enMas.length > 0) {
-    lista.appendChild(crearMas());
-  }
 
   nav.appendChild(lista);
   // Entre el nombre de la empresa y el botón de salir
   barra.insertBefore(nav, barra.querySelector('#cerrar-sesion'));
   document.body.classList.add('con-nav-admin');
 
-  // Botón "Más" (solo en celular) que abre un panel desde abajo con el resto de secciones
-  function crearMas() {
-    const panel = document.createElement('dialog');
-    panel.className = 'panel-mas';
-    panel.setAttribute('aria-label', 'Más secciones');
-    const listaMas = document.createElement('ul');
-    enMas.forEach((seccion) => {
-      const item = document.createElement('li');
-      item.appendChild(crearEnlace(seccion));
-      listaMas.appendChild(item);
-    });
-    panel.appendChild(listaMas);
-    // Tocar fuera del panel (en el fondo oscuro) lo cierra
-    panel.addEventListener('click', (evento) => {
-      if (evento.target === panel) panel.close();
-    });
-    document.body.appendChild(panel);
+  // En celular, si hay más de 4 opciones (ADMIN) la barra se desliza de lado; el OPERADOR tiene 4 fijas
+  if (visibles.length > 4) {
+    nav.classList.add('nav-deslizable');
 
-    const boton = document.createElement('button');
-    boton.type = 'button';
-    boton.className = 'nav-enlace';
-    boton.setAttribute('aria-haspopup', 'dialog');
-    if (enMas.some((seccion) => seccion.ruta === location.pathname)) {
-      boton.classList.add('activo'); // la página actual está dentro de "Más"
+    // El degradado de la derecha se quita al llegar al final
+    const marcarFinal = () => {
+      nav.classList.toggle('al-final', lista.scrollLeft + lista.clientWidth >= lista.scrollWidth - 2);
+    };
+    lista.addEventListener('scroll', marcarFinal, { passive: true });
+    window.addEventListener('resize', marcarFinal);
+
+    // La opción de la página actual se desplaza sola hasta quedar a la vista (centrada si se puede)
+    if (activo) {
+      const caja = lista.getBoundingClientRect();
+      const item = activo.getBoundingClientRect();
+      lista.scrollLeft += item.left - caja.left - (caja.width - item.width) / 2;
     }
-    const texto = document.createElement('span');
-    texto.textContent = 'Más';
-    boton.append(Iconos.crear('puntos'), texto);
-    boton.addEventListener('click', () => panel.showModal());
-
-    // Si la pantalla crece a escritorio con el panel abierto, se cierra
-    matchMedia('(min-width: 960px)').addEventListener('change', (evento) => {
-      if (evento.matches && panel.open) panel.close();
-    });
-
-    const item = document.createElement('li');
-    item.className = 'nav-solo-celular';
-    item.appendChild(boton);
-    return item;
+    marcarFinal();
   }
 })();
