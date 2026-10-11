@@ -2,11 +2,18 @@
 // enlaces de WhatsApp y plantilla de recordatorio. No depende de ningún otro script.
 
 const Formato = (() => {
-  const formatoNumero = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // Formato de Perú en todo el sistema, sin depender del idioma del navegador: 1,264.00
+  // ('en-US' da el mismo resultado que es-PE y está en todos los navegadores, aunque traigan pocos idiomas)
+  const formatoNumero = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  // dinero('S/', 79) -> "S/ 79.00" (separador decimal según el idioma del navegador)
-  function dinero(moneda, monto) {
-    return (moneda ? moneda + ' ' : '') + formatoNumero.format(Number(monto));
+  // monto(1264) -> "1,264.00"
+  function monto(valor) {
+    return formatoNumero.format(Number(valor));
+  }
+
+  // dinero('S/', 1264) -> "S/ 1,264.00"
+  function dinero(moneda, valor) {
+    return (moneda ? moneda + ' ' : '') + monto(valor);
   }
 
   // "2026-10" -> "Octubre de 2026"
@@ -100,6 +107,6 @@ const Formato = (() => {
     return new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
   }
 
-  return { dinero, nombreMes, fecha, hoy, mesActual, mesesEnTexto, rellenarPlantilla, enlaceWhatsApp,
+  return { dinero, monto, nombreMes, fecha, hoy, mesActual, mesesEnTexto, rellenarPlantilla, enlaceWhatsApp,
     bytes, velocidad, fechaHora };
 })();

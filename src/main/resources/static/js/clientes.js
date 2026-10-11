@@ -28,8 +28,6 @@
   const cajaError = $('error');
   const vistas = { lista: $('vista-lista'), detalle: $('vista-detalle'), formulario: $('vista-formulario') };
 
-  const formatoPrecio = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
   // Mensaje de éxito para mostrar después de cambiar de vista
   let mensajePendiente = null;
   // Cliente abierto en el detalle (para las acciones)
@@ -513,7 +511,7 @@
     estado.className = 'estado estado-' + cliente.estado.toLowerCase();
     estado.textContent = ETIQUETA_ESTADO[cliente.estado];
 
-    const plan = cliente.plan.nombre + ' · ' + formatoPrecio.format(cliente.plan.precio) + ' / mes'
+    const plan = cliente.plan.nombre + ' · ' + Formato.monto(cliente.plan.precio) + ' / mes'
       + (cliente.plan.activo ? '' : ' (plan desactivado)');
     const filas = [
       ['Celular', cliente.celular],
@@ -696,7 +694,7 @@
     $('boton-cancelar').href = volver;
 
     // Planes activos; al editar se agrega el plan actual aunque esté desactivado
-    const opciones = planes.map((p) => new Option(p.nombre + ' · ' + formatoPrecio.format(p.precio), p.id));
+    const opciones = planes.map((p) => new Option(p.nombre + ' · ' + Formato.monto(p.precio), p.id));
     if (modo === 'editar' && !cliente.plan.activo) {
       opciones.unshift(new Option(cliente.plan.nombre + ' (desactivado, plan actual)', cliente.plan.id));
     }
