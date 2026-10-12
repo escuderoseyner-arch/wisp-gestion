@@ -174,6 +174,19 @@ public class MikrotikService {
         }
     }
 
+    // Para el comando corto de instalación (/tool fetch + /import): el instalador completo, sin marcador.
+    // Token inválido -> 401 (el fetch falla y no se importa nada).
+    @Transactional
+    public String instalador(String token, String ip, String urlDePeticion) {
+        Red red = autenticar(token, ip);
+        try {
+            return scriptRouterOsService.generar(red, token.trim(), urlDePeticion);
+        } catch (ReglaNegocioException e) {
+            log.warn("No se pudo generar la instalación para la red {}: {}", red.getId(), e.getMessage());
+            return ":log error \"wisp-gestion: la web no pudo generar el script (revisa APP_URL_PUBLICA)\"\n";
+        }
+    }
+
     // ---------- Terminal remota ----------
 
     @Transactional

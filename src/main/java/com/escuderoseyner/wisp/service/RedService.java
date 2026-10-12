@@ -111,7 +111,8 @@ public class RedService {
             throw new ReglaNegocioException("Ese token no corresponde a la red \"" + red.getNombre() + "\".");
         }
         String url = scriptRouterOsService.urlBase(urlDePeticion);
-        return new ScriptRedResponse(scriptRouterOsService.generar(red, token, urlDePeticion), url,
+        return new ScriptRedResponse(scriptRouterOsService.generar(red, token, urlDePeticion),
+                scriptRouterOsService.comandoInstalacion(token, urlDePeticion), url,
                 url.startsWith("https://"));
     }
 

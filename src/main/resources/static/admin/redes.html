@@ -158,10 +158,19 @@
       <div id="resultado-script" hidden>
         <p id="aviso-http" class="aviso aviso-error" hidden>La URL no es HTTPS: el router no podrá verificar el
           certificado. Solo sirve para pruebas locales. Configura APP_URL_PUBLICA en Render.</p>
-        <p class="campo-ayuda">Pégalo completo en la terminal del MikroTik (New Terminal en Winbox). Contiene el token: no lo compartas.</p>
+        <h3 class="panel-titulo">Opción 1 (recomendada): comando corto</h3>
+        <p class="campo-ayuda">Pega estas 2 líneas en la terminal del MikroTik (New Terminal en Winbox). El router descarga
+          el script, lo instala con /import y borra el archivo. Contiene el token: no lo compartas.</p>
+        <pre id="texto-comando-corto" class="salida-terminal"></pre>
+        <div class="acciones">
+          <button type="button" id="boton-copiar-comando" class="boton boton-primario"><span data-icono="copiar"></span>Copiar comando</button>
+        </div>
+        <h3 class="panel-titulo">Opción 2: script completo</h3>
+        <p class="campo-ayuda">Si el router no puede descargarlo, pega el script completo en la terminal
+          o súbelo como archivo .rsc y usa /import. Contiene el token: no lo compartas.</p>
         <pre id="texto-script" class="salida-terminal"></pre>
         <div class="acciones">
-          <button type="button" id="boton-copiar-script" class="boton boton-primario"><span data-icono="copiar"></span>Copiar script</button>
+          <button type="button" id="boton-copiar-script" class="boton boton-secundario"><span data-icono="copiar"></span>Copiar script</button>
         </div>
       </div>
     </section>

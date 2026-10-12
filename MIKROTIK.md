@@ -131,8 +131,12 @@ Si falta un tipo o la cola padre, el script **no** modifica la cola y la acción
 2. Instala `wisp-sync` de una de estas dos formas:
    - **Por el puente (recomendado):** la red nueva queda con la instalación pendiente; el puente la
      descarga en su próxima consulta (máx. 2 min).
-   - **A mano:** Redes → **Script** → escribe el token → **Generar script** → cópialo y pégalo
-     completo en *New Terminal* de Winbox.
+   - **Comando corto:** Redes → **Script** → escribe el token → **Generar script** → copia las 2 líneas de
+     la *Opción 1* y pégalas en *New Terminal* de Winbox. El router descarga el instalador
+     (`GET /api/mikrotik/instalar` con el token en el header), lo ejecuta con `/import` y borra el archivo.
+   - **Script completo:** la *Opción 2* de la misma pantalla. Se puede pegar en la terminal o subir como
+     archivo `.rsc` y usar `/import file-name=...`. Cada comando ocupa una sola línea (como `/export`):
+     el código de `wisp-sync` va escapado dentro de `source="..."`.
 3. Revisa el log del router (`/log print where message~"wisp"`). Debe decir
    `wisp-gestion: sincronizacion instalada`.
 4. Al primer reporte, la red queda como "Instalada". En **Colas** verás qué coincide y qué no.

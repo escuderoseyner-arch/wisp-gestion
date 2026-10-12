@@ -244,6 +244,15 @@ class SeguridadRutasTest {
     }
 
     @Test
+    @DisplayName("Comando corto de instalación: con token inválido responde 401 vacío (no se importa nada)")
+    void instalarTokenInvalido() throws Exception {
+        when(mikrotikService.instalador(any(), any(), any())).thenThrow(new TokenRedInvalidoException());
+        mockMvc.perform(get("/api/mikrotik/instalar").header("X-Red-Token", "token-que-no-existe-0000"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().string(""));
+    }
+
+    @Test
     @DisplayName("Bootstrap del puente: sin login, y con token inválido o nada pendiente responde 200 vacío")
     void bootstrapVacio() throws Exception {
         when(mikrotikService.bootstrap(any(), any(), any())).thenReturn("");

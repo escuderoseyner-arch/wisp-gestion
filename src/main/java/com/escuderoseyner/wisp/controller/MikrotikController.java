@@ -47,6 +47,14 @@ public class MikrotikController {
                 ServletUriComponentsBuilder.fromCurrentContextPath().toUriString());
     }
 
+    // Para el comando corto de instalación: el MikroTik lo descarga a un archivo y lo importa con /import
+    @GetMapping("/instalar")
+    public String instalar(@RequestHeader(value = HEADER_TOKEN, required = false) String token,
+                           HttpServletRequest http) {
+        return mikrotikService.instalador(token, http.getRemoteAddr(),
+                ServletUriComponentsBuilder.fromCurrentContextPath().toUriString());
+    }
+
     @GetMapping("/acciones")
     public String acciones(@RequestHeader(value = HEADER_TOKEN, required = false) String token,
                            HttpServletRequest http) {

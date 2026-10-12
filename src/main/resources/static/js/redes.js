@@ -34,7 +34,8 @@
   $('boton-copiar').addEventListener('click', copiarToken);
   $('boton-ocultar-token').addEventListener('click', ocultarToken);
   $('form-script').addEventListener('submit', generarScript);
-  $('boton-copiar-script').addEventListener('click', copiarScript);
+  $('boton-copiar-script').addEventListener('click', () => copiar('texto-script', 'Script copiado. Pégalo en la terminal del MikroTik.'));
+  $('boton-copiar-comando').addEventListener('click', () => copiar('texto-comando-corto', 'Comando copiado. Pégalo en la terminal del MikroTik.'));
   $('boton-reinstalar').addEventListener('click', marcarReinstalacion);
   $('boton-cerrar-script').addEventListener('click', cerrarScript);
   $('boton-script-token').addEventListener('click', () => {
@@ -176,6 +177,7 @@
   function ocultarResultadoScript() {
     $('resultado-script').hidden = true;
     $('texto-script').textContent = '';
+    $('texto-comando-corto').textContent = '';
   }
 
   async function generarScript(evento) {
@@ -195,6 +197,7 @@
     try {
       const respuesta = await Sesion.api(URL_REDES + '/' + red.id + '/script', { method: 'POST', body: { token } });
       $('texto-script').textContent = respuesta.script;
+      $('texto-comando-corto').textContent = respuesta.comandoCorto;
       $('aviso-http').hidden = respuesta.https;
       $('resultado-script').hidden = false;
     } catch (error) {
@@ -204,10 +207,10 @@
     }
   }
 
-  async function copiarScript() {
+  async function copiar(idTexto, mensaje) {
     try {
-      await navigator.clipboard.writeText($('texto-script').textContent);
-      Sesion.mostrarMensaje(cajaExito, 'Script copiado. Pégalo en la terminal del MikroTik.');
+      await navigator.clipboard.writeText($(idTexto).textContent);
+      Sesion.mostrarMensaje(cajaExito, mensaje);
     } catch {
       Sesion.mostrarMensaje(cajaExito, 'No se pudo copiar automáticamente: selecciona el texto y cópialo a mano.');
     }
