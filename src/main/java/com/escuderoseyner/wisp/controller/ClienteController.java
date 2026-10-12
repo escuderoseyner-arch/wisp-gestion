@@ -38,13 +38,14 @@ public class ClienteController {
         this.cuentaClienteService = cuentaClienteService;
     }
 
-    // GET /api/admin/clientes?estado=RETIRADO&zona=Zona Norte&q=maría
-    // Sin "estado" devuelve solo ACTIVO y SUSPENDIDO
+    // GET /api/admin/clientes?estado=RETIRADO&zona=Zona Norte&q=maría&redId=1
+    // Sin "estado" devuelve solo ACTIVO y SUSPENDIDO. Sin "redId", todas las redes que puede ver.
     @GetMapping
     public List<ClienteResumenResponse> listar(@RequestParam(required = false) EstadoCliente estado,
                                                @RequestParam(required = false) String zona,
-                                               @RequestParam(required = false) String q) {
-        return clienteService.listar(estado, zona, q);
+                                               @RequestParam(required = false) String q,
+                                               @RequestParam(required = false) Integer redId) {
+        return clienteService.listar(estado, zona, q, redId);
     }
 
     @GetMapping("/zonas")
@@ -52,9 +53,10 @@ public class ClienteController {
         return clienteService.zonas();
     }
 
+    // Con el prefijo de la red: GET /api/admin/clientes/siguiente-codigo?redId=2 -> "CP-10"
     @GetMapping("/siguiente-codigo")
-    public SiguienteCodigoResponse siguienteCodigo() {
-        return clienteService.siguienteCodigo();
+    public SiguienteCodigoResponse siguienteCodigo(@RequestParam(required = false) Integer redId) {
+        return clienteService.siguienteCodigo(redId);
     }
 
     @GetMapping("/{id}")

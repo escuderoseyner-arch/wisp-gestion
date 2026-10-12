@@ -20,13 +20,18 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
     @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.cliente WHERE u.username = :username")
     Optional<Usuario> findConClienteByUsername(String username);
 
+    // Con sus redes asignadas (OPERADOR)
+    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.redes WHERE u.username = :username")
+    Optional<Usuario> findConRedesByUsername(String username);
+
     // Para "¿Olvidaste tu contraseña?"
     Optional<Usuario> findByEmail(String email);
 
     // Para saber si hay que crear el admin inicial al arrancar
     boolean existsByRol(Rol rol);
 
-    // Lista del personal (administradores y operadores)
+    // Lista del personal (administradores y operadores), con las redes de cada uno
+    @Query("SELECT DISTINCT u FROM Usuario u LEFT JOIN FETCH u.redes WHERE u.rol IN :roles ORDER BY u.nombreMostrar")
     List<Usuario> findByRolInOrderByNombreMostrarAsc(Collection<Rol> roles);
 
     // Admins activos, BLOQUEANDO esas filas hasta que termine la transacción (SELECT ... FOR UPDATE).

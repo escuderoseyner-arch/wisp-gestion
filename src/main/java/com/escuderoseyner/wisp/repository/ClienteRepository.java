@@ -75,6 +75,14 @@ public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
 
     long countByRedIdAndEstadoNot(Integer redId, EstadoCliente estado);
 
+    // Clientes vigentes con este plan que NO son de la red indicada (para cambiar la red de un plan)
+    @Query("""
+            SELECT COUNT(c) FROM Cliente c LEFT JOIN c.red r
+            WHERE c.plan.id = :planId AND c.estado <> com.escuderoseyner.wisp.model.EstadoCliente.RETIRADO
+              AND (r IS NULL OR r.id <> :redId)
+            """)
+    long contarVigentesConPlanFueraDeRed(Integer planId, Integer redId);
+
     // Clientes vigentes de una red, con su plan (para calcular sus colas)
     @Query("""
             SELECT c FROM Cliente c JOIN FETCH c.plan

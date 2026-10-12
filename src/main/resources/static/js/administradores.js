@@ -20,12 +20,16 @@
   $('boton-copiar').addEventListener('click', copiar);
   $('boton-ocultar-password').addEventListener('click', ocultarPassword);
   form.addEventListener('submit', crear);
+  form.rol.addEventListener('change', mostrarRedesSegunRol);
+
+  let redes = []; // todas las redes, para las casillas de los operadores
 
   cargar();
 
   async function cargar() {
     try {
-      const admins = await Sesion.api(URL_ADMINS);
+      const [admins, todas] = await Promise.all([Sesion.api(URL_ADMINS), Sesion.api('/api/admin/redes')]);
+      redes = todas;
       $('lista-admins').replaceChildren(...admins.map(crearTarjeta));
     } catch (error) {
       Sesion.mostrarError(cajaError, error);
@@ -61,6 +65,16 @@
 
     item.append(cabecera, usuario, acceso);
 
+    // Redes del operador (el administrador ve todas)
+    if (admin.rol === 'OPERADOR') {
+      const textoRedes = document.createElement('p');
+      textoRedes.className = 'campo-ayuda';
+      textoRedes.textContent = admin.redes.length
+        ? 'Redes: ' + admin.redes.map((r) => r.nombre).join(', ')
+        : 'Sin redes asignadas: no ve ningún cliente.';
+      item.appendChild(textoRedes);
+    }
+
     // Sobre su propia cuenta, un admin no puede desactivarse ni restablecerse
     if (admin.esUstedMismo) {
       const nota = document.createElement('p');
@@ -75,6 +89,9 @@
 
     const acciones = document.createElement('div');
     acciones.className = 'tarjeta-plan-acciones';
+    if (admin.rol === 'OPERADOR') {
+      acciones.append(boton('Redes', 'router', 'boton-secundario', () => editarRedes(admin, item)));
+    }
     if (admin.activo) {
       acciones.append(
         boton('Restablecer contraseña', 'candado', 'boton-secundario', (b) => restablecer(admin, b)),
@@ -84,6 +101,61 @@
     }
     item.appendChild(acciones);
     return item;
+  }
+
+  // Una casilla por red; marcadas las de "elegidas" (ids)
+  function crearCasillas(contenedor, elegidas, prefijoId) {
+    contenedor.replaceChildren(...redes.map((r) => {
+      const etiqueta = document.createElement('label');
+      etiqueta.className = 'check-linea';
+      const casilla = document.createElement('input');
+      casilla.type = 'checkbox';
+      casilla.value = r.id;
+      casilla.id = prefijoId + r.id;
+      casilla.checked = elegidas.includes(r.id);
+      const texto = document.createElement('span');
+      texto.textContent = r.nombre;
+      etiqueta.append(casilla, texto);
+      return etiqueta;
+    }));
+    if (redes.length === 0) {
+      const vacio = document.createElement('p');
+      vacio.className = 'campo-ayuda';
+      vacio.textContent = 'Aún no hay redes registradas (pantalla Redes).';
+      contenedor.appendChild(vacio);
+    }
+  }
+
+  function marcadas(contenedor) {
+    return [...contenedor.querySelectorAll('input[type=checkbox]:checked')].map((c) => Number(c.value));
+  }
+
+  // Editor de redes dentro de la tarjeta del operador
+  function editarRedes(admin, item) {
+    if (item.querySelector('.editor-redes')) return; // ya está abierto
+    const editor = document.createElement('fieldset');
+    editor.className = 'campo grupo-redes editor-redes';
+    const leyenda = document.createElement('legend');
+    leyenda.textContent = 'Redes que puede ver ' + admin.nombreMostrar;
+    const casillas = document.createElement('div');
+    casillas.className = 'casillas-redes';
+    crearCasillas(casillas, admin.redes.map((r) => r.id), 'red-' + admin.id + '-');
+    const acciones = document.createElement('div');
+    acciones.className = 'tarjeta-plan-acciones';
+    acciones.append(
+      boton('Guardar redes', 'check', 'boton-primario', (b) => accion(b, async () => {
+        await Sesion.api(URL_ADMINS + '/' + admin.id + '/redes', { method: 'PUT', body: { redIds: marcadas(casillas) } });
+        Sesion.mostrarMensaje(cajaExito, 'Redes de ' + admin.nombreMostrar + ' actualizadas.');
+        await cargar();
+      })),
+      boton('Cancelar', 'atras', 'boton-secundario', () => editor.remove()));
+    editor.append(leyenda, casillas, acciones);
+    item.appendChild(editor);
+  }
+
+  // Las casillas de redes solo aplican al operador
+  function mostrarRedesSegunRol() {
+    $('grupo-redes-nuevo').hidden = form.rol.value !== 'OPERADOR';
   }
 
   function boton(texto, icono, estilo, alPulsar) {
@@ -164,6 +236,8 @@
     Sesion.ocultar($('error-formulario'));
     form.reset();
     campoPassword.reiniciar();
+    crearCasillas($('redes-nuevo'), [], 'red-nuevo-');
+    mostrarRedesSegunRol();
     $('panel-formulario').hidden = false;
     $('boton-nuevo').hidden = true;
     form.nombreMostrar.focus();
@@ -185,6 +259,7 @@
       username: form.username.value.trim(),
       rol: form.rol.value,
       password: form.password.value,
+      redIds: form.rol.value === 'OPERADOR' ? marcadas($('redes-nuevo')) : [],
     };
 
     const problemas = [];

@@ -6,6 +6,8 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "usuarios")
@@ -48,6 +50,13 @@ public class Usuario {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cliente_id", unique = true)
     private Cliente cliente;
+
+    // Redes que ve un OPERADOR (tabla usuario_redes, script 008). El ADMIN ve todas sin necesitarla.
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "usuario_redes",
+            joinColumns = @JoinColumn(name = "usuario_id"),
+            inverseJoinColumns = @JoinColumn(name = "red_id"))
+    private Set<Red> redes = new HashSet<>();
 
     @Column(name = "nombre_mostrar", nullable = false, length = 100)
     private String nombreMostrar;

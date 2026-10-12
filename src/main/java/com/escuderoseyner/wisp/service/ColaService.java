@@ -16,6 +16,7 @@ import com.escuderoseyner.wisp.repository.ColaRepository;
 import com.escuderoseyner.wisp.repository.ConsumoMensualRepository;
 import com.escuderoseyner.wisp.repository.RedRepository;
 import com.escuderoseyner.wisp.repository.UsuarioRepository;
+import com.escuderoseyner.wisp.security.AlcanceRedes;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,11 +38,13 @@ public class ColaService {
     private final SincronizacionService sincronizacionService;
     private final ConsumoMensualRepository consumoMensualRepository;
     private final RedService redService;
+    private final AlcanceRedes alcanceRedes;
 
     public ColaService(ColaRepository colaRepository, AccionColaRepository accionColaRepository,
                        RedRepository redRepository, ClienteRepository clienteRepository,
                        UsuarioRepository usuarioRepository, SincronizacionService sincronizacionService,
-                       ConsumoMensualRepository consumoMensualRepository, RedService redService) {
+                       ConsumoMensualRepository consumoMensualRepository, RedService redService,
+                       AlcanceRedes alcanceRedes) {
         this.colaRepository = colaRepository;
         this.accionColaRepository = accionColaRepository;
         this.redRepository = redRepository;
@@ -50,6 +53,7 @@ public class ColaService {
         this.sincronizacionService = sincronizacionService;
         this.consumoMensualRepository = consumoMensualRepository;
         this.redService = redService;
+        this.alcanceRedes = alcanceRedes;
     }
 
     @Transactional
@@ -198,9 +202,12 @@ public class ColaService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe una red con el id " + id + "."));
     }
 
+    // 403 si el cliente es de una red que el usuario no tiene asignada (estado de conexión del operador)
     private Cliente buscarCliente(Integer id) {
-        return clienteRepository.findById(id)
+        Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe un cliente con el id " + id + "."));
+        alcanceRedes.actual().verificar(cliente);
+        return cliente;
     }
 
     private Usuario admin(String username) {

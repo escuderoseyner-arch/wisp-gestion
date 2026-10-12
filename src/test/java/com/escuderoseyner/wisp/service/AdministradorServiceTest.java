@@ -37,6 +37,9 @@ class AdministradorServiceTest {
     @Mock
     private ControlIntentosLogin controlIntentos;
 
+    @Mock
+    private com.escuderoseyner.wisp.repository.RedRepository redRepository;
+
     @InjectMocks
     private AdministradorService servicio;
 
@@ -141,12 +144,12 @@ class AdministradorServiceTest {
     @DisplayName("Crear: usuario repetido da error; si no, queda con el rol elegido y debe cambiar la clave")
     void crear() {
         when(usuarioRepository.existsByUsername("rosa")).thenReturn(true);
-        assertThatThrownBy(() -> servicio.crear(new CrearAdministradorRequest("Rosa", " rosa ", Rol.ADMIN, "Clave-segura-1")))
+        assertThatThrownBy(() -> servicio.crear(new CrearAdministradorRequest("Rosa", " rosa ", Rol.ADMIN, "Clave-segura-1", null)))
                 .isInstanceOf(ReglaNegocioException.class);
 
         when(usuarioRepository.existsByUsername("lucho")).thenReturn(false);
         when(passwordEncoder.encode("Clave-segura-1")).thenReturn("$2a$otro");
-        var respuesta = servicio.crear(new CrearAdministradorRequest("Lucho", "lucho", Rol.OPERADOR, "Clave-segura-1"));
+        var respuesta = servicio.crear(new CrearAdministradorRequest("Lucho", "lucho", Rol.OPERADOR, "Clave-segura-1", null));
 
         assertThat(respuesta.username()).isEqualTo("lucho");
         ArgumentCaptor<Usuario> guardado = ArgumentCaptor.forClass(Usuario.class);
@@ -160,7 +163,7 @@ class AdministradorServiceTest {
     @Test
     @DisplayName("Desde la pestaña Admins no se crean cuentas de cliente")
     void noCreaClientes() {
-        assertThatThrownBy(() -> servicio.crear(new CrearAdministradorRequest("X", "xx1", Rol.CLIENTE, "Clave-segura-1")))
+        assertThatThrownBy(() -> servicio.crear(new CrearAdministradorRequest("X", "xx1", Rol.CLIENTE, "Clave-segura-1", null)))
                 .isInstanceOf(ReglaNegocioException.class);
         verify(usuarioRepository, never()).save(any());
     }

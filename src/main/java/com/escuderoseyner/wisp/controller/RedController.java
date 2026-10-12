@@ -5,6 +5,7 @@ import com.escuderoseyner.wisp.dto.CrearRedRequest;
 import com.escuderoseyner.wisp.dto.GenerarScriptRequest;
 import com.escuderoseyner.wisp.dto.RedRequest;
 import com.escuderoseyner.wisp.dto.RedResponse;
+import com.escuderoseyner.wisp.dto.RedVisibleResponse;
 import com.escuderoseyner.wisp.dto.ScriptRedResponse;
 import com.escuderoseyner.wisp.dto.TokenRedResponse;
 import com.escuderoseyner.wisp.service.RedService;
@@ -36,6 +37,12 @@ public class RedController {
     @GetMapping
     public List<RedResponse> listar() {
         return redService.listar();
+    }
+
+    // Para el selector de red (ADMIN y OPERADOR, ver SecurityConfig): solo las redes que puede ver
+    @GetMapping("/visibles")
+    public List<RedVisibleResponse> visibles() {
+        return redService.visibles();
     }
 
     @GetMapping("/{id}")

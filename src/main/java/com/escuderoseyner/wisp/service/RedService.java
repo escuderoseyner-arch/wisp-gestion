@@ -4,6 +4,7 @@ import com.escuderoseyner.wisp.dto.CrearRedRequest;
 import com.escuderoseyner.wisp.dto.DatosRed;
 import com.escuderoseyner.wisp.dto.RedRequest;
 import com.escuderoseyner.wisp.dto.RedResponse;
+import com.escuderoseyner.wisp.dto.RedVisibleResponse;
 import com.escuderoseyner.wisp.dto.ScriptRedResponse;
 import com.escuderoseyner.wisp.dto.TokenRedResponse;
 import com.escuderoseyner.wisp.model.EstadoCliente;
@@ -11,6 +12,7 @@ import com.escuderoseyner.wisp.model.MotivoAccion;
 import com.escuderoseyner.wisp.model.Red;
 import com.escuderoseyner.wisp.repository.ClienteRepository;
 import com.escuderoseyner.wisp.repository.RedRepository;
+import com.escuderoseyner.wisp.security.AlcanceRedes;
 import com.escuderoseyner.wisp.security.TokenRed;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,14 +38,28 @@ public class RedService {
     private final TokenRed tokenRed;
     private final SincronizacionService sincronizacionService;
     private final ScriptRouterOsService scriptRouterOsService;
+    private final AlcanceRedes alcanceRedes;
 
     public RedService(RedRepository redRepository, ClienteRepository clienteRepository, TokenRed tokenRed,
-                      SincronizacionService sincronizacionService, ScriptRouterOsService scriptRouterOsService) {
+                      SincronizacionService sincronizacionService, ScriptRouterOsService scriptRouterOsService,
+                      AlcanceRedes alcanceRedes) {
         this.redRepository = redRepository;
         this.clienteRepository = clienteRepository;
         this.tokenRed = tokenRed;
         this.sincronizacionService = sincronizacionService;
         this.scriptRouterOsService = scriptRouterOsService;
+        this.alcanceRedes = alcanceRedes;
+    }
+
+    // Redes que puede ver el usuario actual (para el selector "Todas las redes / ..."): el ADMIN todas,
+    // el OPERADOR solo las suyas. Solo id, nombre y prefijo: nada del MikroTik.
+    @Transactional(readOnly = true)
+    public List<RedVisibleResponse> visibles() {
+        Alcance alcance = alcanceRedes.actual();
+        List<Red> redes = alcance.todas() ? redRepository.findAllByOrderByNombreAsc()
+                : alcance.redIds().isEmpty() ? List.of()
+                : redRepository.findByIdInOrderByNombreAsc(alcance.redIds());
+        return redes.stream().map(r -> new RedVisibleResponse(r.getId(), r.getNombre(), r.getPrefijoCodigo())).toList();
     }
 
     @Transactional(readOnly = true)
@@ -160,6 +176,13 @@ public class RedService {
             problemas.add("Ya existe una red con el nombre \"" + nombre + "\".");
         }
 
+        String prefijo = datos.prefijoCodigo() == null ? null : datos.prefijoCodigo().trim().toUpperCase(Locale.ROOT);
+        if (prefijo != null && (idExcluir == null
+                ? redRepository.existsByPrefijoCodigo(prefijo)
+                : redRepository.existsByPrefijoCodigoAndIdNot(prefijo, idExcluir))) {
+            problemas.add("Otra red ya usa el prefijo " + prefijo + " para sus códigos.");
+        }
+
         String colaPadre = limpiar(datos.colaPadre());
         if (colaPadre != null && !FORMATO_COLA_ROUTER.matcher(colaPadre).matches()) {
             problemas.add("La cola padre solo puede tener letras, números, espacios, punto, guion y guion bajo.");
@@ -195,6 +218,7 @@ public class RedService {
         }
 
         red.setNombre(nombre);
+        red.setPrefijoCodigo(prefijo);
         red.setColaPadre(colaPadre);
         red.setColasProtegidas(protegidas.isEmpty() ? null : String.join(",", protegidas));
         red.setIntervaloSegundos(datos.intervaloSegundos());
@@ -225,7 +249,7 @@ public class RedService {
     }
 
     private RedResponse aResponse(Red red) {
-        return new RedResponse(red.getId(), red.getNombre(), red.getColaPadre(),
+        return new RedResponse(red.getId(), red.getNombre(), red.getPrefijoCodigo(), red.getColaPadre(),
                 separarProtegidas(red.getColasProtegidas()), red.getIntervaloSegundos(), red.getModo(),
                 red.getInstalacionPendiente(), red.getUltimaConexion(), red.getUltimoReporte(), red.getUltimaIp(),
                 clienteRepository.countByRedIdAndEstadoNot(red.getId(), EstadoCliente.RETIRADO));

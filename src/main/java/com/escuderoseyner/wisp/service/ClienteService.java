@@ -15,6 +15,7 @@ import com.escuderoseyner.wisp.model.Usuario;
 import com.escuderoseyner.wisp.repository.ClienteRepository;
 import com.escuderoseyner.wisp.repository.RedRepository;
 import com.escuderoseyner.wisp.repository.UsuarioRepository;
+import com.escuderoseyner.wisp.security.AlcanceRedes;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +33,9 @@ import java.util.regex.Pattern;
 @Service
 public class ClienteService {
 
-    private static final Pattern FORMATO_CODIGO = Pattern.compile("^C-(\\d{2,8})$");
+    // Prefijo de la red (C-, CP-, ...) y número. Ej: C-07, CP-10
+    private static final Pattern FORMATO_CODIGO = Pattern.compile("^([A-Z]{1,4}-)(\\d{2,8})$");
+    private static final String PREFIJO_SIN_RED = "C-";
     private static final Pattern FORMATO_CELULAR = Pattern.compile("^9\\d{8}$");
     // Cuatro números de 0 a 255 separados por puntos, sin ceros a la izquierda
     private static final Pattern FORMATO_IPV4 = Pattern.compile(
@@ -44,10 +47,11 @@ public class ClienteService {
     public static final List<EstadoCliente> VIGENTES = List.of(EstadoCliente.ACTIVO, EstadoCliente.SUSPENDIDO);
     private static final int MAX_LARGO_BUSQUEDA = 100;
 
-    // Orden numérico del código: C-2, C-10, C-100 (como texto, C-100 iría antes que C-2).
+    // Por prefijo y luego número: C-2, C-10, C-100, CP-01 (como texto, C-100 iría antes que C-2).
     // Público porque PagoService ordena igual la lista del mes.
     public static final Comparator<Cliente> POR_CODIGO =
-            Comparator.comparingLong((Cliente c) -> numeroDeCodigo(c.getCodigo()))
+            Comparator.comparing((Cliente c) -> prefijoDeCodigo(c.getCodigo()))
+                    .thenComparingLong(c -> numeroDeCodigo(c.getCodigo()))
                     .thenComparing(Cliente::getCodigo)
                     .thenComparing(Cliente::getId);
 
@@ -56,22 +60,25 @@ public class ClienteService {
     private final PlanService planService;
     private final RedRepository redRepository;
     private final SincronizacionService sincronizacionService;
+    private final AlcanceRedes alcanceRedes;
 
     public ClienteService(ClienteRepository clienteRepository, UsuarioRepository usuarioRepository,
                           PlanService planService, RedRepository redRepository,
-                          SincronizacionService sincronizacionService) {
+                          SincronizacionService sincronizacionService, AlcanceRedes alcanceRedes) {
         this.clienteRepository = clienteRepository;
         this.usuarioRepository = usuarioRepository;
         this.planService = planService;
         this.redRepository = redRepository;
         this.sincronizacionService = sincronizacionService;
+        this.alcanceRedes = alcanceRedes;
     }
 
     // ---------- Consultas ----------
 
-    // Sin estado: solo vigentes (ACTIVO y SUSPENDIDO)
+    // Sin estado: solo vigentes (ACTIVO y SUSPENDIDO). redId null = todas las redes que puede ver.
     @Transactional(readOnly = true)
-    public List<ClienteResumenResponse> listar(EstadoCliente estado, String zona, String busqueda) {
+    public List<ClienteResumenResponse> listar(EstadoCliente estado, String zona, String busqueda, Integer redId) {
+        Alcance.FiltroRed filtro = alcanceRedes.actual().filtro(redId);
         List<EstadoCliente> estados = estado != null ? List.of(estado) : VIGENTES;
 
         String patron = null;
@@ -84,32 +91,54 @@ public class ClienteService {
         }
 
         return clienteRepository.buscar(estados, limpiarTexto(zona), patron).stream()
+                .filter(filtro::incluye)
                 .sorted(POR_CODIGO)
                 .map(this::aResumen)
                 .toList();
     }
 
+    // Zonas de los clientes que puede ver (un operador no ve las zonas de otras redes)
     @Transactional(readOnly = true)
     public List<String> zonas() {
-        return clienteRepository.findZonas();
+        Alcance alcance = alcanceRedes.actual();
+        if (alcance.todas()) {
+            return clienteRepository.findZonas();
+        }
+        return clienteRepository.findAll().stream()
+                .filter(alcance::puedeVer)
+                .map(Cliente::getZona)
+                .filter(zona -> zona != null)
+                .distinct()
+                .sorted()
+                .toList();
     }
 
-    // El número más alto usado alguna vez + 1. No reutiliza códigos de retirados:
-    // para darle un código antiguo a otra persona está "reasignar código".
+    // Con el prefijo de la red (sin red: "C-"). El número más alto usado alguna vez con ese prefijo + 1.
+    // No reutiliza códigos de retirados: para darle un código antiguo a otra persona está "reasignar código".
     @Transactional(readOnly = true)
-    public SiguienteCodigoResponse siguienteCodigo() {
+    public SiguienteCodigoResponse siguienteCodigo(Integer redId) {
+        String prefijo = PREFIJO_SIN_RED;
+        if (redId != null) {
+            prefijo = redRepository.findById(redId)
+                    .orElseThrow(() -> new RecursoNoEncontradoException("No existe una red con el id " + redId + "."))
+                    .getPrefijoCodigo();
+        }
+        String buscado = prefijo;
         long mayor = clienteRepository.findAllCodigos().stream()
                 .map(FORMATO_CODIGO::matcher)
-                .filter(Matcher::matches)
-                .mapToLong(m -> Long.parseLong(m.group(1)))
+                .filter(m -> m.matches() && m.group(1).equals(buscado))
+                .mapToLong(m -> Long.parseLong(m.group(2)))
                 .max()
                 .orElse(0);
-        return new SiguienteCodigoResponse(String.format("C-%02d", mayor + 1));
+        return new SiguienteCodigoResponse(String.format("%s%02d", prefijo, mayor + 1));
     }
 
+    // 403 si el cliente es de una red que el usuario no tiene asignada
     @Transactional(readOnly = true)
     public ClienteDetalleResponse detalle(Integer id) {
-        return aDetalle(buscar(id));
+        Cliente cliente = buscar(id);
+        alcanceRedes.actual().verificar(cliente);
+        return aDetalle(cliente);
     }
 
     // ---------- Crear y editar ----------
@@ -117,7 +146,7 @@ public class ClienteService {
     @Transactional
     public ClienteDetalleResponse crear(ClienteRequest request) {
         Cliente cliente = new Cliente();
-        validarYAplicar(cliente, request.codigo(), request, null, null, new ArrayList<>());
+        validarYAplicar(cliente, request.codigo(), request, null, null, null, new ArrayList<>());
         clienteRepository.save(cliente);
         actualizarColas(cliente);
         return aDetalle(cliente, Optional.empty());
@@ -128,7 +157,8 @@ public class ClienteService {
         Cliente cliente = buscarVigente(id);
         Optional<Usuario> cuenta = usuarioRepository.findByClienteId(id);
 
-        validarYAplicar(cliente, request.codigo(), request, id, cliente.getPlan(), new ArrayList<>());
+        validarYAplicar(cliente, request.codigo(), request, id, cliente.getPlan(), cliente.getCodigo(),
+                new ArrayList<>());
         actualizarColas(cliente);
 
         // El usuario de acceso NO cambia con el celular: se cambia aparte ("Cambiar usuario")
@@ -175,7 +205,8 @@ public class ClienteService {
 
         // Primero se valida la persona nueva. La IP del anterior cuenta como libre porque se va a retirar.
         Cliente nuevo = new Cliente();
-        validarYAplicar(nuevo, anterior.getCodigo(), request, anterior.getId(), null, new ArrayList<>());
+        validarYAplicar(nuevo, anterior.getCodigo(), request, anterior.getId(), null, anterior.getCodigo(),
+                new ArrayList<>());
 
         marcarRetirado(anterior);
         // flush: guarda YA el retiro, para que MySQL libere codigo_vigente antes de insertar
@@ -192,12 +223,14 @@ public class ClienteService {
 
     // Revisa todo y junta TODOS los problemas antes de avisar, para corregirlos de una vez.
     // idExcluir: el propio cliente al editar (o el que se retira al reasignar).
-    // planActual: al editar, conservar el mismo plan está permitido aunque esté desactivado.
+    // planActual: al editar, conservar el mismo plan está permitido aunque esté desactivado o sea de otra red.
+    // codigoActual: al editar o reasignar, conservar el código está permitido aunque no tenga el prefijo de su red.
     private void validarYAplicar(Cliente cliente, String codigoRecibido, DatosCliente datos,
-                                 Integer idExcluir, Plan planActual, List<String> problemas) {
+                                 Integer idExcluir, Plan planActual, String codigoActual, List<String> problemas) {
         String codigo = codigoRecibido == null ? "" : codigoRecibido.trim().toUpperCase(Locale.ROOT);
-        if (!FORMATO_CODIGO.matcher(codigo).matches()) {
-            problemas.add("El código debe tener el formato C-NN (ej: C-07).");
+        boolean formatoOk = FORMATO_CODIGO.matcher(codigo).matches();
+        if (!formatoOk) {
+            problemas.add("El código debe tener el formato PREFIJO-NN (ej: C-07 o CP-10).");
         } else if (codigoEnUso(codigo, idExcluir)) {
             problemas.add("El código " + codigo + " ya lo tiene otro cliente vigente.");
         }
@@ -225,7 +258,8 @@ public class ClienteService {
             problemas.add(e.getMessage());
         }
 
-        // Red (MikroTik) y nombre de su cola. Sin nombre, la cola se llama como el código.
+        // Red (negocio y MikroTik) y nombre de su cola. Sin nombre, la cola se llama como el código.
+        // Sin IP también puede tener red: cuenta para esa red, pero no tiene cola en el MikroTik hasta tener IP.
         Red red = null;
         String nombreCola = null;
         if (datos.redId() != null) {
@@ -233,8 +267,9 @@ public class ClienteService {
             if (red == null) {
                 problemas.add("No existe la red elegida.");
             } else {
-                if (ip == null) {
-                    problemas.add("Para asignarlo a una red, el cliente necesita una IP.");
+                if (formatoOk && !codigo.equals(codigoActual) && !codigo.startsWith(red.getPrefijoCodigo())) {
+                    problemas.add("Los códigos de la red " + red.getNombre() + " empiezan con "
+                            + red.getPrefijoCodigo() + " (ej: " + red.getPrefijoCodigo() + "07).");
                 }
                 nombreCola = limpiarTexto(datos.nombreCola());
                 if (nombreCola == null) {
@@ -248,6 +283,13 @@ public class ClienteService {
                     problemas.add("La cola \"" + nombreCola + "\" ya la usa otro cliente vigente de esa red.");
                 }
             }
+        }
+
+        // El plan debe ser de su red o "de todas las redes" (conservar el plan actual siempre se permite)
+        if (plan != null && plan != planActual && plan.getRed() != null
+                && (red == null || !plan.getRed().getId().equals(red.getId()))) {
+            problemas.add("El plan \"" + plan.getNombre() + "\" es de la red " + plan.getRed().getNombre()
+                    + ": elige un plan de la red del cliente o de todas las redes.");
         }
 
         if (!problemas.isEmpty()) {
@@ -344,7 +386,12 @@ public class ClienteService {
 
     private static long numeroDeCodigo(String codigo) {
         Matcher m = FORMATO_CODIGO.matcher(codigo);
-        return m.matches() ? Long.parseLong(m.group(1)) : Long.MAX_VALUE;
+        return m.matches() ? Long.parseLong(m.group(2)) : Long.MAX_VALUE;
+    }
+
+    private static String prefijoDeCodigo(String codigo) {
+        Matcher m = FORMATO_CODIGO.matcher(codigo);
+        return m.matches() ? m.group(1) : codigo;
     }
 
     private ClienteResumenResponse aResumen(Cliente c) {

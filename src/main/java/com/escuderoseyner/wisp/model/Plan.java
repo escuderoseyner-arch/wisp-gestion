@@ -18,7 +18,13 @@ public class Plan {
     @GeneratedValue(strategy = GenerationType.IDENTITY) // AUTO_INCREMENT de MySQL
     private Integer id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    // Red del plan (script 008). null = disponible en todas las redes.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "red_id")
+    private Red red;
+
+    // Único por red (uk_plan_red_nombre en MySQL)
+    @Column(nullable = false, length = 50)
     private String nombre;
 
     @Column(name = "bajada_mbps", nullable = false)

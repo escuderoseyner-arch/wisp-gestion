@@ -62,6 +62,13 @@
         </div>
 
         <div class="campo">
+          <label for="prefijo-codigo">Prefijo de los códigos</label>
+          <input id="prefijo-codigo" name="prefijoCodigo" type="text" maxlength="5" required autocomplete="off"
+                 autocapitalize="characters" spellcheck="false" placeholder="Ej: CP-" aria-describedby="ayuda-prefijo">
+          <p id="ayuda-prefijo" class="campo-ayuda">De 1 a 4 letras y un guion. Los clientes nuevos de esta red se numeran así (ej: CP-10).</p>
+        </div>
+
+        <div class="campo">
           <label for="cola-padre">Cola padre</label>
           <input id="cola-padre" name="colaPadre" type="text" maxlength="40" required autocomplete="off"
                  spellcheck="false" placeholder="Ej: Total-Clientes" aria-describedby="ayuda-cola-padre">

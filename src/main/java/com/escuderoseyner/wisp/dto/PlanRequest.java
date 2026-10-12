@@ -29,6 +29,9 @@ public record PlanRequest(
         @NotNull(message = "El precio es obligatorio")
         @Positive(message = "El precio debe ser mayor que 0")
         @Digits(integer = 6, fraction = 2, message = "El precio puede tener hasta 6 cifras enteras y 2 decimales")
-        BigDecimal precio
+        BigDecimal precio,
+
+        // Red del plan. null = disponible en todas las redes.
+        Integer redId
 ) {
 }

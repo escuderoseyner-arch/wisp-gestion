@@ -23,7 +23,8 @@
   $('filtro-estado').addEventListener('change', dibujarLista);
   $('filtros').addEventListener('submit', (e) => e.preventDefault());
 
-  cargar();
+  // Primero el selector de red (recuerda la última elegida); los totales respetan la red elegida
+  SelectorRed.iniciar($('selector-red'), cargar).finally(cargar);
 
   function moverMes(delta) {
     const [anio, mes] = (inputMes.value || Pagos.mesActual()).split('-').map(Number);
@@ -37,7 +38,7 @@
     $('mes-nombre').textContent = Pagos.nombreMes(periodo);
     const miCarga = ++numeroDeCarga;
     try {
-      const datos = await Sesion.api(Pagos.URL_PAGOS + '/mes?periodo=' + encodeURIComponent(periodo));
+      const datos = await Sesion.api(SelectorRed.enUrl(Pagos.URL_PAGOS + '/mes?periodo=' + encodeURIComponent(periodo)));
       if (miCarga !== numeroDeCarga) return;
       resumen = datos;
       dibujarTotales();

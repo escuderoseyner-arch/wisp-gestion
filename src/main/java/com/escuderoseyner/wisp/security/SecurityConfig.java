@@ -68,6 +68,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/auth/me").hasAnyRole("ADMIN", "OPERADOR", "CLIENTE")
                         // OPERADOR (ayuda con los cobros): solo lo que está en esta lista. No edita ni borra nada.
                         .requestMatchers(HttpMethod.GET, "/api/admin/panel",
+                                "/api/admin/redes/visibles",              // solo id y nombre de SUS redes
                                 "/api/admin/clientes", "/api/admin/clientes/zonas", "/api/admin/clientes/{id}",
                                 "/api/admin/clientes/{id}/cola",          // estado de conexión, solo ver
                                 "/api/admin/configuracion",               // plantilla del recordatorio de WhatsApp

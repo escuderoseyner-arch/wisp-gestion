@@ -16,6 +16,7 @@ import com.escuderoseyner.wisp.repository.CajaMovimientoRepository;
 import com.escuderoseyner.wisp.repository.CajaRepository;
 import com.escuderoseyner.wisp.repository.PagoRepository;
 import com.escuderoseyner.wisp.repository.UsuarioRepository;
+import com.escuderoseyner.wisp.security.AlcanceRedes;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,15 +50,17 @@ public class CajaService {
     private final UsuarioRepository usuarioRepository;
     private final PagoRepository pagoRepository;
     private final ConfiguracionService configuracionService;
+    private final AlcanceRedes alcanceRedes;
 
     public CajaService(CajaRepository cajaRepository, CajaMovimientoRepository movimientoRepository,
                        UsuarioRepository usuarioRepository, PagoRepository pagoRepository,
-                       ConfiguracionService configuracionService) {
+                       ConfiguracionService configuracionService, AlcanceRedes alcanceRedes) {
         this.cajaRepository = cajaRepository;
         this.movimientoRepository = movimientoRepository;
         this.usuarioRepository = usuarioRepository;
         this.pagoRepository = pagoRepository;
         this.configuracionService = configuracionService;
+        this.alcanceRedes = alcanceRedes;
     }
 
     public static LocalDate hoy() {
@@ -66,10 +69,13 @@ public class CajaService {
 
     // ---------- Consultas ----------
 
+    // Solo las cajas de las redes que puede ver el usuario
     @Transactional(readOnly = true)
     public List<CajaResumenResponse> listar() {
         String moneda = configuracionService.moneda();
+        Alcance alcance = alcanceRedes.actual();
         return cajaRepository.findTodasConRed().stream()
+                .filter(c -> alcance.puedeVer(c.getRed().getId()))
                 .map(c -> new CajaResumenResponse(c.getId(), c.getRed().getId(), c.getRed().getNombre(), moneda,
                         saldo(movimientoRepository.sumarPorTipo(c.getId()))))
                 .toList();
@@ -77,7 +83,7 @@ public class CajaService {
 
     @Transactional(readOnly = true)
     public CajaDetalleResponse detalle(Integer cajaId) {
-        Caja caja = buscarCaja(cajaId);
+        Caja caja = buscarCajaVisible(cajaId);
         LocalDate hoy = hoy();
         YearMonth mes = YearMonth.from(hoy);
         Map<TipoMovimientoCaja, BigDecimal> delMes =
@@ -98,7 +104,7 @@ public class CajaService {
     // la lista se devuelve del más reciente al más antiguo.
     @Transactional(readOnly = true)
     public HistorialCajaResponse historial(Integer cajaId, String mesTexto) {
-        buscarCaja(cajaId);
+        buscarCajaVisible(cajaId);
         YearMonth mes = mesTexto == null || mesTexto.isBlank() ? null : parsearMes(mesTexto);
 
         BigDecimal saldo;
@@ -146,7 +152,7 @@ public class CajaService {
 
     @Transactional
     public CajaDetalleResponse registrarRetiro(Integer cajaId, RetiroCajaRequest request, String usernameAdmin) {
-        Caja caja = buscarCaja(cajaId);
+        Caja caja = buscarCajaVisible(cajaId);
         Usuario admin = usuarioRepository.findByUsername(usernameAdmin)
                 .orElseThrow(CredencialesInvalidasException::new);
         LocalDate fecha = request.fecha() == null ? hoy() : request.fecha();
@@ -168,6 +174,7 @@ public class CajaService {
     // Solo los retiros se pueden eliminar (por si hubo un error al registrarlo)
     @Transactional
     public void eliminarRetiro(Integer cajaId, Integer movimientoId) {
+        buscarCajaVisible(cajaId);
         CajaMovimiento movimiento = movimientoRepository.findByIdAndCajaId(movimientoId, cajaId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe ese movimiento en esta caja."));
         if (movimiento.getTipo() != TipoMovimientoCaja.RETIRO) {
@@ -180,7 +187,7 @@ public class CajaService {
 
     @Transactional
     public CajaDetalleResponse editarDescuento(Integer cajaId, DescuentoCajaRequest request) {
-        Caja caja = buscarCaja(cajaId);
+        Caja caja = buscarCajaVisible(cajaId);
         if (request.activo() && request.monto().signum() == 0) {
             throw new ReglaNegocioException("Para activar el descuento, el monto debe ser mayor que 0.");
         }
@@ -289,6 +296,14 @@ public class CajaService {
     private Caja buscarCaja(Integer id) {
         return cajaRepository.findConRed(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe una caja con el id " + id + "."));
+    }
+
+    // Para lo que pide una persona: 403 si la caja es de una red que no tiene asignada.
+    // (La tarea del descuento mensual no tiene usuario: usa buscarCaja.)
+    private Caja buscarCajaVisible(Integer id) {
+        Caja caja = buscarCaja(id);
+        alcanceRedes.actual().verificar(caja.getRed().getId());
+        return caja;
     }
 
     private static Map<TipoMovimientoCaja, BigDecimal> totales(List<Object[]> filas) {

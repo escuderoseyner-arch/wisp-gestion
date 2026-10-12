@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
+
 // Cuenta del personal (ADMIN u OPERADOR). La contraseña inicial la escribe el admin;
 // la persona debe cambiarla en su primer ingreso.
 public record CrearAdministradorRequest(
@@ -23,6 +25,9 @@ public record CrearAdministradorRequest(
 
         @NotBlank(message = "La contraseña inicial es obligatoria")
         @Size(min = 8, max = 72, message = "La contraseña inicial debe tener entre 8 y 72 caracteres")
-        String password
+        String password,
+
+        // Solo para OPERADOR: redes que podrá ver. Vacío = ninguna (no ve ningún cliente).
+        List<Integer> redIds
 ) {
 }

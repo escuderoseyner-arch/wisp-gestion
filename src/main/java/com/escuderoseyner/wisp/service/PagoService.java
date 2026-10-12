@@ -13,6 +13,7 @@ import com.escuderoseyner.wisp.model.Usuario;
 import com.escuderoseyner.wisp.repository.ClienteRepository;
 import com.escuderoseyner.wisp.repository.PagoRepository;
 import com.escuderoseyner.wisp.repository.UsuarioRepository;
+import com.escuderoseyner.wisp.security.AlcanceRedes;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,33 +49,40 @@ public class PagoService {
     private final UsuarioRepository usuarioRepository;
     private final ConfiguracionService configuracionService;
     private final CajaService cajaService;
+    private final AlcanceRedes alcanceRedes;
 
     public PagoService(PagoRepository pagoRepository, ClienteRepository clienteRepository,
                        UsuarioRepository usuarioRepository, ConfiguracionService configuracionService,
-                       CajaService cajaService) {
+                       CajaService cajaService, AlcanceRedes alcanceRedes) {
         this.pagoRepository = pagoRepository;
         this.clienteRepository = clienteRepository;
         this.usuarioRepository = usuarioRepository;
         this.configuracionService = configuracionService;
         this.cajaService = cajaService;
+        this.alcanceRedes = alcanceRedes;
     }
 
     // ---------- Pantalla de pagos de un mes ----------
 
+    // redId null = todas las redes que puede ver el usuario; otra red que no tiene asignada = 403
     @Transactional(readOnly = true)
-    public ResumenMesResponse resumenDelMes(String periodoTexto) {
+    public ResumenMesResponse resumenDelMes(String periodoTexto, Integer redId) {
         YearMonth mes = periodoTexto == null || periodoTexto.isBlank() ? YearMonth.now() : parsearMes(periodoTexto);
+        return resumenFiltrado(mes, alcanceRedes.actual().filtro(redId));
+    }
+
+    // Solo cuentan los clientes del filtro: el cobrado, el pendiente y las filas
+    @Transactional(readOnly = true)
+    public ResumenMesResponse resumenFiltrado(YearMonth mes, Alcance.FiltroRed filtro) {
         int tolerancia = configuracionService.diasTolerancia();
         LocalDate hoy = LocalDate.now();
 
         // getCliente().getId() no hace otra consulta: el id ya viene en la fila del pago
         Map<Integer, Pago> pagoPorCliente = pagoRepository.findDelPeriodo(mes.atDay(1)).stream()
                 .collect(Collectors.toMap(p -> p.getCliente().getId(), Function.identity()));
-        BigDecimal cobrado = pagoPorCliente.values().stream()
-                .map(Pago::getMonto)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         List<ResumenMesResponse.FilaMes> filas = new ArrayList<>();
+        BigDecimal cobrado = BigDecimal.ZERO;
         BigDecimal pendiente = BigDecimal.ZERO;
         int pagados = 0;
         int pendientes = 0;
@@ -84,10 +92,14 @@ public class PagoService {
         // Así un retirado que pagó agosto cuenta en cobrado y esperado, y uno retirado en septiembre
         // que no pagó agosto cuenta como pendiente de agosto.
         List<Cliente> delMes = clienteRepository.findParaResumenDelMes(mes.atDay(1)).stream()
+                .filter(filtro::incluye)
                 .sorted(ClienteService.POR_CODIGO)
                 .toList();
         for (Cliente cliente : delMes) {
             Pago pago = pagoPorCliente.get(cliente.getId());
+            if (pago != null) {
+                cobrado = cobrado.add(pago.getMonto());
+            }
             EstadoMes estado = estadoDe(cliente, mes, pago != null, tolerancia, hoy);
             switch (estado) {
                 case NO_APLICA -> {
@@ -115,6 +127,14 @@ public class PagoService {
 
     // ---------- Estado de cuenta de un cliente ----------
 
+    // Para el personal: 403 si el cliente es de una red que no tiene asignada
+    @Transactional(readOnly = true)
+    public EstadoCuentaResponse estadoDeCuentaParaPersonal(Integer clienteId) {
+        alcanceRedes.actual().verificar(buscarCliente(clienteId));
+        return estadoDeCuenta(clienteId);
+    }
+
+    // Sin revisar la red: lo usa el portal, que ya se limita al propio cliente
     @Transactional(readOnly = true)
     public EstadoCuentaResponse estadoDeCuenta(Integer clienteId) {
         Cliente cliente = buscarCliente(clienteId);
@@ -170,6 +190,7 @@ public class PagoService {
     @Transactional
     public EstadoCuentaResponse registrar(RegistrarPagoRequest request, String usernameAdmin) {
         Cliente cliente = buscarCliente(request.clienteId());
+        alcanceRedes.actual().verificar(cliente); // un operador solo registra pagos de sus redes
         Usuario admin = usuarioRepository.findByUsername(usernameAdmin)
                 .orElseThrow(CredencialesInvalidasException::new);
 
@@ -230,6 +251,7 @@ public class PagoService {
     public void eliminar(Integer pagoId) {
         Pago pago = pagoRepository.findById(pagoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe un pago con el id " + pagoId + "."));
+        alcanceRedes.actual().verificar(pago.getCliente());
         cajaService.eliminarIngresoDePago(pago.getId()); // primero el ingreso de la caja (FK al pago)
         pagoRepository.delete(pago);
     }

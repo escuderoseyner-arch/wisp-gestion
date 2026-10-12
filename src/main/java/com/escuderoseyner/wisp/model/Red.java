@@ -22,6 +22,10 @@ public class Red {
     @Column(nullable = false, unique = true, length = 60)
     private String nombre;
 
+    // Prefijo de los códigos de sus clientes (script 008). Ej: "C-" -> C-18, "CP-" -> CP-10
+    @Column(name = "prefijo_codigo", nullable = false, length = 5)
+    private String prefijoCodigo = "C-";
+
     // Cola que agrupa a los clientes (ej: "Total-Clientes"). El sistema NUNCA la modifica.
     @Column(name = "cola_padre", nullable = false, length = 40)
     private String colaPadre;

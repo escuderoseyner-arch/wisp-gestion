@@ -13,6 +13,7 @@
   <script src="/js/nav-admin.js" defer></script>
   <script src="/js/formato.js" defer></script>
   <script src="/js/pagos-comun.js" defer></script>
+  <script src="/js/selector-red.js" defer></script>
   <script src="/js/panel.js" defer></script>
 </head>
 <!-- data-rol: panel.js solo deja entrar a usuarios con este rol -->
@@ -28,6 +29,8 @@
   <main class="contenido">
     <h1 class="saludo">Hola, <span id="nombre-usuario">…</span></h1>
     <p class="saludo-sub">Así van los cobros de tu empresa.</p>
+
+    <div id="selector-red" class="fila-selector-red" hidden></div>
 
     <div id="exito" class="aviso aviso-info" role="status" hidden></div>
     <div id="error" class="aviso aviso-error" role="alert" hidden></div>

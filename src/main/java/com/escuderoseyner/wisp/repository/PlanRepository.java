@@ -14,9 +14,6 @@ public interface PlanRepository extends JpaRepository<Plan, Integer> {
     // Solo los que se pueden elegir para un cliente nuevo
     List<Plan> findByActivoTrueOrderByNombreAsc();
 
-    // Para que no se repita el nombre ("Básico" y "básico" cuentan como iguales)
-    boolean existsByNombreIgnoreCase(String nombre);
-
-    // Lo mismo al editar, sin contar el propio plan
-    boolean existsByNombreIgnoreCaseAndIdNot(String nombre, Integer id);
+    // Planes con ese nombre ("Básico" y "básico" cuentan como iguales), para revisar repetidos por red
+    List<Plan> findByNombreIgnoreCase(String nombre);
 }

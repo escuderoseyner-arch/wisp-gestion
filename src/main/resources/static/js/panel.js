@@ -17,11 +17,12 @@
     .then((usuario) => { $('nombre-usuario').textContent = usuario.nombreMostrar; })
     .catch(() => { $('nombre-usuario').textContent = ''; });
 
-  cargar();
+  // Primero el selector de red (recuerda la última elegida); todos los totales respetan la red elegida
+  SelectorRed.iniciar($('selector-red'), cargar).finally(cargar);
 
   async function cargar() {
     try {
-      panel = await Sesion.api('/api/admin/panel');
+      panel = await Sesion.api(SelectorRed.enUrl('/api/admin/panel'));
       dibujar();
       $('panel').hidden = false;
     } catch (error) {

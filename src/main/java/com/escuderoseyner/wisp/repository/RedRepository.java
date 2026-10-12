@@ -14,6 +14,13 @@ public interface RedRepository extends JpaRepository<Red, Integer> {
 
     boolean existsByNombreIgnoreCaseAndIdNot(String nombre, Integer id);
 
+    // Dos redes con el mismo prefijo darían el mismo "siguiente código"
+    boolean existsByPrefijoCodigo(String prefijo);
+
+    boolean existsByPrefijoCodigoAndIdNot(String prefijo, Integer id);
+
+    List<Red> findByIdInOrderByNombreAsc(java.util.Collection<Integer> ids);
+
     // El MikroTik se identifica con su token: se busca por el hash, nunca por el token
     Optional<Red> findByTokenHash(String tokenHash);
 

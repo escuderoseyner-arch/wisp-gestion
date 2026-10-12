@@ -9,6 +9,7 @@ import com.escuderoseyner.wisp.model.EstadoCliente;
 import com.escuderoseyner.wisp.model.Pago;
 import com.escuderoseyner.wisp.repository.ClienteRepository;
 import com.escuderoseyner.wisp.repository.PagoRepository;
+import com.escuderoseyner.wisp.security.AlcanceRedes;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,29 +37,35 @@ public class PanelService {
     private final PagoRepository pagoRepository;
     private final PagoService pagoService;
     private final ConfiguracionService configuracionService;
+    private final AlcanceRedes alcanceRedes;
 
     public PanelService(ClienteRepository clienteRepository, PagoRepository pagoRepository,
-                        PagoService pagoService, ConfiguracionService configuracionService) {
+                        PagoService pagoService, ConfiguracionService configuracionService,
+                        AlcanceRedes alcanceRedes) {
         this.clienteRepository = clienteRepository;
         this.pagoRepository = pagoRepository;
         this.pagoService = pagoService;
         this.configuracionService = configuracionService;
+        this.alcanceRedes = alcanceRedes;
     }
 
+    // redId null = todas las redes que puede ver el usuario. Todos los totales respetan el filtro.
     @Transactional(readOnly = true)
-    public PanelResponse panel() {
+    public PanelResponse panel(Integer redId) {
+        Alcance.FiltroRed filtro = alcanceRedes.actual().filtro(redId);
         LocalDate hoy = LocalDate.now();
         YearMonth actual = YearMonth.from(hoy);
         ConfiguracionResponse config = configuracionService.obtener();
         int tolerancia = config.diasTolerancia();
 
         // Resumen del mes actual (mismo cálculo que la pantalla de pagos)
-        ResumenMesResponse mes = pagoService.resumenDelMes(actual.toString());
+        ResumenMesResponse mes = pagoService.resumenFiltrado(actual, filtro);
         BigDecimal esperado = mes.clientes().stream()
                 .map(ResumenMesResponse.FilaMes::precioPlan)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         List<Cliente> vigentes = clienteRepository.buscar(ClienteService.VIGENTES, null, null).stream()
+                .filter(filtro::incluye)
                 .sorted(ClienteService.POR_CODIGO)
                 .toList();
         int activos = (int) vigentes.stream().filter(c -> c.getEstado() == EstadoCliente.ACTIVO).count();
@@ -115,6 +122,7 @@ public class PanelService {
         LocalDate lunes = hoy.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         LocalDate domingo = lunes.plusDays(6);
         List<PanelResponse.PagoDeLaSemana> semana = pagoRepository.findRecibidosEntre(lunes, domingo).stream()
+                .filter(p -> filtro.incluye(p.getCliente()))
                 .map(this::aPagoDeLaSemana)
                 .toList();
         BigDecimal totalSemana = semana.stream()

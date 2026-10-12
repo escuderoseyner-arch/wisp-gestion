@@ -18,7 +18,7 @@
   const URL_REDES = '/api/admin/redes';
 
   const ETIQUETA_ESTADO = { ACTIVO: 'Activo', SUSPENDIDO: 'Suspendido', RETIRADO: 'Retirado' };
-  const FORMATO_CODIGO = /^C-\d{2,8}$/;
+  const FORMATO_CODIGO = /^[A-Z]{1,4}-\d{2,8}$/;
   const FORMATO_CELULAR = /^9\d{8}$/;
   const FORMATO_NOMBRE_COLA = /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/;
   const FORMATO_IPV4 = /^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/;
@@ -42,8 +42,10 @@
   configurarLista();
   configurarDetalle();
   $('form-cliente').addEventListener('submit', guardarFormulario);
+  $('form-cliente').redId.addEventListener('change', alCambiarRed);
   window.addEventListener('hashchange', router);
-  router();
+  // Primero el selector de red (recuerda la última elegida), después la lista
+  SelectorRed.iniciar($('selector-red'), cargarLista).finally(router);
 
   // =====================================================================
   // Navegación
@@ -115,6 +117,7 @@
     if (busqueda) parametros.set('q', busqueda);
     if ($('filtro-zona').value) parametros.set('zona', $('filtro-zona').value);
     if ($('filtro-estado').value) parametros.set('estado', $('filtro-estado').value);
+    if (SelectorRed.redId() != null) parametros.set('redId', SelectorRed.redId());
 
     const miCarga = ++numeroDeCarga;
     try {
@@ -677,9 +680,9 @@
         irA('#cliente/' + cliente.id);
         return;
       }
-      estadoFormulario = { modo, cliente };
+      estadoFormulario = { modo, cliente, planes, codigoSugerido: sugerido ? sugerido.codigo : null };
       form.redId.replaceChildren(new Option('Ninguna', ''), ...redes.map((r) => new Option(r.nombre, r.id)));
-      prepararFormulario(modo, cliente, planes, sugerido);
+      prepararFormulario(modo, cliente, sugerido);
       form.hidden = false;
       (modo === 'editar' ? form.codigo : form.nombres).focus({ preventScroll: true });
     } catch (error) {
@@ -687,18 +690,46 @@
     }
   }
 
-  function prepararFormulario(modo, cliente, planes, sugerido) {
+  // Planes activos de la red elegida más los "de todas las redes". Al editar se agrega el plan actual
+  // aunque esté desactivado o sea de otra red (conservarlo siempre se permite).
+  function llenarPlanes() {
+    const form = $('form-cliente');
+    const { modo, cliente, planes } = estadoFormulario;
+    const redId = form.redId.value ? Number(form.redId.value) : null;
+    const elegido = form.planId.value;
+    const disponibles = planes.filter((p) => p.redId == null || p.redId === redId);
+    const opciones = disponibles.map((p) => new Option(p.nombre + ' · ' + Formato.monto(p.precio), p.id));
+    if (modo === 'editar' && !disponibles.some((p) => p.id === cliente.plan.id)) {
+      opciones.unshift(new Option(cliente.plan.nombre + ' (plan actual)', cliente.plan.id));
+    }
+    form.planId.replaceChildren(new Option('Elige un plan', ''), ...opciones);
+    if ([...form.planId.options].some((o) => o.value === elegido)) form.planId.value = elegido;
+  }
+
+  // Al cambiar la red: sus planes y, en un cliente nuevo, el código sugerido con el prefijo de esa red
+  async function alCambiarRed() {
+    llenarPlanes();
+    const form = $('form-cliente');
+    if (!estadoFormulario || estadoFormulario.modo !== 'crear') return;
+    if (form.codigo.value.trim().toUpperCase() !== estadoFormulario.codigoSugerido) return; // lo escribió a mano
+    try {
+      const url = URL_CLIENTES + '/siguiente-codigo' + (form.redId.value ? '?redId=' + form.redId.value : '');
+      const sugerido = await Sesion.api(url);
+      estadoFormulario.codigoSugerido = sugerido.codigo;
+      form.codigo.value = sugerido.codigo;
+    } catch {
+      // se queda el código anterior
+    }
+  }
+
+  function prepararFormulario(modo, cliente, sugerido) {
     const form = $('form-cliente');
     const volver = cliente ? '#cliente/' + cliente.id : '#';
     $('form-volver').href = volver;
     $('boton-cancelar').href = volver;
 
-    // Planes activos; al editar se agrega el plan actual aunque esté desactivado
-    const opciones = planes.map((p) => new Option(p.nombre + ' · ' + Formato.monto(p.precio), p.id));
-    if (modo === 'editar' && !cliente.plan.activo) {
-      opciones.unshift(new Option(cliente.plan.nombre + ' (desactivado, plan actual)', cliente.plan.id));
-    }
-    form.planId.replaceChildren(new Option('Elige un plan', ''), ...opciones);
+    form.redId.value = cliente && cliente.red ? cliente.red.id : '';
+    llenarPlanes();
 
     form.codigo.readOnly = modo === 'reasignar';
     form.fechaInicio.value = hoy();
@@ -724,9 +755,8 @@
       form.zona.value = cliente.zona || '';
       form.referencia.value = cliente.referencia || '';
       form.ip.value = cliente.ip || '';
-      form.redId.value = cliente.red ? cliente.red.id : '';
       form.nombreCola.value = cliente.red ? cliente.nombreCola : '';
-      if (cliente.plan.activo) form.planId.value = cliente.plan.id;
+      if ([...form.planId.options].some((o) => o.value === String(cliente.plan.id))) form.planId.value = cliente.plan.id;
       $('boton-guardar').textContent = 'Reasignar código';
     }
   }
@@ -741,7 +771,6 @@
     form.diaPago.value = cliente.diaPago;
     form.fechaInicio.value = cliente.fechaInicio;
     form.ip.value = cliente.ip || '';
-    form.redId.value = cliente.red ? cliente.red.id : '';
     form.nombreCola.value = cliente.red ? cliente.nombreCola : '';
   }
 
@@ -818,7 +847,7 @@
   function validar(d) {
     const problemas = [];
     if (estadoFormulario.modo !== 'reasignar' && !FORMATO_CODIGO.test(d.codigo)) {
-      problemas.push('El código debe tener el formato C-NN (ej: C-07).');
+      problemas.push('El código debe tener el formato PREFIJO-NN (ej: C-07 o CP-10).');
     }
     if (!d.nombres) problemas.push('El nombre es obligatorio.');
     if (d.celular && !FORMATO_CELULAR.test(d.celular)) {
@@ -830,7 +859,7 @@
     }
     if (!d.fechaInicio) problemas.push('La fecha de inicio es obligatoria.');
     if (d.ip && !FORMATO_IPV4.test(d.ip)) problemas.push('La IP no es una IPv4 válida (ej: 192.168.1.20).');
-    if (d.redId && !d.ip) problemas.push('Para asignarlo a una red, el cliente necesita una IP.');
+
     if (d.redId && d.nombreCola && !FORMATO_NOMBRE_COLA.test(d.nombreCola)) {
       problemas.push('El nombre de la cola solo puede tener letras, números, punto, guion y guion bajo (sin espacios).');
     }

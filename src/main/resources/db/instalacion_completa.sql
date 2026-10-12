@@ -2,9 +2,9 @@
 --  SISTEMA DE GESTIÓN PARA PROVEEDORES DE INTERNET (WISP)
 --  INSTALACIÓN COMPLETA para una base de datos NUEVA (MySQL 8.x)
 --
---  Equivale a wisp_db.sql + 002 + 003 + 004 + 005 + 006 + 007, con los cambios ya
+--  Equivale a wisp_db.sql + 002 + 003 + 004 + 005 + 006 + 007 + 008, con los cambios ya
 --  integrados en cada tabla (sin los pagos de ejemplo).
---  Si tu base ya existe, NO uses este archivo: usa los scripts 002-007.
+--  Si tu base ya existe, NO uses este archivo: usa los scripts 002-008.
 --
 --  Ejecutar UNA sola vez con el usuario administrador del servidor
 --  (root en local; avnadmin en Aiven).
@@ -38,26 +38,12 @@ CREATE TABLE configuracion (
 );
 
 -- ---------------------------------------------------------------------
--- 1. PLANES
--- ---------------------------------------------------------------------
-CREATE TABLE planes (
-  id            INT AUTO_INCREMENT PRIMARY KEY,
-  nombre        VARCHAR(50)  NOT NULL UNIQUE,
-  bajada_mbps   INT          NOT NULL,
-  subida_mbps   INT          NOT NULL,
-  precio        DECIMAL(8,2) NOT NULL,
-  activo        BOOLEAN      NOT NULL DEFAULT TRUE,   -- para "retirar" un plan sin borrarlo
-  creado_en     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT chk_plan_precio    CHECK (precio > 0),
-  CONSTRAINT chk_plan_velocidad CHECK (bajada_mbps > 0 AND subida_mbps > 0)
-);
-
--- ---------------------------------------------------------------------
--- 1b. REDES (MikroTik). Solo se guarda el hash SHA-256 del token.
+-- 1. REDES (cada negocio / MikroTik). Solo se guarda el hash SHA-256 del token.
 -- ---------------------------------------------------------------------
 CREATE TABLE redes (
   id                    INT AUTO_INCREMENT PRIMARY KEY,
   nombre                VARCHAR(60)  NOT NULL UNIQUE,
+  prefijo_codigo        VARCHAR(5)   NOT NULL DEFAULT 'C-',  -- prefijo de los códigos de sus clientes (C-, CP-)
   cola_padre            VARCHAR(40)  NOT NULL,               -- ej: "Total-Clientes" (NUNCA se modifica)
   colas_protegidas      VARCHAR(500) NULL,                   -- otras colas que nunca se tocan, separadas por coma
   intervalo_segundos    INT          NOT NULL DEFAULT 60,    -- cada cuánto consulta el MikroTik
@@ -70,6 +56,26 @@ CREATE TABLE redes (
   creado_en             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   actualizado_en        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT chk_red_intervalo CHECK (intervalo_segundos BETWEEN 30 AND 3600)
+);
+
+-- ---------------------------------------------------------------------
+-- 1b. PLANES. red_id NULL = disponible en todas las redes.
+--     El nombre es único por red (red_unica trata NULL como red 0).
+-- ---------------------------------------------------------------------
+CREATE TABLE planes (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  red_id        INT          NULL,
+  red_unica     INT AS (IFNULL(red_id, 0)) STORED,
+  nombre        VARCHAR(50)  NOT NULL,
+  bajada_mbps   INT          NOT NULL,
+  subida_mbps   INT          NOT NULL,
+  precio        DECIMAL(8,2) NOT NULL,
+  activo        BOOLEAN      NOT NULL DEFAULT TRUE,   -- para "retirar" un plan sin borrarlo
+  creado_en     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_plan_red          FOREIGN KEY (red_id) REFERENCES redes(id),
+  CONSTRAINT uk_plan_red_nombre   UNIQUE (red_unica, nombre),
+  CONSTRAINT chk_plan_precio      CHECK (precio > 0),
+  CONSTRAINT chk_plan_velocidad   CHECK (bajada_mbps > 0 AND subida_mbps > 0)
 );
 
 -- ---------------------------------------------------------------------
@@ -144,6 +150,15 @@ CREATE TABLE usuarios (
     (rol IN ('ADMIN','OPERADOR') AND cliente_id IS NULL) OR
     (rol = 'CLIENTE' AND cliente_id IS NOT NULL)
   )
+);
+
+-- Redes que ve cada OPERADOR (el ADMIN ve todas sin necesitarla)
+CREATE TABLE usuario_redes (
+  usuario_id  INT NOT NULL,
+  red_id      INT NOT NULL,
+  PRIMARY KEY (usuario_id, red_id),
+  CONSTRAINT fk_usuario_redes_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+  CONSTRAINT fk_usuario_redes_red     FOREIGN KEY (red_id)     REFERENCES redes(id)
 );
 
 -- ---------------------------------------------------------------------

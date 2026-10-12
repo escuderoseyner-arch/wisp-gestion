@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 // Editar una red. El token no se cambia aquí: tiene su propio endpoint.
@@ -12,6 +13,10 @@ public record RedRequest(
         @NotBlank(message = "El nombre de la red es obligatorio")
         @Size(max = 60, message = "El nombre de la red no puede tener más de 60 caracteres")
         String nombre,
+
+        @NotBlank(message = "El prefijo de los códigos es obligatorio")
+        @Pattern(regexp = "^\\s*[A-Za-z]{1,4}-\\s*$", message = "El prefijo debe tener de 1 a 4 letras y terminar en guion (ej: C- o CP-)")
+        String prefijoCodigo,
 
         @NotBlank(message = "La cola padre es obligatoria")
         @Size(max = 40, message = "La cola padre no puede tener más de 40 caracteres")

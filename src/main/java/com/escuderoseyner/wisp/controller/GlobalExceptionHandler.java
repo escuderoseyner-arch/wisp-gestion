@@ -1,6 +1,7 @@
 package com.escuderoseyner.wisp.controller;
 
 import com.escuderoseyner.wisp.dto.ErrorResponse;
+import com.escuderoseyner.wisp.service.AccesoDenegadoException;
 import com.escuderoseyner.wisp.service.CredencialesInvalidasException;
 import com.escuderoseyner.wisp.service.DemasiadosIntentosException;
 import com.escuderoseyner.wisp.service.RecursoNoEncontradoException;
@@ -51,6 +52,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DemasiadosIntentosException.class)
     @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
     public ErrorResponse demasiadosIntentos(DemasiadosIntentosException e) {
+        return ErrorResponse.de(e.getMessage());
+    }
+
+    // Pidió algo de una red que no tiene asignada
+    @ExceptionHandler(AccesoDenegadoException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse accesoDenegado(AccesoDenegadoException e) {
         return ErrorResponse.de(e.getMessage());
     }
 

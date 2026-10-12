@@ -1524,6 +1524,17 @@ body.con-nav-admin {
   }
 }
 
+/* ---------- Selector de red (Inicio, Clientes y Pagos) ---------- */
+
+.fila-selector-red {
+  margin-bottom: 16px;
+}
+
+.selector-red {
+  max-width: 360px;
+  margin-bottom: 0;
+}
+
 /* ---------- Caja ---------- */
 
 .saldo-caja {
@@ -1618,6 +1629,29 @@ body.con-nav-admin {
   border: 0;
   box-shadow: none;
   accent-color: var(--primario);
+}
+
+/* Casillas de redes de un operador (pantalla Admins) */
+.grupo-redes {
+  padding: 0;
+  border: 0;
+}
+
+.grupo-redes legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-weight: 600;
+}
+
+.casillas-redes {
+  display: grid;
+  gap: 10px;
+}
+
+.editor-redes {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--borde);
 }
 
 /* El OPERADOR no ve lo que solo puede hacer el ADMIN (el servidor también lo rechaza) */

@@ -4,6 +4,7 @@ import com.escuderoseyner.wisp.dto.PanelResponse;
 import com.escuderoseyner.wisp.service.PanelService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -16,8 +17,9 @@ public class PanelController {
         this.panelService = panelService;
     }
 
+    // GET /api/admin/panel?redId=1  (sin redId: todas las redes que puede ver)
     @GetMapping
-    public PanelResponse panel() {
-        return panelService.panel();
+    public PanelResponse panel(@RequestParam(required = false) Integer redId) {
+        return panelService.panel(redId);
     }
 }

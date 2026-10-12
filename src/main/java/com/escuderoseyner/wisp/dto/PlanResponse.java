@@ -8,6 +8,8 @@ public record PlanResponse(
         Integer bajadaMbps,
         Integer subidaMbps,
         BigDecimal precio,
-        boolean activo
+        boolean activo,
+        Integer redId,        // null = disponible en todas las redes
+        String redNombre
 ) {
 }

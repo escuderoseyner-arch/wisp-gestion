@@ -86,6 +86,7 @@
     const lista = document.createElement('dl');
     lista.className = 'datos';
     const filas = [
+      ['Códigos', red.prefijoCodigo + 'NN'],
       ['Cola padre', red.colaPadre],
       ['Colas protegidas', red.colasProtegidas.length ? red.colasProtegidas.join(', ') : 'Ninguna'],
       ['Consulta cada', red.intervaloSegundos + ' s'],
@@ -244,6 +245,7 @@
     redEnEdicion = red;
     $('titulo-formulario').textContent = red ? 'Editar red' : 'Nueva red';
     form.nombre.value = red ? red.nombre : '';
+    form.prefijoCodigo.value = red ? red.prefijoCodigo : '';
     form.colaPadre.value = red ? red.colaPadre : '';
     form.colasProtegidas.value = red ? red.colasProtegidas.join(', ') : '';
     form.intervaloSegundos.value = red ? red.intervaloSegundos : 60;
@@ -280,6 +282,7 @@
     const editando = redEnEdicion !== null;
     const red = {
       nombre: form.nombre.value.trim(),
+      prefijoCodigo: form.prefijoCodigo.value.trim().toUpperCase(),
       colaPadre: form.colaPadre.value.trim(),
       colasProtegidas: form.colasProtegidas.value.trim(),
       intervaloSegundos: Number(form.intervaloSegundos.value),
@@ -292,6 +295,9 @@
     // Validación rápida en el navegador. El servidor vuelve a validar todo.
     const problemas = [];
     if (!red.nombre) problemas.push('El nombre de la red es obligatorio.');
+    if (!/^[A-Z]{1,4}-$/.test(red.prefijoCodigo)) {
+      problemas.push('El prefijo debe tener de 1 a 4 letras y terminar en guion (ej: C- o CP-).');
+    }
     if (!red.colaPadre) problemas.push('La cola padre es obligatoria.');
     if (!Number.isInteger(red.intervaloSegundos) || red.intervaloSegundos < 30 || red.intervaloSegundos > 3600) {
       problemas.push('El intervalo de consulta debe estar entre 30 y 3600 segundos.');

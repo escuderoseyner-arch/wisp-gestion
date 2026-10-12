@@ -3,7 +3,10 @@ package com.escuderoseyner.wisp.service;
 import com.escuderoseyner.wisp.dto.PlanRequest;
 import com.escuderoseyner.wisp.dto.PlanResponse;
 import com.escuderoseyner.wisp.model.Plan;
+import com.escuderoseyner.wisp.model.Red;
+import com.escuderoseyner.wisp.repository.ClienteRepository;
 import com.escuderoseyner.wisp.repository.PlanRepository;
+import com.escuderoseyner.wisp.repository.RedRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,15 +14,22 @@ import java.util.List;
 
 // Los planes nunca se borran: se desactivan. Un plan desactivado sigue valiendo para
 // los clientes que ya lo tienen, pero no se puede asignar a clientes nuevos.
+// Cada plan es de una red o de todas (red null). El nombre es único por red, y un plan
+// "de todas las redes" no puede llamarse igual que uno de alguna red (saldrían dos iguales al elegir).
 @Service
 public class PlanService {
 
     private final PlanRepository planRepository;
     private final SincronizacionService sincronizacionService;
+    private final RedRepository redRepository;
+    private final ClienteRepository clienteRepository;
 
-    public PlanService(PlanRepository planRepository, SincronizacionService sincronizacionService) {
+    public PlanService(PlanRepository planRepository, SincronizacionService sincronizacionService,
+                       RedRepository redRepository, ClienteRepository clienteRepository) {
         this.planRepository = planRepository;
         this.sincronizacionService = sincronizacionService;
+        this.redRepository = redRepository;
+        this.clienteRepository = clienteRepository;
     }
 
     @Transactional(readOnly = true)
@@ -33,11 +43,10 @@ public class PlanService {
     @Transactional
     public PlanResponse crear(PlanRequest request) {
         String nombre = normalizarNombre(request.nombre());
-        if (planRepository.existsByNombreIgnoreCase(nombre)) {
-            throw nombreRepetido(nombre);
-        }
+        Red red = buscarRed(request.redId());
+        validarNombre(nombre, red, null);
         Plan plan = new Plan();
-        aplicarDatos(plan, request, nombre);
+        aplicarDatos(plan, request, nombre, red);
         return aResponse(planRepository.save(plan));
     }
 
@@ -47,10 +56,19 @@ public class PlanService {
     public PlanResponse actualizar(Integer id, PlanRequest request) {
         Plan plan = buscar(id);
         String nombre = normalizarNombre(request.nombre());
-        if (planRepository.existsByNombreIgnoreCaseAndIdNot(nombre, id)) {
-            throw nombreRepetido(nombre);
+        Red red = buscarRed(request.redId());
+        validarNombre(nombre, red, id);
+        // Pasar el plan a una red: ningún cliente vigente de otra red (o sin red) puede quedar con él
+        if (red != null) {
+            long fuera = clienteRepository.contarVigentesConPlanFueraDeRed(id, red.getId());
+            if (fuera > 0) {
+                throw new ReglaNegocioException("No se puede pasar el plan a la red " + red.getNombre() + ": "
+                        + fuera + (fuera == 1 ? " cliente vigente de otra red (o sin red) lo usa."
+                        : " clientes vigentes de otras redes (o sin red) lo usan.")
+                        + " Cámbiales el plan primero o deja el plan para todas las redes.");
+            }
         }
-        aplicarDatos(plan, request, nombre);
+        aplicarDatos(plan, request, nombre, red);
         // Si cambió la velocidad, cambia el max-limit de las colas de sus clientes en el MikroTik
         sincronizacionService.recalcularTodas();
         return aResponse(plan); // JPA guarda los cambios al terminar la transacción
@@ -84,11 +102,30 @@ public class PlanService {
         return nombre.trim().replaceAll("\\s+", " ");
     }
 
-    private ReglaNegocioException nombreRepetido(String nombre) {
-        return new ReglaNegocioException("Ya existe un plan con el nombre \"" + nombre + "\".");
+    private Red buscarRed(Integer redId) {
+        if (redId == null) {
+            return null;
+        }
+        return redRepository.findById(redId)
+                .orElseThrow(() -> new ReglaNegocioException("No existe la red elegida para el plan."));
     }
 
-    private void aplicarDatos(Plan plan, PlanRequest request, String nombre) {
+    // Repetido = mismo nombre en la misma red, o cuando uno de los dos es "de todas las redes"
+    private void validarNombre(String nombre, Red red, Integer idExcluir) {
+        for (Plan otro : planRepository.findByNombreIgnoreCase(nombre)) {
+            if (otro.getId().equals(idExcluir)) {
+                continue;
+            }
+            Red redOtro = otro.getRed();
+            if (red == null || redOtro == null || redOtro.getId().equals(red.getId())) {
+                String donde = redOtro == null ? "para todas las redes" : "en la red " + redOtro.getNombre();
+                throw new ReglaNegocioException("Ya existe un plan \"" + otro.getNombre() + "\" " + donde + ".");
+            }
+        }
+    }
+
+    private void aplicarDatos(Plan plan, PlanRequest request, String nombre, Red red) {
+        plan.setRed(red);
         plan.setNombre(nombre);
         plan.setBajadaMbps(request.bajadaMbps());
         plan.setSubidaMbps(request.subidaMbps());
@@ -96,7 +133,9 @@ public class PlanService {
     }
 
     private PlanResponse aResponse(Plan plan) {
+        Red red = plan.getRed();
         return new PlanResponse(plan.getId(), plan.getNombre(), plan.getBajadaMbps(), plan.getSubidaMbps(),
-                plan.getPrecio(), plan.getActivo());
+                plan.getPrecio(), plan.getActivo(), red == null ? null : red.getId(),
+                red == null ? null : red.getNombre());
     }
 }

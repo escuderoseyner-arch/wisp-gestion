@@ -14,6 +14,7 @@
   <script src="/js/formato.js" defer></script>
   <script src="/js/clave.js" defer></script>
   <script src="/js/pagos-comun.js" defer></script>
+  <script src="/js/selector-red.js" defer></script>
   <script src="/js/clientes.js" defer></script>
 </head>
 <!-- data-rol: clientes.js solo deja entrar a usuarios con este rol -->
@@ -39,6 +40,8 @@
         </div>
         <a href="#nuevo" class="boton boton-primario boton-compacto" data-solo-admin><span data-icono="mas"></span>Nuevo cliente</a>
       </div>
+
+      <div id="selector-red" class="fila-selector-red" hidden></div>
 
       <form id="filtros" class="filtros" role="search" novalidate>
         <div class="campo">
@@ -192,7 +195,7 @@
           <label for="codigo">Código</label>
           <input id="codigo" name="codigo" type="text" maxlength="10" required autocomplete="off"
                  autocapitalize="characters" spellcheck="false" aria-describedby="ayuda-codigo">
-          <p id="ayuda-codigo" class="campo-ayuda">Formato C-NN, por ejemplo C-07.</p>
+          <p id="ayuda-codigo" class="campo-ayuda">Prefijo de la red y número, por ejemplo C-07 o CP-10.</p>
         </div>
 
         <div class="campo">
@@ -220,6 +223,21 @@
                  placeholder="Ej: casa azul frente a la plaza">
         </div>
 
+        <div class="fila-campos">
+          <div class="campo">
+            <label for="red">Red <span class="opcional">(opcional)</span></label>
+            <select id="red" name="redId" aria-describedby="ayuda-red">
+              <option value="">Ninguna</option>
+            </select>
+            <p id="ayuda-red" class="campo-ayuda">Define a qué negocio pertenece y qué planes puede tener.</p>
+          </div>
+          <div class="campo">
+            <label for="nombre-cola">Nombre de la cola <span class="opcional">(vacío = el código)</span></label>
+            <input id="nombre-cola" name="nombreCola" type="text" maxlength="40" autocomplete="off"
+                   spellcheck="false" placeholder="Ej: C-07">
+          </div>
+        </div>
+
         <div class="campo">
           <label for="plan">Plan</label>
           <select id="plan" name="planId" required>
@@ -242,20 +260,6 @@
           <label for="ip">IP <span class="opcional">(opcional)</span></label>
           <input id="ip" name="ip" type="text" inputmode="decimal" maxlength="15" autocomplete="off"
                  spellcheck="false" placeholder="192.168.1.20">
-        </div>
-
-        <div class="fila-campos">
-          <div class="campo">
-            <label for="red">Red (MikroTik) <span class="opcional">(opcional)</span></label>
-            <select id="red" name="redId">
-              <option value="">Ninguna</option>
-            </select>
-          </div>
-          <div class="campo">
-            <label for="nombre-cola">Nombre de la cola <span class="opcional">(vacío = el código)</span></label>
-            <input id="nombre-cola" name="nombreCola" type="text" maxlength="40" autocomplete="off"
-                   spellcheck="false" placeholder="Ej: C-07">
-          </div>
         </div>
 
         <div class="acciones">

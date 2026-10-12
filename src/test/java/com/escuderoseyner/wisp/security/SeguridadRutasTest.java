@@ -12,6 +12,7 @@ import com.escuderoseyner.wisp.controller.RedController;
 import com.escuderoseyner.wisp.controller.TerminalController;
 import com.escuderoseyner.wisp.model.Rol;
 import com.escuderoseyner.wisp.model.Usuario;
+import com.escuderoseyner.wisp.service.AccesoDenegadoException;
 import com.escuderoseyner.wisp.service.AdministradorService;
 import com.escuderoseyner.wisp.service.CajaService;
 import com.escuderoseyner.wisp.service.ClienteService;
@@ -38,6 +39,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -169,6 +171,31 @@ class SeguridadRutasTest {
         }
         verify(cajaService, never()).eliminarRetiro(any(), any());
         verifyNoInteractions(planService, redService, administradorService, terminalService, cuentaClienteService);
+    }
+
+    @Test
+    @DisplayName("Un OPERADOR que pide algo de una red que no tiene asignada recibe 403")
+    void operadorOtraRed() throws Exception {
+        String operador = tokenOperador();
+        when(clienteService.detalle(20)).thenThrow(new AccesoDenegadoException());
+        when(pagoService.resumenDelMes(any(), eq(2))).thenThrow(new AccesoDenegadoException());
+        when(pagoService.registrar(any(), any())).thenThrow(new AccesoDenegadoException());
+
+        mockMvc.perform(get("/api/admin/clientes/20").header("Authorization", operador))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/admin/pagos/mes?redId=2").header("Authorization", operador))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/admin/pagos").header("Authorization", operador)
+                        .contentType("application/json")
+                        .content("{\"clienteId\": 20, \"periodos\": [\"2026-10\"], \"monto\": 40.00,"
+                                + " \"fechaPago\": \"2026-10-05\", \"metodo\": \"EFECTIVO\"}"))
+                .andExpect(status().isForbidden());
+
+        // Ve la lista de SUS redes (para el selector), pero no puede asignarse redes
+        mockMvc.perform(get("/api/admin/redes/visibles").header("Authorization", operador)).andExpect(status().isOk());
+        mockMvc.perform(put("/api/admin/administradores/3/redes").header("Authorization", operador)
+                .contentType("application/json").content("{\"redIds\": [1, 2]}")).andExpect(status().isForbidden());
+        verify(administradorService, never()).cambiarRedes(any(), any(), any());
     }
 
     @Test

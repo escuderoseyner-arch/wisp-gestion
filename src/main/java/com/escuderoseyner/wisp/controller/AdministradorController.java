@@ -1,6 +1,7 @@
 package com.escuderoseyner.wisp.controller;
 
 import com.escuderoseyner.wisp.dto.AdministradorResponse;
+import com.escuderoseyner.wisp.dto.CambiarRedesRequest;
 import com.escuderoseyner.wisp.dto.CrearAdministradorRequest;
 import com.escuderoseyner.wisp.dto.CuentaResponse;
 import com.escuderoseyner.wisp.dto.PasswordInicialRequest;
@@ -12,6 +13,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -45,6 +47,13 @@ public class AdministradorController {
     @PostMapping("/{id}/desactivar")
     public AdministradorResponse desactivar(@PathVariable Integer id, @AuthenticationPrincipal Jwt jwt) {
         return administradorService.desactivar(id, jwt.getSubject());
+    }
+
+    // Redes que ve un OPERADOR (casillas en la pantalla Admins)
+    @PutMapping("/{id}/redes")
+    public AdministradorResponse cambiarRedes(@PathVariable Integer id, @AuthenticationPrincipal Jwt jwt,
+                                              @Valid @RequestBody CambiarRedesRequest request) {
+        return administradorService.cambiarRedes(id, request.redIds(), jwt.getSubject());
     }
 
     @PostMapping("/{id}/reactivar")

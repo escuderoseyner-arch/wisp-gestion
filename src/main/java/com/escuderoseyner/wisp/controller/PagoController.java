@@ -28,15 +28,16 @@ public class PagoController {
         this.pagoService = pagoService;
     }
 
-    // GET /api/admin/pagos/mes?periodo=2026-10  (sin periodo: el mes actual)
+    // GET /api/admin/pagos/mes?periodo=2026-10&redId=1  (sin periodo: el mes actual; sin redId: todas sus redes)
     @GetMapping("/mes")
-    public ResumenMesResponse resumenDelMes(@RequestParam(required = false) String periodo) {
-        return pagoService.resumenDelMes(periodo);
+    public ResumenMesResponse resumenDelMes(@RequestParam(required = false) String periodo,
+                                            @RequestParam(required = false) Integer redId) {
+        return pagoService.resumenDelMes(periodo, redId);
     }
 
     @GetMapping("/cliente/{clienteId}")
     public EstadoCuentaResponse estadoDeCuenta(@PathVariable Integer clienteId) {
-        return pagoService.estadoDeCuenta(clienteId);
+        return pagoService.estadoDeCuentaParaPersonal(clienteId);
     }
 
     // registrado_por = el admin del token, nunca un dato enviado por el navegador

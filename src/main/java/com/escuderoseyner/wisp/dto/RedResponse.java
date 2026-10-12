@@ -9,6 +9,7 @@ import java.util.List;
 public record RedResponse(
         Integer id,
         String nombre,
+        String prefijoCodigo,
         String colaPadre,
         List<String> colasProtegidas,
         Integer intervaloSegundos,

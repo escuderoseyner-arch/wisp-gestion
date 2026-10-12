@@ -28,7 +28,18 @@
   document.getElementById('boton-cancelar').addEventListener('click', cerrarFormulario);
   form.addEventListener('submit', guardar);
 
+  cargarRedes();
   cargarPlanes();
+
+  // Opciones de "Red" del formulario
+  async function cargarRedes() {
+    try {
+      const redes = await Sesion.api('/api/admin/redes');
+      form.redId.replaceChildren(new Option('Todas las redes', ''), ...redes.map((r) => new Option(r.nombre, r.id)));
+    } catch {
+      // sin redes: solo "Todas las redes"
+    }
+  }
 
   // ---------- Listado ----------
 
@@ -74,7 +85,11 @@
     velocidad.className = 'tarjeta-plan-velocidad';
     velocidad.textContent = '↓ ' + plan.bajadaMbps + ' Mbps · ↑ ' + plan.subidaMbps + ' Mbps';
 
-    item.append(cabecera, precio, velocidad);
+    const red = document.createElement('p');
+    red.className = 'campo-ayuda';
+    red.textContent = plan.redNombre ? 'Red: ' + plan.redNombre : 'Todas las redes';
+
+    item.append(cabecera, precio, velocidad, red);
 
     if (!plan.activo) {
       const nota = document.createElement('p');
@@ -139,6 +154,7 @@
     form.bajadaMbps.value = plan ? plan.bajadaMbps : '';
     form.subidaMbps.value = plan ? plan.subidaMbps : '';
     form.precio.value = plan ? Number(plan.precio).toFixed(2) : '';
+    form.redId.value = plan && plan.redId != null ? plan.redId : '';
 
     panelFormulario.hidden = false;
     botonNuevo.hidden = true;
@@ -164,6 +180,7 @@
       bajadaMbps: Number(form.bajadaMbps.value),
       subidaMbps: Number(form.subidaMbps.value),
       precio: Number(form.precio.value),
+      redId: form.redId.value ? Number(form.redId.value) : null,
     };
 
     // Validación rápida en el navegador. El servidor vuelve a validar todo.

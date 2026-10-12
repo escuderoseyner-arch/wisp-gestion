@@ -7,6 +7,9 @@ public interface DatosRed {
 
     String nombre();
 
+    // Prefijo de los códigos de sus clientes (ej: "C-", "CP-")
+    String prefijoCodigo();
+
     String colaPadre();
 
     String colasProtegidas();
