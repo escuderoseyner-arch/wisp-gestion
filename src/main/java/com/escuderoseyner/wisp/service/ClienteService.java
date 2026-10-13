@@ -33,8 +33,10 @@ import java.util.regex.Pattern;
 @Service
 public class ClienteService {
 
-    // Prefijo de la red (C-, CP-, ...) y número. Ej: C-07, CP-10
-    private static final Pattern FORMATO_CODIGO = Pattern.compile("^([A-Z]{1,4}-)(\\d{2,8})$");
+    // Prefijo de la red (C-, CP-, ...) y luego letras y números. Ej: C-07, CP-10, CP-W2 (sin antena)
+    private static final Pattern FORMATO_CODIGO = Pattern.compile("^([A-Z]{1,4}-)([A-Z0-9]{1,8})$");
+    // Solo los códigos numéricos (C-07, CP-10): con ellos se calcula el "siguiente código" y el orden
+    private static final Pattern CODIGO_NUMERICO = Pattern.compile("^([A-Z]{1,4}-)(\\d{1,8})$");
     private static final String PREFIJO_SIN_RED = "C-";
     private static final Pattern FORMATO_CELULAR = Pattern.compile("^9\\d{8}$");
     // Cuatro números de 0 a 255 separados por puntos, sin ceros a la izquierda
@@ -125,7 +127,7 @@ public class ClienteService {
         }
         String buscado = prefijo;
         long mayor = clienteRepository.findAllCodigos().stream()
-                .map(FORMATO_CODIGO::matcher)
+                .map(CODIGO_NUMERICO::matcher)
                 .filter(m -> m.matches() && m.group(1).equals(buscado))
                 .mapToLong(m -> Long.parseLong(m.group(2)))
                 .max()
@@ -228,9 +230,9 @@ public class ClienteService {
     private void validarYAplicar(Cliente cliente, String codigoRecibido, DatosCliente datos,
                                  Integer idExcluir, Plan planActual, String codigoActual, List<String> problemas) {
         String codigo = codigoRecibido == null ? "" : codigoRecibido.trim().toUpperCase(Locale.ROOT);
-        boolean formatoOk = FORMATO_CODIGO.matcher(codigo).matches();
+        boolean formatoOk = codigoValido(codigo);
         if (!formatoOk) {
-            problemas.add("El código debe tener el formato PREFIJO-NN (ej: C-07 o CP-10).");
+            problemas.add("El código debe ser el prefijo de la red y letras o números (ej: C-07, CP-10 o CP-W2).");
         } else if (codigoEnUso(codigo, idExcluir)) {
             problemas.add("El código " + codigo + " ya lo tiene otro cliente vigente.");
         }
@@ -384,8 +386,13 @@ public class ClienteService {
         return texto.replace("!", "!!").replace("%", "!%").replace("_", "!_");
     }
 
+    static boolean codigoValido(String codigo) {
+        return codigo != null && FORMATO_CODIGO.matcher(codigo).matches();
+    }
+
+    // Los códigos con letras (CP-W2) van después de los numéricos de su prefijo
     private static long numeroDeCodigo(String codigo) {
-        Matcher m = FORMATO_CODIGO.matcher(codigo);
+        Matcher m = CODIGO_NUMERICO.matcher(codigo);
         return m.matches() ? Long.parseLong(m.group(2)) : Long.MAX_VALUE;
     }
 

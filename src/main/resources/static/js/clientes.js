@@ -18,7 +18,7 @@
   const URL_REDES = '/api/admin/redes';
 
   const ETIQUETA_ESTADO = { ACTIVO: 'Activo', SUSPENDIDO: 'Suspendido', RETIRADO: 'Retirado' };
-  const FORMATO_CODIGO = /^[A-Z]{1,4}-\d{2,8}$/;
+  const FORMATO_CODIGO = /^[A-Z]{1,4}-[A-Z0-9]{1,8}$/;
   const FORMATO_CELULAR = /^9\d{8}$/;
   const FORMATO_NOMBRE_COLA = /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/;
   const FORMATO_IPV4 = /^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/;
@@ -847,7 +847,7 @@
   function validar(d) {
     const problemas = [];
     if (estadoFormulario.modo !== 'reasignar' && !FORMATO_CODIGO.test(d.codigo)) {
-      problemas.push('El código debe tener el formato PREFIJO-NN (ej: C-07 o CP-10).');
+      problemas.push('El código debe ser el prefijo de la red y letras o números (ej: C-07, CP-10 o CP-W2).');
     }
     if (!d.nombres) problemas.push('El nombre es obligatorio.');
     if (d.celular && !FORMATO_CELULAR.test(d.celular)) {
