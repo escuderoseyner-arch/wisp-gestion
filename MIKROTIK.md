@@ -11,8 +11,10 @@ Hay dos scripts en el router, independientes entre sí:
 | **wisp-sync** | La web (por el puente o pegándolo a mano) | Cada N segundos consulta acciones, las aplica, ejecuta los comandos de la terminal y envía el reporte. |
 
 El script `wisp-sync` solo crea, reemplaza o borra **su propio** script y **su propia** tarea programada
-(ambos llamados `wisp-sync`). No toca el puente, el firewall, la cola padre, las colas protegidas
+(ambos llamados `wisp-sync`). No toca el puente, las reglas del firewall, la cola padre, las colas protegidas
 ni ninguna cola que no sea de un cliente del sistema, y nunca activa fasttrack.
+Del firewall solo maneja **sus propias** entradas de la address-list `wisp-cortados`
+(comentario `wisp-gestion:<cola>`) y borra las conexiones abiertas de un cliente al cortarlo.
 Si `wisp-sync` falla, el puente sigue funcionando y puede reinstalarlo.
 
 ---
@@ -121,6 +123,26 @@ Las colas de clientes usan `queue=fq-codel-up/fq-codel-down`. Si esos tipos no e
 ```
 
 Si falta un tipo o la cola padre, el script **no** modifica la cola y la acción queda con el error en la web.
+
+### 1.6 Corte real del servicio (firewall)
+
+Una cola deshabilitada **no corta** el internet: solo quita el límite. Para cortar de verdad, la web
+pone la IP de cada cliente **suspendido, con corte manual o retirado** en la address-list `wisp-cortados`
+(en modo Control). Esa lista no bloquea nada sola: agrega **una vez**, a mano, estas dos reglas:
+
+```
+/ip firewall filter add chain=forward src-address-list=wisp-cortados action=drop comment="wisp-gestion: clientes cortados (salida)" place-before=0
+/ip firewall filter add chain=forward dst-address-list=wisp-cortados action=drop comment="wisp-gestion: clientes cortados (entrada)" place-before=0
+```
+
+- `place-before=0` las deja primeras, antes de cualquier "accept established" o fasttrack.
+- Al cortar, `wisp-sync` también borra las conexiones abiertas de esa IP (si no, un video o una
+  descarga que ya estaba en curso seguiría, sobre todo con fasttrack).
+- Es `forward`: el cliente cortado aún llega al router (DHCP, DNS, ping), así que la web sigue viendo su conexión.
+- Si la IP de un retirado ya la usa un cliente vigente de la misma red, esa IP **no** se bloquea.
+- Límite: un cliente que se cambie la IP a mano se salta el bloqueo (usa leases DHCP estáticos o ARP `reply-only`).
+
+Revisa la lista: `/ip firewall address-list print where list=wisp-cortados`
 
 ---
 

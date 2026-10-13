@@ -49,6 +49,8 @@ public class MikrotikService {
     public static final String FIN = "# fin";
     private static final int MAX_ACCIONES_POR_CONSULTA = 50;
     private static final int CAMPOS_REPORTE = 12;
+    // Q2: igual que Q, más "¿está en wisp-cortados?" antes del comentario (que va al final)
+    private static final int CAMPOS_REPORTE_V2 = 13;
 
     private final RedRepository redRepository;
     private final ColaRepository colaRepository;
@@ -130,9 +132,11 @@ public class MikrotikService {
                     accion.setResueltaEn(ahora);
                     continue;
                 }
+                // El último campo (corte) es nuevo: un script anterior lo ignora sin romperse
                 linea(texto, String.join("|", "Q", String.valueOf(accion.getId()), cola.getNombre(), cola.getTarget(),
                         cola.getMaxLimit(), cola.getParent(), cola.getTipoCola(),
-                        cola.getDeshabilitada() ? "yes" : "no", cola.getComentario()));
+                        cola.getDeshabilitada() ? "yes" : "no", cola.getComentario(),
+                        cola.getCortada() ? "yes" : "no"));
                 if (accion.getEstado() == EstadoAccion.PENDIENTE) {
                     accion.setEstado(EstadoAccion.ENVIADA);
                     accion.setEnviadaEn(ahora);
@@ -230,11 +234,13 @@ public class MikrotikService {
         LocalDate periodo = ahora.toLocalDate().withDayOfMonth(1);
         int actualizadas = 0;
         for (String linea : cuerpo.split("\\r?\\n")) {
-            if (!linea.startsWith("Q|")) {
+            boolean v2 = linea.startsWith("Q2|");
+            if (!v2 && !linea.startsWith("Q|")) {
                 continue;
             }
-            String[] c = linea.split("\\|", CAMPOS_REPORTE);
-            if (c.length < CAMPOS_REPORTE) {
+            int campos = v2 ? CAMPOS_REPORTE_V2 : CAMPOS_REPORTE;
+            String[] c = linea.split("\\|", campos);
+            if (c.length < campos) {
                 continue;
             }
             Cola cola = porNombre.get(c[1].trim().toLowerCase(Locale.ROOT));
@@ -242,7 +248,9 @@ public class MikrotikService {
             if (cola == null || RedService.esColaProtegida(red, cola.getNombre())) {
                 continue;
             }
-            aplicarReporte(cola, c, periodo, ahora);
+            // Script anterior (Q): no informa la lista, se deja en null para no mostrar diferencias falsas
+            cola.setRepCortada(v2 ? FormatoRouterOs.booleano(c[11]) : null);
+            aplicarReporte(cola, c, v2 ? c[12] : c[11], periodo, ahora);
             actualizadas++;
         }
 
@@ -252,7 +260,7 @@ public class MikrotikService {
         return actualizadas;
     }
 
-    private void aplicarReporte(Cola cola, String[] c, LocalDate periodo, LocalDateTime ahora) {
+    private void aplicarReporte(Cola cola, String[] c, String comentario, LocalDate periodo, LocalDateTime ahora) {
         boolean existe = "1".equals(c[2].trim());
         cola.setRepExiste(existe);
         cola.setReportadoEn(ahora);
@@ -273,7 +281,7 @@ public class MikrotikService {
         cola.setRepParent(FormatoRouterOs.textoRecibido(c[5], 60));
         cola.setRepTipoCola(FormatoRouterOs.textoRecibido(c[6], 80));
         cola.setRepDeshabilitada(FormatoRouterOs.booleano(c[7]));
-        cola.setRepComentario(FormatoRouterOs.textoRecibido(c[11], 150));
+        cola.setRepComentario(FormatoRouterOs.textoRecibido(comentario, 150));
 
         long[] rate = FormatoRouterOs.parSubidaBajada(c[8]);
         cola.setRateSubidaBps(rate == null ? null : rate[0]);

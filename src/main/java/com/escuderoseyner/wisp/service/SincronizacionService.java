@@ -32,7 +32,11 @@ import java.util.Set;
 // Reglas:
 //  - Una cola por cliente vigente de la red: target = IP/32, max-limit = subida/bajada del plan,
 //    parent = cola padre, tipo fq-codel, comentario = nombre, deshabilitada si no está ACTIVO o tiene corte manual.
-//  - Una cola que se queda sin dueño vigente (retiro, cambio de nombre o de red) se DESHABILITA, nunca se borra.
+//  - "cortada" (su IP va a la address-list wisp-cortados, que el firewall del router bloquea):
+//    cliente SUSPENDIDO o con corte manual, y las colas sin dueño vigente (RETIRADOS).
+//  - Una cola que se queda sin dueño vigente (retiro, cambio de nombre o de red) se DESHABILITA y se CORTA,
+//    nunca se borra. Excepción: si su IP ya la usa un cliente vigente de la misma red, no se corta
+//    (si no, se bloquearía a la persona nueva).
 //  - La cola padre y las protegidas nunca reciben acciones.
 //  - En SOLO_LECTURA se guarda el estado deseado pero no se crean acciones.
 @Service
@@ -83,6 +87,7 @@ public class SincronizacionService {
 
         int cambios = 0;
         Set<Integer> conDueno = new HashSet<>();
+        Set<String> targetsVigentes = new HashSet<>();
         for (Cliente cliente : clienteRepository.findVigentesDeRed(red.getId())) {
             String nombre = cliente.getNombreCola();
             // Defensa extra: la validación del cliente ya lo impide
@@ -99,12 +104,15 @@ public class SincronizacionService {
             }
             cola.setCliente(cliente);
             boolean deshabilitada = cliente.getEstado() != EstadoCliente.ACTIVO || cliente.getCorteManual();
+            String target = FormatoRouterOs.target(cliente.getIp());
+            targetsVigentes.add(target);
             boolean cambio = aplicarDeseado(cola,
-                    FormatoRouterOs.target(cliente.getIp()),
+                    target,
                     FormatoRouterOs.maxLimit(cliente.getPlan().getSubidaMbps(), cliente.getPlan().getBajadaMbps()),
                     red.getColaPadre(),
                     FormatoRouterOs.comentario(cliente.getNombres()),
-                    deshabilitada);
+                    deshabilitada,
+                    deshabilitada); // suspendido o corte manual: también se bloquea
             if (nueva || cambio) {
                 colaRepository.save(cola);
                 accionSiCorresponde(cola, motivo, usuario);
@@ -113,12 +121,14 @@ public class SincronizacionService {
             conDueno.add(cola.getId());
         }
 
-        // Colas sin dueño vigente: se deshabilitan (con el resto igual)
+        // Colas sin dueño vigente (retirados): se deshabilitan y se cortan, salvo que su IP ya sea de un vigente
         for (Cola cola : porNombre.values()) {
             if (cola.getId() == null || conDueno.contains(cola.getId())) {
                 continue;
             }
-            if (aplicarDeseado(cola, cola.getTarget(), cola.getMaxLimit(), red.getColaPadre(), cola.getComentario(), true)) {
+            boolean cortada = !targetsVigentes.contains(cola.getTarget());
+            if (aplicarDeseado(cola, cola.getTarget(), cola.getMaxLimit(), red.getColaPadre(), cola.getComentario(),
+                    true, cortada)) {
                 accionSiCorresponde(cola, motivo, usuario);
                 cambios++;
             }
@@ -180,6 +190,9 @@ public class SincronizacionService {
         }
         if (!cola.getRepExiste()) {
             lista.add("No existe en el MikroTik");
+            if (cola.getCortada() && Boolean.FALSE.equals(cola.getRepCortada())) {
+                lista.add("Su IP debería estar en wisp-cortados (bloqueada)");
+            }
             return lista;
         }
         if (!FormatoRouterOs.mismoTarget(cola.getTarget(), cola.getRepTarget())) {
@@ -200,6 +213,11 @@ public class SincronizacionService {
         if (!Objects.equals(cola.getDeshabilitada(), cola.getRepDeshabilitada())) {
             lista.add(cola.getDeshabilitada() ? "Debería estar deshabilitada" : "Debería estar habilitada");
         }
+        // Solo si el script del router ya informa la lista (versión con wisp-cortados)
+        if (cola.getRepCortada() != null && !Objects.equals(cola.getCortada(), cola.getRepCortada())) {
+            lista.add(cola.getCortada() ? "Su IP debería estar en wisp-cortados (bloqueada)"
+                    : "Su IP no debería estar en wisp-cortados");
+        }
         return lista;
     }
 
@@ -207,13 +225,14 @@ public class SincronizacionService {
 
     // true si cambió algo del estado deseado
     private boolean aplicarDeseado(Cola cola, String target, String maxLimit, String parent, String comentario,
-                                   boolean deshabilitada) {
+                                   boolean deshabilitada, boolean cortada) {
         boolean cambio = !Objects.equals(cola.getTarget(), target)
                 || !Objects.equals(cola.getMaxLimit(), maxLimit)
                 || !Objects.equals(cola.getParent(), parent)
                 || !Objects.equals(cola.getTipoCola(), FormatoRouterOs.TIPO_COLA)
                 || !Objects.equals(cola.getComentario(), comentario)
-                || !Objects.equals(cola.getDeshabilitada(), deshabilitada);
+                || !Objects.equals(cola.getDeshabilitada(), deshabilitada)
+                || !Objects.equals(cola.getCortada(), cortada);
         if (cambio) {
             cola.setTarget(target);
             cola.setMaxLimit(maxLimit);
@@ -221,6 +240,7 @@ public class SincronizacionService {
             cola.setTipoCola(FormatoRouterOs.TIPO_COLA);
             cola.setComentario(comentario);
             cola.setDeshabilitada(deshabilitada);
+            cola.setCortada(cortada);
             cola.setDeseadoEn(LocalDateTime.now());
         }
         return cambio;

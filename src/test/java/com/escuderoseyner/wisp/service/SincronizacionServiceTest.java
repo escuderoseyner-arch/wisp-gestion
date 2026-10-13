@@ -228,4 +228,81 @@ class SincronizacionServiceTest {
 
         assertThat(SincronizacionService.diferencias(cola)).containsExactly("Debería estar deshabilitada");
     }
+
+    // ---------- wisp-cortados ----------
+
+    @Test
+    @DisplayName("Activo: no va a wisp-cortados; suspendido o con corte manual: sí")
+    void cortadaSegunEstado() {
+        cliente(1, "C-01", EstadoCliente.ACTIVO);
+        cliente(2, "C-02", EstadoCliente.SUSPENDIDO);
+        Cliente manual = cliente(3, "C-03", EstadoCliente.ACTIVO);
+        manual.setCorteManual(true);
+
+        servicio.recalcularRed(red, MotivoAccion.CAMBIO, null);
+
+        assertThat(colas).extracting(Cola::getNombre, Cola::getCortada)
+                .containsExactlyInAnyOrder(org.assertj.core.groups.Tuple.tuple("C-01", false),
+                        org.assertj.core.groups.Tuple.tuple("C-02", true), org.assertj.core.groups.Tuple.tuple("C-03", true));
+    }
+
+    @Test
+    @DisplayName("Retirado: su cola se deshabilita y su IP va a wisp-cortados (con una acción en modo Control)")
+    void retiradoQuedaCortado() {
+        Cliente c = cliente(1, "C-01", EstadoCliente.ACTIVO);
+        servicio.recalcularRed(red, MotivoAccion.CAMBIO, null);
+
+        c.setEstado(EstadoCliente.RETIRADO);
+        clientes.clear();
+        servicio.recalcularRed(red, MotivoAccion.CAMBIO, null);
+
+        assertThat(colas.getFirst().getDeshabilitada()).isTrue();
+        assertThat(colas.getFirst().getCortada()).isTrue();
+        verify(accionColaRepository, org.mockito.Mockito.times(2)).save(any(AccionCola.class));
+    }
+
+    @Test
+    @DisplayName("Retirado cuya IP ya usa un cliente vigente de la red: no se corta (no bloquea a la persona nueva)")
+    void retiradoConIpReutilizadaNoSeCorta() {
+        Cliente anterior = cliente(1, "C-01", EstadoCliente.ACTIVO);
+        servicio.recalcularRed(red, MotivoAccion.CAMBIO, null);
+
+        anterior.setEstado(EstadoCliente.RETIRADO);
+        clientes.clear();
+        Cliente nuevo = cliente(2, "C-05", EstadoCliente.ACTIVO);
+        nuevo.setIp(anterior.getIp());
+        servicio.recalcularRed(red, MotivoAccion.CAMBIO, null);
+
+        Cola vieja = colas.stream().filter(c -> c.getNombre().equals("C-01")).findFirst().orElseThrow();
+        Cola nueva = colas.stream().filter(c -> c.getNombre().equals("C-05")).findFirst().orElseThrow();
+        assertThat(vieja.getDeshabilitada()).isTrue();
+        assertThat(vieja.getCortada()).isFalse();
+        assertThat(nueva.getCortada()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Diferencias de wisp-cortados: solo si el router ya informa la lista")
+    void diferenciasCortada() {
+        Cola cola = new Cola();
+        cola.setTarget("192.168.1.11/32");
+        cola.setMaxLimit("5M/15M");
+        cola.setParent("Total-Clientes");
+        cola.setTipoCola("fq-codel-up/fq-codel-down");
+        cola.setComentario("Maria Demo");
+        cola.setDeshabilitada(true);
+        cola.setCortada(true);
+        cola.setRepExiste(true);
+        cola.setRepTarget("192.168.1.11/32");
+        cola.setRepMaxLimit("5M/15M");
+        cola.setRepParent("Total-Clientes");
+        cola.setRepTipoCola("fq-codel-up/fq-codel-down");
+        cola.setRepComentario("Maria Demo");
+        cola.setRepDeshabilitada(true);
+
+        assertThat(SincronizacionService.diferencias(cola)).isEmpty(); // script anterior: rep_cortada null
+        cola.setRepCortada(false);
+        assertThat(SincronizacionService.diferencias(cola)).containsExactly("Su IP debería estar en wisp-cortados (bloqueada)");
+        cola.setRepCortada(true);
+        assertThat(SincronizacionService.diferencias(cola)).isEmpty();
+    }
 }

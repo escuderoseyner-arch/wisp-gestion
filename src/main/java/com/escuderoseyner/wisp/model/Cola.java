@@ -50,6 +50,11 @@ public class Cola {
     @Column(nullable = false)
     private Boolean deshabilitada;
 
+    // Su IP debe estar en la address-list "wisp-cortados" del MikroTik (script 009):
+    // cliente SUSPENDIDO, con corte manual o RETIRADO. El firewall del router bloquea esa lista.
+    @Column(nullable = false)
+    private Boolean cortada = false;
+
     @Column(name = "deseado_en", nullable = false)
     private LocalDateTime deseadoEn;
 
@@ -75,6 +80,10 @@ public class Cola {
 
     @Column(name = "rep_deshabilitada")
     private Boolean repDeshabilitada;
+
+    // ¿Su IP está en wisp-cortados? null = el script del router aún no lo informa (versión anterior)
+    @Column(name = "rep_cortada")
+    private Boolean repCortada;
 
     @Column(name = "rate_subida_bps")
     private Long rateSubidaBps;

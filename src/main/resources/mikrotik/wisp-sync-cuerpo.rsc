@@ -55,6 +55,7 @@
           :local err ""
           :if (($n = "") || ($padre = "") || ($n = $padre)) do={ :set err "Nombre de cola no permitido" }
           :foreach p in=$protegidas do={ :if ($p = $n) do={ :set err "Cola protegida: no se modifica" } }
+          :local permitido ($err = "")
           :if (($err = "") && (($f->5) != $padre)) do={ :set err "El parent recibido no es la cola padre" }
           :if (($err = "") && ([:len [/queue simple find where name=$padre]] = 0)) do={ :set err ("No existe la cola padre " . $padre) }
           :if ($err = "") do={
@@ -80,6 +81,25 @@
               }
             } on-error={ :set ok false }
             :if (!$ok) do={ :set err "RouterOS rechazo el cambio (revisa el target, la velocidad y que la IP no este en otra cola)" }
+          }
+          :if ($permitido && ([:len $f] > 9)) do={
+            :local t ($f->3)
+            :local ipc $t
+            :local barraIp [:find $t "/"]
+            :if ([:typeof $barraIp] != "nil") do={ :set ipc [:pick $t 0 $barraIp] }
+            :local etiqueta ("wisp-gestion:" . $n)
+            :local okLista true
+            :do {
+              /ip firewall address-list remove [find where list="wisp-cortados" and comment=$etiqueta]
+              :if (($f->9) = "yes") do={
+                :if ([:len [/ip firewall address-list find where list="wisp-cortados" and address=$ipc]] = 0) do={
+                  /ip firewall address-list add list="wisp-cortados" address=$ipc comment=$etiqueta
+                }
+                :foreach k in=[/ip firewall connection find where src-address~("^" . $ipc . ":")] do={ :do { /ip firewall connection remove $k } on-error={} }
+                :foreach k in=[/ip firewall connection find where dst-address~("^" . $ipc . ":")] do={ :do { /ip firewall connection remove $k } on-error={} }
+              }
+            } on-error={ :set okLista false }
+            :if ((!$okLista) && ($err = "")) do={ :set err "No se pudo actualizar la address-list wisp-cortados" }
           }
           :do {
             :if ($err = "") do={
@@ -125,12 +145,18 @@
               :if ([/ping address=$ip count=1] > 0) do={ :set ping "1" } else={ :set ping "0" }
             } on-error={}
           }
+          :local cortada "0"
+          :if ($ip != "") do={
+            :do {
+              :if ([:len [/ip firewall address-list find where list="wisp-cortados" and address=$ip]] > 0) do={ :set cortada "1" }
+            } on-error={}
+          }
           :local q [/queue simple find where name=$n]
           :if ([:len $q] = 0) do={
-            :set cuerpo ($cuerpo . "Q|" . $n . "|0||||||||" . $ping . "|\n")
+            :set cuerpo ($cuerpo . "Q2|" . $n . "|0||||||||" . $ping . "|" . $cortada . "|\n")
           } else={
             :local d [/queue simple get ($q->0)]
-            :set cuerpo ($cuerpo . "Q|" . $n . "|1|" . [:tostr ($d->"target")] . "|" . ($d->"max-limit") . "|" . ($d->"parent") . "|" . ($d->"queue") . "|" . [:tostr ($d->"disabled")] . "|" . ($d->"rate") . "|" . ($d->"bytes") . "|" . $ping . "|" . ($d->"comment") . "\n")
+            :set cuerpo ($cuerpo . "Q2|" . $n . "|1|" . [:tostr ($d->"target")] . "|" . ($d->"max-limit") . "|" . ($d->"parent") . "|" . ($d->"queue") . "|" . [:tostr ($d->"disabled")] . "|" . ($d->"rate") . "|" . ($d->"bytes") . "|" . $ping . "|" . $cortada . "|" . ($d->"comment") . "\n")
           }
         }
       }

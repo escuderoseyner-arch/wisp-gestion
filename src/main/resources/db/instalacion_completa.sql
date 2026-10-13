@@ -2,9 +2,9 @@
 --  SISTEMA DE GESTIÓN PARA PROVEEDORES DE INTERNET (WISP)
 --  INSTALACIÓN COMPLETA para una base de datos NUEVA (MySQL 8.x)
 --
---  Equivale a wisp_db.sql + 002 + 003 + 004 + 005 + 006 + 007 + 008, con los cambios ya
+--  Equivale a wisp_db.sql + 002 + 003 + 004 + 005 + 006 + 007 + 008 + 009, con los cambios ya
 --  integrados en cada tabla (sin los pagos de ejemplo).
---  Si tu base ya existe, NO uses este archivo: usa los scripts 002-008.
+--  Si tu base ya existe, NO uses este archivo: usa los scripts 002-009.
 --
 --  Ejecutar UNA sola vez con el usuario administrador del servidor
 --  (root en local; avnadmin en Aiven).
@@ -216,6 +216,7 @@ CREATE TABLE colas (
   tipo_cola          VARCHAR(60)  NOT NULL,                  -- ej: fq-codel-up/fq-codel-down
   comentario         VARCHAR(100) NOT NULL,
   deshabilitada      BOOLEAN      NOT NULL,
+  cortada            BOOLEAN      NOT NULL DEFAULT FALSE,    -- su IP va a la address-list wisp-cortados
   deseado_en         DATETIME     NOT NULL,
 
   -- Último reporte del MikroTik (NULL = todavía no reporta)
@@ -226,6 +227,7 @@ CREATE TABLE colas (
   rep_tipo_cola      VARCHAR(80)  NULL,
   rep_comentario     VARCHAR(150) NULL,
   rep_deshabilitada  BOOLEAN      NULL,
+  rep_cortada        BOOLEAN      NULL,                      -- NULL = el script aún no informa la lista
   rate_subida_bps    BIGINT       NULL,
   rate_bajada_bps    BIGINT       NULL,
   bytes_subida       BIGINT       NULL,                      -- contador del MikroTik (se reinicia)

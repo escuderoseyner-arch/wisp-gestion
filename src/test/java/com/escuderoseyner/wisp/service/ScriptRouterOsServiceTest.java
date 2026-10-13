@@ -50,9 +50,24 @@ class ScriptRouterOsServiceTest {
             cantidad++;
         }
         assertThat(cantidad).isEqualTo(2);
-        // Nada de firewall, fasttrack, reinicios ni borrado de colas
-        assertThat(script.toLowerCase()).doesNotContain("fasttrack", "/ip firewall", "/system reboot",
-                "queue simple remove", "/system reset");
+        // Nada de reglas de firewall, fasttrack, reinicios ni borrado de colas
+        String minusculas = script.toLowerCase();
+        assertThat(minusculas).doesNotContain("fasttrack", "/ip firewall filter", "/ip firewall nat",
+                "/ip firewall mangle", "/ip firewall raw", "/system reboot", "queue simple remove", "/system reset");
+        // Del firewall solo toca su propia address-list (wisp-cortados) y las conexiones del cliente cortado
+        String cuerpo = cuerpo(script);
+        Matcher firewall = Pattern.compile("/ip firewall (\\S+) (\\S+)([^\\n]*)").matcher(cuerpo);
+        int usos = 0;
+        while (firewall.find()) {
+            assertThat(firewall.group(1)).isIn("address-list", "connection");
+            if (firewall.group(1).equals("address-list")) {
+                assertThat(firewall.group(3)).contains("list=\"wisp-cortados\"");
+            }
+            usos++;
+        }
+        assertThat(usos).isPositive();
+        // Solo borra las entradas que él mismo creó (comentario wisp-gestion:<cola>)
+        assertThat(cuerpo).contains("address-list remove [find where list=\"wisp-cortados\" and comment=$etiqueta]");
         assertThat(script).contains("check-certificate=yes-without-crl");
         assertThat(script).doesNotContain("check-certificate=no");
     }
