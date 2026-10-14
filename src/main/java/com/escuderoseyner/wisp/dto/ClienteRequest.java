@@ -46,6 +46,9 @@ public record ClienteRequest(
         Integer redId,
 
         @Size(max = 40, message = "El nombre de la cola no puede tener más de 40 caracteres")
-        String nombreCola
+        String nombreCola,
+
+        // Casilla "No mostrar aviso" de pago por Wi-Fi (null = no)
+        Boolean sinAviso
 ) implements DatosCliente {
 }

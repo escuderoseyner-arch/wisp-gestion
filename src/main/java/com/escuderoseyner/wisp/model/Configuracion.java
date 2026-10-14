@@ -57,6 +57,24 @@ public class Configuracion {
     @Column(name = "plantilla_recordatorio", nullable = false, length = 500)
     private String plantillaRecordatorio;
 
+    // Textos de la página de aviso por Wi-Fi (script 010), con {nombre}, {monto} y {mes}
+    @Column(name = "aviso_texto_suave", nullable = false, length = 500)
+    private String avisoTextoSuave = TEXTO_SUAVE;
+
+    @Column(name = "aviso_texto_vencido", nullable = false, length = 500)
+    private String avisoTextoVencido = TEXTO_VENCIDO;
+
+    @Column(name = "aviso_texto_suspendido", nullable = false, length = 500)
+    private String avisoTextoSuspendido = TEXTO_SUSPENDIDO;
+
+    // Los mismos valores por defecto que en 010_aviso_wifi.sql
+    public static final String TEXTO_SUAVE = "Hola {nombre}, te recordamos con cariño que ya llegó tu fecha de pago "
+            + "de internet ({mes}): {monto}. Si ya pagaste, envíanos tu comprobante. ¡Gracias por tu preferencia!";
+    public static final String TEXTO_VENCIDO = "Hola {nombre}, tu pago de internet de {mes} ya venció. Debes {monto}. "
+            + "Por favor paga pronto para que tu servicio no se suspenda. Si ya pagaste, envíanos tu comprobante.";
+    public static final String TEXTO_SUSPENDIDO = "Hola {nombre}, tu servicio de internet está suspendido. "
+            + "Debes {monto} ({mes}). Paga y envíanos tu comprobante por WhatsApp para volver a activarlo.";
+
     // Lo actualiza MySQL solo (ON UPDATE CURRENT_TIMESTAMP), Java no lo toca
     @Column(name = "actualizado_en", insertable = false, updatable = false)
     private LocalDateTime actualizadoEn;

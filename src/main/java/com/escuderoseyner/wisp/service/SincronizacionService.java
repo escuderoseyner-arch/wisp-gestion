@@ -12,11 +12,13 @@ import com.escuderoseyner.wisp.model.Usuario;
 import com.escuderoseyner.wisp.repository.AccionColaRepository;
 import com.escuderoseyner.wisp.repository.ClienteRepository;
 import com.escuderoseyner.wisp.repository.ColaRepository;
+import com.escuderoseyner.wisp.repository.PagoRepository;
 import com.escuderoseyner.wisp.repository.RedRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,6 +39,11 @@ import java.util.Set;
 //  - Una cola que se queda sin dueño vigente (retiro, cambio de nombre o de red) se DESHABILITA y se CORTA,
 //    nunca se borra. Excepción: si su IP ya la usa un cliente vigente de la misma red, no se corta
 //    (si no, se bloquearía a la persona nueva).
+//  - "aviso" (su IP va a la address-list wisp-aviso): red con el aviso activo, cliente ACTIVO sin corte manual,
+//    sin la casilla "No mostrar aviso", con un mes impago cuyo día de pago ya llegó y sin "Entendido" vigente.
+//  - "portal" (su regla en el proxy que desvía su HTTP a la página de aviso): red con el aviso activo y
+//    cola en aviso o cortada (los suspendidos ven "Servicio suspendido").
+//  - Las IP terminadas en .1 a .10 (MikroTik e infraestructura) nunca tienen aviso ni portal.
 //  - La cola padre y las protegidas nunca reciben acciones.
 //  - En SOLO_LECTURA se guarda el estado deseado pero no se crean acciones.
 @Service
@@ -48,13 +55,16 @@ public class SincronizacionService {
     private final AccionColaRepository accionColaRepository;
     private final ClienteRepository clienteRepository;
     private final RedRepository redRepository;
+    private final PagoRepository pagoRepository;
 
     public SincronizacionService(ColaRepository colaRepository, AccionColaRepository accionColaRepository,
-                                 ClienteRepository clienteRepository, RedRepository redRepository) {
+                                 ClienteRepository clienteRepository, RedRepository redRepository,
+                                 PagoRepository pagoRepository) {
         this.colaRepository = colaRepository;
         this.accionColaRepository = accionColaRepository;
         this.clienteRepository = clienteRepository;
         this.redRepository = redRepository;
+        this.pagoRepository = pagoRepository;
     }
 
     // ---------- Recalcular ----------
@@ -85,6 +95,13 @@ public class SincronizacionService {
             porNombre.put(clave(cola.getNombre()), cola);
         }
 
+        // El aviso depende de la fecha: como el MikroTik consulta cada minuto, entra y sale solo
+        LocalDateTime ahora = LocalDateTime.now();
+        boolean avisoRed = Boolean.TRUE.equals(red.getAvisoActivo());
+        Map<Integer, Set<YearMonth>> pagados = avisoRed
+                ? AvisoWifi.agruparPagados(pagoRepository.findClienteYPeriodoDeRed(red.getId()))
+                : Map.of();
+
         int cambios = 0;
         Set<Integer> conDueno = new HashSet<>();
         Set<String> targetsVigentes = new HashSet<>();
@@ -106,13 +123,20 @@ public class SincronizacionService {
             boolean deshabilitada = cliente.getEstado() != EstadoCliente.ACTIVO || cliente.getCorteManual();
             String target = FormatoRouterOs.target(cliente.getIp());
             targetsVigentes.add(target);
+            boolean ipPermitida = AvisoWifi.ipPermitida(cliente.getIp());
+            boolean aviso = avisoRed && ipPermitida && !deshabilitada && !Boolean.TRUE.equals(cliente.getSinAviso())
+                    && !AvisoWifi.pospuesto(cliente, ahora)
+                    && !AvisoWifi.mesesEnAviso(cliente, pagados.getOrDefault(cliente.getId(), Set.of()),
+                    ahora.toLocalDate()).isEmpty();
             boolean cambio = aplicarDeseado(cola,
                     target,
                     FormatoRouterOs.maxLimit(cliente.getPlan().getSubidaMbps(), cliente.getPlan().getBajadaMbps()),
                     red.getColaPadre(),
                     FormatoRouterOs.comentario(cliente.getNombres()),
                     deshabilitada,
-                    deshabilitada); // suspendido o corte manual: también se bloquea
+                    deshabilitada, // suspendido o corte manual: también se bloquea
+                    aviso,
+                    avisoRed && ipPermitida && (aviso || deshabilitada));
             if (nueva || cambio) {
                 colaRepository.save(cola);
                 accionSiCorresponde(cola, motivo, usuario);
@@ -127,8 +151,9 @@ public class SincronizacionService {
                 continue;
             }
             boolean cortada = !targetsVigentes.contains(cola.getTarget());
+            boolean portal = avisoRed && cortada && AvisoWifi.ipPermitida(cola.getTarget());
             if (aplicarDeseado(cola, cola.getTarget(), cola.getMaxLimit(), red.getColaPadre(), cola.getComentario(),
-                    true, cortada)) {
+                    true, cortada, false, portal)) {
                 accionSiCorresponde(cola, motivo, usuario);
                 cambios++;
             }
@@ -193,6 +218,9 @@ public class SincronizacionService {
             if (cola.getCortada() && Boolean.FALSE.equals(cola.getRepCortada())) {
                 lista.add("Su IP debería estar en wisp-cortados (bloqueada)");
             }
+            if (cola.getAviso() && Boolean.FALSE.equals(cola.getRepAviso())) {
+                lista.add("Su IP debería estar en wisp-aviso (aviso de pago)");
+            }
             return lista;
         }
         if (!FormatoRouterOs.mismoTarget(cola.getTarget(), cola.getRepTarget())) {
@@ -218,6 +246,10 @@ public class SincronizacionService {
             lista.add(cola.getCortada() ? "Su IP debería estar en wisp-cortados (bloqueada)"
                     : "Su IP no debería estar en wisp-cortados");
         }
+        if (cola.getRepAviso() != null && !Objects.equals(cola.getAviso(), cola.getRepAviso())) {
+            lista.add(cola.getAviso() ? "Su IP debería estar en wisp-aviso (aviso de pago)"
+                    : "Su IP no debería estar en wisp-aviso");
+        }
         return lista;
     }
 
@@ -225,14 +257,16 @@ public class SincronizacionService {
 
     // true si cambió algo del estado deseado
     private boolean aplicarDeseado(Cola cola, String target, String maxLimit, String parent, String comentario,
-                                   boolean deshabilitada, boolean cortada) {
+                                   boolean deshabilitada, boolean cortada, boolean aviso, boolean portal) {
         boolean cambio = !Objects.equals(cola.getTarget(), target)
                 || !Objects.equals(cola.getMaxLimit(), maxLimit)
                 || !Objects.equals(cola.getParent(), parent)
                 || !Objects.equals(cola.getTipoCola(), FormatoRouterOs.TIPO_COLA)
                 || !Objects.equals(cola.getComentario(), comentario)
                 || !Objects.equals(cola.getDeshabilitada(), deshabilitada)
-                || !Objects.equals(cola.getCortada(), cortada);
+                || !Objects.equals(cola.getCortada(), cortada)
+                || !Objects.equals(cola.getAviso(), aviso)
+                || !Objects.equals(cola.getPortal(), portal);
         if (cambio) {
             cola.setTarget(target);
             cola.setMaxLimit(maxLimit);
@@ -241,6 +275,11 @@ public class SincronizacionService {
             cola.setComentario(comentario);
             cola.setDeshabilitada(deshabilitada);
             cola.setCortada(cortada);
+            cola.setAviso(aviso);
+            cola.setPortal(portal);
+            if (!portal) {
+                cola.setPortalTokenHash(null); // su página deja de abrir al instante
+            }
             cola.setDeseadoEn(LocalDateTime.now());
         }
         return cambio;

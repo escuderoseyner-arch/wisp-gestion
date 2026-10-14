@@ -1,5 +1,6 @@
 package com.escuderoseyner.wisp.controller;
 
+import com.escuderoseyner.wisp.dto.CambiarAvisoRequest;
 import com.escuderoseyner.wisp.dto.CambiarTokenRedRequest;
 import com.escuderoseyner.wisp.dto.CrearRedRequest;
 import com.escuderoseyner.wisp.dto.GenerarScriptRequest;
@@ -72,6 +73,12 @@ public class RedController {
     public ScriptRedResponse script(@PathVariable Integer id, @Valid @RequestBody GenerarScriptRequest request) {
         return redService.generarScript(id, request.token(),
                 ServletUriComponentsBuilder.fromCurrentContextPath().toUriString());
+    }
+
+    // Activar o desactivar el aviso de pago por Wi-Fi de la red
+    @PutMapping("/{id}/aviso")
+    public RedResponse aviso(@PathVariable Integer id, @Valid @RequestBody CambiarAvisoRequest request) {
+        return redService.cambiarAviso(id, request.activo());
     }
 
     @PostMapping("/{id}/reinstalar")

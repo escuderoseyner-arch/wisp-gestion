@@ -71,7 +71,7 @@
 
       <section class="panel" aria-labelledby="titulo-pago">
         <h2 id="titulo-pago" class="panel-titulo">Datos para pagar</h2>
-        <p class="campo-ayuda">Solo los ven los clientes que iniciaron sesión.</p>
+        <p class="campo-ayuda">Los ven los clientes en su portal y en el aviso de pago por Wi-Fi.</p>
         <div class="campo">
           <label for="yape-numero">Número de Yape <span class="opcional">(opcional)</span></label>
           <input id="yape-numero" name="yapeNumero" type="tel" inputmode="numeric" maxlength="15" autocomplete="off">
@@ -110,6 +110,24 @@
         </div>
         <p class="etiqueta-suave">Vista previa</p>
         <p id="vista-previa" class="vista-previa" aria-live="polite"></p>
+      </section>
+
+      <section class="panel" aria-labelledby="titulo-aviso-wifi">
+        <h2 id="titulo-aviso-wifi" class="panel-titulo">Aviso de pago por Wi-Fi</h2>
+        <p class="campo-ayuda">Lo que lee el cliente en su celular. Se activa por red en Redes → Panel.
+          Puedes usar <code>{nombre}</code>, <code>{monto}</code> y <code>{mes}</code>.</p>
+        <div class="campo">
+          <label for="aviso-suave">Desde su día de pago (recordatorio)</label>
+          <textarea id="aviso-suave" name="avisoTextoSuave" rows="3" maxlength="500" required></textarea>
+        </div>
+        <div class="campo">
+          <label for="aviso-vencido">Después de los días de tolerancia (pago vencido)</label>
+          <textarea id="aviso-vencido" name="avisoTextoVencido" rows="3" maxlength="500" required></textarea>
+        </div>
+        <div class="campo">
+          <label for="aviso-suspendido">Servicio suspendido</label>
+          <textarea id="aviso-suspendido" name="avisoTextoSuspendido" rows="3" maxlength="500" required></textarea>
+        </div>
       </section>
 
       <div id="error-formulario" class="aviso aviso-error" role="alert" hidden></div>

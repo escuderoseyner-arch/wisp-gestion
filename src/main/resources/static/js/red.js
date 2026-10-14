@@ -24,6 +24,7 @@
   $('boton-actualizar').addEventListener('click', cargar);
   $('boton-aplicar').addEventListener('click', aplicarDiferencias);
   $('boton-ver-colas').addEventListener('click', alternarColas);
+  $('boton-aviso').addEventListener('click', cambiarAviso);
 
   if (!Number.isInteger(redId) || redId <= 0) {
     $('cargando').hidden = true;
@@ -78,6 +79,63 @@
 
     $('lista-diferencias').replaceChildren(...p.diferencias.map(tarjetaDiferencia));
     $('vacio-diferencias').hidden = p.diferencias.length > 0;
+
+    dibujarAviso(p);
+  }
+
+  // ---------- Aviso de pago por Wi-Fi ----------
+
+  const ETAPA = { SUAVE: 'Recordatorio', VENCIDO: 'Pago vencido' };
+
+  function dibujarAviso(p) {
+    const activo = p.red.avisoActivo;
+    const estado = $('estado-aviso');
+    estado.className = 'estado ' + (activo ? 'estado-activo' : 'estado-inactivo');
+    estado.textContent = activo ? 'Activado' : 'Desactivado';
+    $('boton-aviso').textContent = activo ? 'Desactivar aviso' : 'Activar aviso';
+    $('boton-aviso').className = 'boton ' + (activo ? 'boton-secundario' : 'boton-primario');
+    $('aviso-solo-lectura').hidden = p.red.modo === 'CONTROL';
+
+    $('bloque-en-aviso').hidden = !activo;
+    $('lista-aviso').replaceChildren(...p.enAviso.map((c) => {
+      let detalle = ETAPA[c.etapa] + ' · debe ' + Formato.monto(c.deuda);
+      if (c.entendidoHasta) detalle += ' · tocó "Entendido", lo vuelve a ver el ' + Formato.fechaHora(c.entendidoHasta);
+      else if (c.enMikrotik === false) detalle += ' · aún no llega al MikroTik';
+      return fila(c.clienteId, c.codigo + ' · ' + c.nombres, detalle);
+    }));
+    $('vacio-aviso').hidden = p.enAviso.length > 0;
+  }
+
+  async function cambiarAviso() {
+    if (!panelActual) return;
+    const activar = !panelActual.red.avisoActivo;
+    const confirmado = await confirmar(activar
+      ? {
+        titulo: '¿Activar el aviso en ' + panelActual.red.nombre + '?',
+        texto: 'Los clientes a los que ya les llegó su día de pago verán un aviso al usar el Wi-Fi (su internet sigue '
+          + 'funcionando). Los suspendidos verán "Servicio suspendido". Antes, las reglas del MikroTik deben estar '
+          + 'puestas (MIKROTIK.md).',
+        boton: 'Sí, activar',
+      }
+      : {
+        titulo: '¿Desactivar el aviso en ' + panelActual.red.nombre + '?',
+        texto: 'Nadie más verá el aviso de pago en esta red. El corte de los suspendidos sigue igual.',
+        boton: 'Sí, desactivar',
+      });
+    if (!confirmado) return;
+    const boton = $('boton-aviso');
+    boton.disabled = true;
+    try {
+      await Sesion.api(URL_REDES + '/' + redId + '/aviso', { method: 'PUT', body: { activo: activar } });
+      Sesion.mostrarMensaje(cajaExito, activar
+        ? 'Aviso activado. El MikroTik lo aplicará en su próxima consulta.'
+        : 'Aviso desactivado. El MikroTik lo quitará en su próxima consulta.');
+      await cargar();
+    } catch (error) {
+      Sesion.mostrarError(cajaError, error);
+    } finally {
+      boton.disabled = false;
+    }
   }
 
   // Fila con enlace al detalle del cliente

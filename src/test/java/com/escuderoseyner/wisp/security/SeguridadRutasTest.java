@@ -1,10 +1,12 @@
 package com.escuderoseyner.wisp.security;
 
 import com.escuderoseyner.wisp.controller.AdministradorController;
+import com.escuderoseyner.wisp.controller.AvisoController;
 import com.escuderoseyner.wisp.controller.CajaController;
 import com.escuderoseyner.wisp.controller.ClienteController;
 import com.escuderoseyner.wisp.controller.ColaController;
 import com.escuderoseyner.wisp.controller.MikrotikController;
+import com.escuderoseyner.wisp.controller.PaginaAvisoController;
 import com.escuderoseyner.wisp.controller.PagoController;
 import com.escuderoseyner.wisp.controller.PlanController;
 import com.escuderoseyner.wisp.controller.PortalClienteController;
@@ -14,6 +16,7 @@ import com.escuderoseyner.wisp.model.Rol;
 import com.escuderoseyner.wisp.model.Usuario;
 import com.escuderoseyner.wisp.service.AccesoDenegadoException;
 import com.escuderoseyner.wisp.service.AdministradorService;
+import com.escuderoseyner.wisp.service.AvisoService;
 import com.escuderoseyner.wisp.service.CajaService;
 import com.escuderoseyner.wisp.service.ClienteService;
 import com.escuderoseyner.wisp.service.ColaService;
@@ -49,13 +52,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.forwardedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // Prueba las reglas de acceso con tokens JWT REALES (firmados con JwtService y validados por
 // el JwtDecoder de SecurityConfig). Los servicios son simulados: aquí solo importa quién entra.
 @WebMvcTest(controllers = {AdministradorController.class, CajaController.class, ClienteController.class, PagoController.class, PlanController.class,
         PortalClienteController.class, RedController.class, ColaController.class, MikrotikController.class,
-        TerminalController.class})
+        TerminalController.class, AvisoController.class, PaginaAvisoController.class})
 @Import({SecurityConfig.class, RespuestasSeguridad.class, JwtService.class})
 @TestPropertySource(properties = {
         // Clave SOLO para pruebas (32 bytes en Base64). La real viene de JWT_SECRET.
@@ -109,6 +113,9 @@ class SeguridadRutasTest {
 
     @MockitoBean
     private CajaService cajaService;
+
+    @MockitoBean
+    private AvisoService avisoService;
 
     @BeforeEach
     void usuarioVigente() {
@@ -259,6 +266,19 @@ class SeguridadRutasTest {
         mockMvc.perform(get("/api/cliente/resumen").header("Authorization", tokenCliente()))
                 .andExpect(status().isUnauthorized());
         verifyNoInteractions(portalClienteService);
+    }
+
+    @Test
+    @DisplayName("Aviso por Wi-Fi: la página y el \"Entendido\" son públicos; nada más de /api/public acepta POST")
+    void avisoPublico() throws Exception {
+        mockMvc.perform(get("/api/public/aviso/TokenDeAvisoDePrueba_123456")).andExpect(status().isOk());
+        mockMvc.perform(post("/api/public/aviso/TokenDeAvisoDePrueba_123456/entendido")).andExpect(status().isOk());
+        verify(avisoService).entendido("TokenDeAvisoDePrueba_123456");
+        mockMvc.perform(post("/api/public/aviso/TokenDeAvisoDePrueba_123456")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/aviso/TokenDeAvisoDePrueba_123456")).andExpect(forwardedUrl("/aviso.html"));
+        mockMvc.perform(get("/aviso")).andExpect(forwardedUrl("/aviso.html"));
+        // El aviso no da acceso a nada del admin
+        mockMvc.perform(get("/api/admin/clientes")).andExpect(status().isUnauthorized());
     }
 
     @Test

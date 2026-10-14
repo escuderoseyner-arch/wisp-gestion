@@ -15,4 +15,8 @@ public interface ColaRepository extends JpaRepository<Cola, Integer> {
     Optional<Cola> findByRedIdAndNombreIgnoreCase(Integer redId, String nombre);
 
     List<Cola> findByClienteId(Integer clienteId);
+
+    // Página de aviso por Wi-Fi: la cola se busca por el hash del token de su URL
+    @Query("SELECT c FROM Cola c JOIN FETCH c.cliente JOIN FETCH c.red WHERE c.portalTokenHash = :hash")
+    Optional<Cola> findByPortalTokenHash(String hash);
 }

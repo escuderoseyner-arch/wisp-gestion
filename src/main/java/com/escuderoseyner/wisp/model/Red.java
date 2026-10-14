@@ -50,6 +50,11 @@ public class Red {
     @Column(name = "instalacion_pendiente", nullable = false)
     private Boolean instalacionPendiente = true;
 
+    // Aviso de pago por Wi-Fi (script 010): el MikroTik desvía el HTTP de los clientes en aviso
+    // (y de los suspendidos) a la página /aviso de la web
+    @Column(name = "aviso_activo", nullable = false)
+    private Boolean avisoActivo = false;
+
     @Column(name = "ultima_conexion")
     private LocalDateTime ultimaConexion;
 

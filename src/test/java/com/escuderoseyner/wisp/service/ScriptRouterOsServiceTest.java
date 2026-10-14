@@ -32,6 +32,8 @@ class ScriptRouterOsServiceTest {
 
         assertThat(script).doesNotContain("{{");
         assertThat(cuerpo(script)).contains(":local url \"https://mi-app.example.com/api/mikrotik\"");
+        // El proxy redirige a <host>/aviso/<token> (sin https://: la web lo pasa a HTTPS)
+        assertThat(cuerpo(script)).contains(":local hostWeb \"mi-app.example.com\"");
         assertThat(script).contains("X-Red-Token: " + TOKEN);
         assertThat(script).contains("interval=60s");
         assertThat(script).contains("Red Nandu");
@@ -54,20 +56,36 @@ class ScriptRouterOsServiceTest {
         String minusculas = script.toLowerCase();
         assertThat(minusculas).doesNotContain("fasttrack", "/ip firewall filter", "/ip firewall nat",
                 "/ip firewall mangle", "/ip firewall raw", "/system reboot", "queue simple remove", "/system reset");
-        // Del firewall solo toca su propia address-list (wisp-cortados) y las conexiones del cliente cortado
+        // Del firewall solo toca sus propias address-list (wisp-cortados y wisp-aviso) y las conexiones del cortado
         String cuerpo = cuerpo(script);
         Matcher firewall = Pattern.compile("/ip firewall (\\S+) (\\S+)([^\\n]*)").matcher(cuerpo);
         int usos = 0;
         while (firewall.find()) {
             assertThat(firewall.group(1)).isIn("address-list", "connection");
             if (firewall.group(1).equals("address-list")) {
-                assertThat(firewall.group(3)).contains("list=\"wisp-cortados\"");
+                assertThat(firewall.group(3)).containsAnyOf("list=\"wisp-cortados\"", "list=\"wisp-aviso\"");
             }
             usos++;
         }
         assertThat(usos).isPositive();
         // Solo borra las entradas que él mismo creó (comentario wisp-gestion:<cola>)
         assertThat(cuerpo).contains("address-list remove [find where list=\"wisp-cortados\" and comment=$etiqueta]");
+        assertThat(cuerpo).contains("address-list remove [find where list=\"wisp-aviso\" and comment=$etiqueta]");
+        // Del proxy solo borra sus propias reglas, y las agrega antes de la regla final "wisp-gestion: fin"
+        Matcher proxy = Pattern.compile("/ip proxy access (\\S+)([^\\n]*)").matcher(cuerpo);
+        int reglas = 0;
+        while (proxy.find()) {
+            assertThat(proxy.group(1)).isIn("add", "remove", "find");
+            if (proxy.group(1).equals("remove")) {
+                assertThat(proxy.group(2)).startsWith(" [find where comment=$etiqueta]");
+            }
+            if (proxy.group(1).equals("add")) {
+                assertThat(proxy.group(2)).contains("src-address=$ipc", "action=deny", "comment=$etiqueta");
+            }
+            reglas++;
+        }
+        assertThat(reglas).isEqualTo(4);
+        assertThat(minusculas).doesNotContain("/ip proxy set");
         assertThat(script).contains("check-certificate=yes-without-crl");
         assertThat(script).doesNotContain("check-certificate=no");
     }

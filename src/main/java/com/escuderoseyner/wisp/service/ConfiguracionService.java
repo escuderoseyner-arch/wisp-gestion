@@ -74,6 +74,9 @@ public class ConfiguracionService {
         String codigoPais = soloDigitos(request.codigoPais());
         String yapeNumero = soloDigitos(request.yapeNumero());
         String plantilla = request.plantillaRecordatorio().trim();
+        String avisoSuave = request.avisoTextoSuave().trim();
+        String avisoVencido = request.avisoTextoVencido().trim();
+        String avisoSuspendido = request.avisoTextoSuspendido().trim();
 
         List<String> problemas = new ArrayList<>();
         if (ruc != null && !RUC.matcher(ruc).matches()) {
@@ -91,13 +94,10 @@ public class ConfiguracionService {
         if (yapeNumero != null && !TELEFONO.matcher(yapeNumero).matches()) {
             problemas.add("El número de Yape debe tener entre 6 y 15 dígitos.");
         }
-        Matcher variables = VARIABLE.matcher(plantilla);
-        while (variables.find()) {
-            if (!VARIABLES_PLANTILLA.contains(variables.group(1))) {
-                problemas.add("La plantilla usa la variable {" + variables.group(1)
-                        + "}, que no existe. Usa solo {nombre}, {monto} y {mes}.");
-            }
-        }
+        revisarVariables("La plantilla", plantilla, problemas);
+        revisarVariables("El texto del aviso suave", avisoSuave, problemas);
+        revisarVariables("El texto del aviso de pago vencido", avisoVencido, problemas);
+        revisarVariables("El texto de servicio suspendido", avisoSuspendido, problemas);
         if (!problemas.isEmpty()) {
             throw new ReglaNegocioException("Revisa la configuración.", problemas);
         }
@@ -113,7 +113,20 @@ public class ConfiguracionService {
         c.setCuentaBancaria(limpiar(request.cuentaBancaria()));
         c.setDiasTolerancia(request.diasTolerancia());
         c.setPlantillaRecordatorio(plantilla);
+        c.setAvisoTextoSuave(avisoSuave);
+        c.setAvisoTextoVencido(avisoVencido);
+        c.setAvisoTextoSuspendido(avisoSuspendido);
         return aResponse(configuracionRepository.save(c));
+    }
+
+    private static void revisarVariables(String nombre, String texto, List<String> problemas) {
+        Matcher variables = VARIABLE.matcher(texto);
+        while (variables.find()) {
+            if (!VARIABLES_PLANTILLA.contains(variables.group(1))) {
+                problemas.add(nombre + " usa la variable {" + variables.group(1)
+                        + "}, que no existe. Usa solo {nombre}, {monto} y {mes}.");
+            }
+        }
     }
 
     // La fila la crea wisp_db.sql; por si alguien la borró, se crea de nuevo con id = 1
@@ -137,6 +150,7 @@ public class ConfiguracionService {
     private ConfiguracionResponse aResponse(Configuracion c) {
         return new ConfiguracionResponse(c.getNombreEmpresa(), c.getRuc(), c.getLogoUrl(), c.getWhatsappSoporte(),
                 c.getCodigoPais(), c.getYapeNumero(), c.getYapeTitular(), c.getCuentaBancaria(),
-                c.getDiasTolerancia(), c.getPlantillaRecordatorio(), c.getMoneda());
+                c.getDiasTolerancia(), c.getPlantillaRecordatorio(), c.getMoneda(),
+                c.getAvisoTextoSuave(), c.getAvisoTextoVencido(), c.getAvisoTextoSuspendido());
     }
 }

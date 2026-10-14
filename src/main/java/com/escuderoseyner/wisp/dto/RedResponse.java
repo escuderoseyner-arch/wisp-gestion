@@ -15,6 +15,7 @@ public record RedResponse(
         Integer intervaloSegundos,
         ModoRed modo,
         boolean instalacionPendiente,
+        boolean avisoActivo,     // aviso de pago por Wi-Fi y página "Servicio suspendido"
         LocalDateTime ultimaConexion,
         LocalDateTime ultimoReporte,
         String ultimaIp,

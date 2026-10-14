@@ -43,6 +43,19 @@ public record ConfiguracionRequest(
 
         @NotBlank(message = "La plantilla de recordatorio es obligatoria")
         @Size(max = 500, message = "La plantilla de recordatorio no puede tener más de 500 caracteres")
-        String plantillaRecordatorio
+        String plantillaRecordatorio,
+
+        // Textos de la página de aviso por Wi-Fi
+        @NotBlank(message = "El texto del aviso suave es obligatorio")
+        @Size(max = 500, message = "El texto del aviso suave no puede tener más de 500 caracteres")
+        String avisoTextoSuave,
+
+        @NotBlank(message = "El texto del aviso de pago vencido es obligatorio")
+        @Size(max = 500, message = "El texto del aviso de pago vencido no puede tener más de 500 caracteres")
+        String avisoTextoVencido,
+
+        @NotBlank(message = "El texto de servicio suspendido es obligatorio")
+        @Size(max = 500, message = "El texto de servicio suspendido no puede tener más de 500 caracteres")
+        String avisoTextoSuspendido
 ) {
 }

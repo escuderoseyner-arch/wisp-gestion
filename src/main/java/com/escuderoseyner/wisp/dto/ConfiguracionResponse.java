@@ -12,6 +12,9 @@ public record ConfiguracionResponse(
         String cuentaBancaria,
         Integer diasTolerancia,
         String plantillaRecordatorio,
-        String moneda
+        String moneda,
+        String avisoTextoSuave,
+        String avisoTextoVencido,
+        String avisoTextoSuspendido
 ) {
 }

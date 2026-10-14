@@ -14,17 +14,22 @@ import com.escuderoseyner.wisp.repository.AccionColaRepository;
 import com.escuderoseyner.wisp.repository.ClienteRepository;
 import com.escuderoseyner.wisp.repository.ColaRepository;
 import com.escuderoseyner.wisp.repository.ConsumoMensualRepository;
+import com.escuderoseyner.wisp.repository.PagoRepository;
 import com.escuderoseyner.wisp.repository.RedRepository;
 import com.escuderoseyner.wisp.repository.UsuarioRepository;
 import com.escuderoseyner.wisp.security.AlcanceRedes;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 // Lo que el ADMIN ve y hace con las colas: listado con diferencias, corte/reconexión y "aplicar diferencias"
 @Service
@@ -39,12 +44,15 @@ public class ColaService {
     private final ConsumoMensualRepository consumoMensualRepository;
     private final RedService redService;
     private final AlcanceRedes alcanceRedes;
+    private final PagoRepository pagoRepository;
+    private final ConfiguracionService configuracionService;
 
     public ColaService(ColaRepository colaRepository, AccionColaRepository accionColaRepository,
                        RedRepository redRepository, ClienteRepository clienteRepository,
                        UsuarioRepository usuarioRepository, SincronizacionService sincronizacionService,
                        ConsumoMensualRepository consumoMensualRepository, RedService redService,
-                       AlcanceRedes alcanceRedes) {
+                       AlcanceRedes alcanceRedes, PagoRepository pagoRepository,
+                       ConfiguracionService configuracionService) {
         this.colaRepository = colaRepository;
         this.accionColaRepository = accionColaRepository;
         this.redRepository = redRepository;
@@ -54,6 +62,8 @@ public class ColaService {
         this.consumoMensualRepository = consumoMensualRepository;
         this.redService = redService;
         this.alcanceRedes = alcanceRedes;
+        this.pagoRepository = pagoRepository;
+        this.configuracionService = configuracionService;
     }
 
     @Transactional
@@ -94,6 +104,12 @@ public class ColaService {
         int sinDatos = 0;
         List<PanelRedResponse.ClienteSinConexion> sinConexion = new ArrayList<>();
         List<PanelRedResponse.ColaConDiferencias> diferencias = new ArrayList<>();
+        List<PanelRedResponse.ClienteEnAviso> enAviso = new ArrayList<>();
+        boolean avisoRed = Boolean.TRUE.equals(red.getAvisoActivo());
+        Map<Integer, Set<YearMonth>> pagados = avisoRed
+                ? AvisoWifi.agruparPagados(pagoRepository.findClienteYPeriodoDeRed(redId))
+                : Map.of();
+        int tolerancia = configuracionService.diasTolerancia();
         for (Cola c : colaRepository.findByRedId(redId)) {
             Cliente cliente = c.getCliente();
             boolean vigente = esDuenoVigente(c);
@@ -106,6 +122,21 @@ public class ColaService {
                 continue;
             }
             colas++;
+            // En aviso hoy: los que el MikroTik desvía a la página, y los que tocaron "Entendido"
+            boolean entendido = !c.getAviso() && AvisoWifi.pospuesto(cliente, ahora)
+                    && cliente.getEstado() == EstadoCliente.ACTIVO && !cliente.getCorteManual()
+                    && !Boolean.TRUE.equals(cliente.getSinAviso());
+            if (avisoRed && (c.getAviso() || entendido)) {
+                Set<YearMonth> suyos = pagados.getOrDefault(cliente.getId(), Set.of());
+                AvisoWifi.Etapa etapa = AvisoWifi.etapa(cliente, suyos, tolerancia, ahora.toLocalDate());
+                if (etapa != AvisoWifi.Etapa.NINGUNA) {
+                    int meses = AvisoWifi.mesesEnAviso(cliente, suyos, ahora.toLocalDate()).size();
+                    enAviso.add(new PanelRedResponse.ClienteEnAviso(cliente.getId(), cliente.getCodigo(),
+                            cliente.getNombres(), etapa,
+                            cliente.getPlan().getPrecio().multiply(BigDecimal.valueOf(meses)),
+                            c.getAviso() ? null : cliente.getAvisoPospuestoHasta(), c.getRepAviso()));
+                }
+            }
             switch (conexion(c, red, ahora)) {
                 case CONECTADO -> conectados++;
                 case SIN_DATOS -> sinDatos++;
@@ -122,7 +153,8 @@ public class ColaService {
                 new ColaClienteResponse.ConsumoMes(periodo, ((Number) suma[0]).longValue(), ((Number) suma[1]).longValue()),
                 diferencias,
                 accionColaRepository.contarPorRedYEstados(redId, SincronizacionService.POR_ENVIAR),
-                accionColaRepository.contarPorRedYEstados(redId, List.of(EstadoAccion.ERROR)));
+                accionColaRepository.contarPorRedYEstados(redId, List.of(EstadoAccion.ERROR)),
+                enAviso);
     }
 
     // ---------- Utilidades ----------

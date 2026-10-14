@@ -3,6 +3,8 @@ package com.escuderoseyner.wisp.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -55,6 +57,20 @@ public class Cola {
     @Column(nullable = false)
     private Boolean cortada = false;
 
+    // Su IP debe estar en la address-list "wisp-aviso" (script 010): ya pasó su día de pago
+    @Column(nullable = false)
+    private Boolean aviso = false;
+
+    // Debe tener su regla en el proxy del MikroTik que desvía su HTTP a la página de aviso
+    // (en aviso o cortada, con el aviso activo en la red)
+    @Column(nullable = false)
+    private Boolean portal = false;
+
+    // SHA-256 del token de su página (/aviso/<token>). El token solo viaja al MikroTik, nunca se guarda.
+    @Column(name = "portal_token_hash", length = 64, unique = true)
+    @JdbcTypeCode(SqlTypes.CHAR)
+    private String portalTokenHash;
+
     @Column(name = "deseado_en", nullable = false)
     private LocalDateTime deseadoEn;
 
@@ -84,6 +100,10 @@ public class Cola {
     // ¿Su IP está en wisp-cortados? null = el script del router aún no lo informa (versión anterior)
     @Column(name = "rep_cortada")
     private Boolean repCortada;
+
+    // ¿Su IP está en wisp-aviso? null = el script del router aún no lo informa
+    @Column(name = "rep_aviso")
+    private Boolean repAviso;
 
     @Column(name = "rate_subida_bps")
     private Long rateSubidaBps;

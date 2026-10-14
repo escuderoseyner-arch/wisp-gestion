@@ -526,6 +526,7 @@
       ['IP', cliente.ip],
       ['Red', cliente.red ? cliente.red.nombre : null],
       ['Cola', cliente.red ? cliente.nombreCola : null],
+      ['Aviso por Wi-Fi', cliente.red ? (cliente.sinAviso ? 'No se le muestra' : 'Sí, cuando le toque pagar') : null],
     ];
     if (retirado) filas.push(['Fecha de retiro', formatearFecha(cliente.fechaRetiro)]);
     $('det-datos').replaceChildren(...filas.map(([etiqueta, valor]) => crearDato(etiqueta, valor)));
@@ -663,6 +664,8 @@
     mostrarVista('formulario');
     const form = $('form-cliente');
     form.reset();
+    // Al reasignar, la persona nueva empieza con el aviso normal (se puede cambiar luego en "Editar")
+    form.sinAviso.closest('.campo').hidden = modo === 'reasignar';
     Sesion.ocultar($('error-formulario'));
     form.hidden = true; // hasta tener los datos
     estadoFormulario = null;
@@ -772,6 +775,7 @@
     form.fechaInicio.value = cliente.fechaInicio;
     form.ip.value = cliente.ip || '';
     form.nombreCola.value = cliente.red ? cliente.nombreCola : '';
+    form.sinAviso.checked = cliente.sinAviso;
   }
 
   async function guardarFormulario(evento) {
@@ -795,6 +799,7 @@
       ip: form.ip.value.trim(),
       redId: form.redId.value ? Number(form.redId.value) : null,
       nombreCola: form.nombreCola.value.trim(),
+      sinAviso: form.sinAviso.checked,
     };
 
     const problemas = validar(datos);

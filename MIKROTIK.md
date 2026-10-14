@@ -13,8 +13,9 @@ Hay dos scripts en el router, independientes entre sí:
 El script `wisp-sync` solo crea, reemplaza o borra **su propio** script y **su propia** tarea programada
 (ambos llamados `wisp-sync`). No toca el puente, las reglas del firewall, la cola padre, las colas protegidas
 ni ninguna cola que no sea de un cliente del sistema, y nunca activa fasttrack.
-Del firewall solo maneja **sus propias** entradas de la address-list `wisp-cortados`
+Del firewall solo maneja **sus propias** entradas de las address-list `wisp-cortados` y `wisp-aviso`
 (comentario `wisp-gestion:<cola>`) y borra las conexiones abiertas de un cliente al cortarlo.
+Del proxy solo agrega y borra **sus propias** reglas de `/ip proxy access` (mismo comentario).
 Si `wisp-sync` falla, el puente sigue funcionando y puede reinstalarlo.
 
 ---
@@ -143,6 +144,74 @@ pone la IP de cada cliente **suspendido, con corte manual o retirado** en la add
 - Límite: un cliente que se cambie la IP a mano se salta el bloqueo (usa leases DHCP estáticos o ARP `reply-only`).
 
 Revisa la lista: `/ip firewall address-list print where list=wisp-cortados`
+
+### 1.7 Aviso de pago por Wi-Fi (y página "Servicio suspendido")
+
+Cuando a un cliente le llega su día de pago y no ha pagado, la web pone su IP en la address-list
+`wisp-aviso` y crea en el proxy del router una regla **solo para su IP** que lo redirige a
+`<web>/aviso/<token>`. Así, al navegar, su celular detecta un "portal" ("Iniciar sesión en la red")
+y le muestra su aviso. **Su internet sigue funcionando**: solo se desvían las páginas `http://`
+(puerto 80); HTTPS nunca se toca. Los suspendidos (`wisp-cortados`) ven "Servicio suspendido" y siguen sin internet.
+
+- El token es aleatorio, cambia en cada envío y en la web solo se guarda su hash. Nunca va el código del cliente.
+- Se activa por red: **Redes → (red) → Panel → Activar aviso**. Solo funciona en modo **Control**.
+- Las IP terminadas en **.1 a .10** nunca reciben aviso (la web y el script lo impiden).
+- "Entendido" lo saca del aviso hasta el día siguiente a las 8:00. Al registrar su pago, sale en la siguiente consulta.
+
+Agrega **una vez**, a mano, estas reglas. Cambia `TU-APP.onrender.com` por el dominio de `APP_URL_PUBLICA`
+(sin `https://`) y la subred por la de cada red (ejemplo: Cuypirmarca `192.168.10.0/24`).
+Pega los bloques **en este orden**:
+
+```
+# a) Proxy del router, sin caché (solo se usa para el aviso)
+/ip proxy set enabled=yes port=8080 max-cache-size=none cache-on-disk=no
+
+# b) Regla final (todo lo que no tenga regla propia va a la página general) y, antes, la web pasa directo
+/ip proxy access add action=deny redirect-to="TU-APP.onrender.com/aviso" comment="wisp-gestion: fin"
+/ip proxy access add dst-host=TU-APP.onrender.com action=allow comment="wisp-gestion: la web" place-before=0
+
+# c) Nadie usa el proxy directamente: solo las conexiones desviadas por la NAT de abajo
+/ip firewall filter add chain=input protocol=tcp dst-port=8080 connection-nat-state=!dstnat action=drop comment="wisp-gestion: proxy solo para el aviso" place-before=0
+
+# d) Infraestructura que nunca ve el aviso (.1 a .10 y, en Cuypirmarca, el sectorial en .99)
+/ip firewall address-list add list=wisp-sin-aviso address=192.168.10.1-192.168.10.10 comment="wisp-gestion: MikroTik e infraestructura"
+/ip firewall address-list add list=wisp-sin-aviso address=192.168.10.99 comment="wisp-gestion: sectorial (temporal)"
+
+# e) Desviar SOLO el HTTP (puerto 80) de wisp-aviso y wisp-cortados al proxy. La infraestructura queda primero.
+/ip firewall nat add chain=dstnat src-address-list=wisp-cortados protocol=tcp dst-port=80 action=redirect to-ports=8080 comment="wisp-gestion: suspendidos a la pagina de aviso" place-before=0
+/ip firewall nat add chain=dstnat src-address-list=wisp-aviso protocol=tcp dst-port=80 action=redirect to-ports=8080 comment="wisp-gestion: aviso de pago" place-before=0
+/ip firewall nat add chain=dstnat src-address-list=wisp-sin-aviso protocol=tcp dst-port=80 action=accept comment="wisp-gestion: infraestructura sin aviso" place-before=0
+
+# f) Los suspendidos pueden abrir SOLO la web (HTTPS) para ver su página. Van antes de los "drop" de 1.6.
+/ip firewall address-list add list=wisp-web address=TU-APP.onrender.com comment="wisp-gestion: la web (pagina de aviso)"
+/ip firewall filter add chain=forward src-address-list=wisp-cortados dst-address-list=wisp-web protocol=tcp dst-port=443 action=accept comment="wisp-gestion: suspendidos a la web (salida)" place-before=0
+/ip firewall filter add chain=forward src-address-list=wisp-web dst-address-list=wisp-cortados protocol=tcp src-port=443 action=accept comment="wisp-gestion: suspendidos a la web (entrada)" place-before=0
+```
+
+- Si un `place-before=0` da error porque la lista está vacía, vuelve a pegar esa línea sin `place-before=0`.
+- Para Shiaunto, cambia `192.168.10.` por su subred en el bloque d) (y no agregues el .99).
+- `wisp-web` usa el dominio: el router lo resuelve solo y actualiza las IP. Límite: Render comparte IPs entre
+  apps, así que un suspendido podría abrir otras webs alojadas en Render (solo por HTTPS).
+
+**DNS de los suspendidos (revisa una vez).** Para que el celular de un suspendido encuentre la web,
+debe usar el DNS del router. Revisa `/ip dhcp-server network print` (columna `dns-server`) y
+`/ip dns print` (`allow-remote-requests`). Si los clientes usan otro DNS (ej: 8.8.8.8) y el router
+tiene `allow-remote-requests=yes`, agrega:
+
+```
+/ip firewall nat add chain=dstnat src-address-list=wisp-cortados protocol=udp dst-port=53 action=redirect to-ports=53 comment="wisp-gestion: DNS de suspendidos al router" place-before=0
+```
+
+**Revisar:**
+
+```
+/ip firewall address-list print where list=wisp-aviso
+/ip proxy access print
+/log print where message~"wisp"
+```
+
+Si `wisp-sync` es de una versión anterior, no maneja el aviso: **Script → Que el puente lo reinstale**.
+Para apagarlo de emergencia sin tocar la web: `/ip firewall nat disable [find where comment~"wisp-gestion: aviso"]`.
 
 ---
 

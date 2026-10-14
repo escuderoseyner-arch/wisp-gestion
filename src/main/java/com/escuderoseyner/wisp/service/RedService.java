@@ -140,6 +140,16 @@ public class RedService {
         return aResponse(red);
     }
 
+    // Aviso de pago por Wi-Fi: el MikroTik pone o quita a sus clientes de wisp-aviso (y las reglas del proxy)
+    // en su próxima consulta. Solo hace algo en modo Control.
+    @Transactional
+    public RedResponse cambiarAviso(Integer id, boolean activo) {
+        Red red = buscar(id);
+        red.setAvisoActivo(activo);
+        sincronizacionService.recalcularRed(red, MotivoAccion.CAMBIO, null);
+        return aResponse(red);
+    }
+
     // Para ClienteService
     @Transactional(readOnly = true)
     public Red obtener(Integer id) {
@@ -251,7 +261,7 @@ public class RedService {
     private RedResponse aResponse(Red red) {
         return new RedResponse(red.getId(), red.getNombre(), red.getPrefijoCodigo(), red.getColaPadre(),
                 separarProtegidas(red.getColasProtegidas()), red.getIntervaloSegundos(), red.getModo(),
-                red.getInstalacionPendiente(), red.getUltimaConexion(), red.getUltimoReporte(), red.getUltimaIp(),
+                red.getInstalacionPendiente(), red.getAvisoActivo(), red.getUltimaConexion(), red.getUltimoReporte(), red.getUltimaIp(),
                 clienteRepository.countByRedIdAndEstadoNot(red.getId(), EstadoCliente.RETIRADO));
     }
 }

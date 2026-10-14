@@ -12,6 +12,7 @@ import com.escuderoseyner.wisp.model.Red;
 import com.escuderoseyner.wisp.repository.AccionColaRepository;
 import com.escuderoseyner.wisp.repository.ClienteRepository;
 import com.escuderoseyner.wisp.repository.ColaRepository;
+import com.escuderoseyner.wisp.repository.PagoRepository;
 import com.escuderoseyner.wisp.repository.RedRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,6 +25,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,6 +52,9 @@ class SincronizacionServiceTest {
 
     @Mock
     private RedRepository redRepository;
+
+    @Mock
+    private PagoRepository pagoRepository;
 
     @InjectMocks
     private SincronizacionService servicio;
@@ -304,5 +310,81 @@ class SincronizacionServiceTest {
         assertThat(SincronizacionService.diferencias(cola)).containsExactly("Su IP debería estar en wisp-cortados (bloqueada)");
         cola.setRepCortada(true);
         assertThat(SincronizacionService.diferencias(cola)).isEmpty();
+        cola.setAviso(true);
+        cola.setRepAviso(false);
+        assertThat(SincronizacionService.diferencias(cola)).containsExactly("Su IP debería estar en wisp-aviso (aviso de pago)");
+    }
+
+    // ---------- Aviso de pago por Wi-Fi ----------
+
+    // Activo desde este mes, paga el día 1: hoy ya llegó su día de pago
+    private Cliente clienteParaAviso(int id, String cola, EstadoCliente estado) {
+        Cliente c = cliente(id, cola, estado);
+        c.setDiaPago(1);
+        c.setFechaInicio(LocalDate.now().withDayOfMonth(1));
+        return c;
+    }
+
+    private Cola colaDe(String nombre) {
+        return colas.stream().filter(c -> c.getNombre().equals(nombre)).findFirst().orElseThrow();
+    }
+
+    @Test
+    @DisplayName("Aviso: con la red activa, el que no pagó y ya pasó su día de pago va a wisp-aviso y al proxy")
+    void avisoAlQueNoPago() {
+        red.setAvisoActivo(true);
+        clienteParaAviso(1, "C-01", EstadoCliente.ACTIVO);
+        Cliente pagado = clienteParaAviso(2, "C-02", EstadoCliente.ACTIVO);
+        when(pagoRepository.findClienteYPeriodoDeRed(1))
+                .thenReturn(List.<Object[]>of(new Object[]{pagado.getId(), LocalDate.now().withDayOfMonth(1)}));
+
+        servicio.recalcularRed(red, MotivoAccion.CAMBIO, null);
+
+        assertThat(colaDe("C-01").getAviso()).isTrue();
+        assertThat(colaDe("C-01").getPortal()).isTrue();
+        assertThat(colaDe("C-02").getAviso()).isFalse();
+        assertThat(colaDe("C-02").getPortal()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Aviso: nunca con la red desactivada, \"No mostrar aviso\", \"Entendido\" vigente ni IP .1 a .10")
+    void sinAviso() {
+        clienteParaAviso(1, "C-01", EstadoCliente.ACTIVO);
+        servicio.recalcularRed(red, MotivoAccion.CAMBIO, null);
+        assertThat(colaDe("C-01").getAviso()).isFalse(); // red desactivada
+
+        red.setAvisoActivo(true);
+        clienteParaAviso(2, "C-02", EstadoCliente.ACTIVO).setSinAviso(true);
+        clienteParaAviso(3, "C-03", EstadoCliente.ACTIVO).setAvisoPospuestoHasta(LocalDateTime.now().plusHours(2));
+        clienteParaAviso(4, "C-04", EstadoCliente.ACTIVO).setIp("192.168.10.9");
+        clienteParaAviso(5, "C-05", EstadoCliente.ACTIVO).setAvisoPospuestoHasta(LocalDateTime.now().minusMinutes(1));
+        servicio.recalcularRed(red, MotivoAccion.CAMBIO, null);
+
+        assertThat(colaDe("C-01").getAviso()).isTrue();
+        assertThat(colaDe("C-02").getAviso()).isFalse();
+        assertThat(colaDe("C-03").getAviso()).isFalse();
+        assertThat(colaDe("C-04").getAviso()).isFalse();
+        assertThat(colaDe("C-04").getPortal()).isFalse();
+        assertThat(colaDe("C-05").getAviso()).isTrue(); // el "Entendido" ya venció
+    }
+
+    @Test
+    @DisplayName("Suspendido: sin aviso de pago, pero con regla en el proxy (ve \"Servicio suspendido\"); al apagar el aviso se quita")
+    void suspendidoConPortal() {
+        red.setAvisoActivo(true);
+        clienteParaAviso(1, "C-01", EstadoCliente.SUSPENDIDO);
+        servicio.recalcularRed(red, MotivoAccion.CAMBIO, null);
+
+        Cola cola = colaDe("C-01");
+        assertThat(cola.getCortada()).isTrue();
+        assertThat(cola.getAviso()).isFalse();
+        assertThat(cola.getPortal()).isTrue();
+
+        cola.setPortalTokenHash("a".repeat(64));
+        red.setAvisoActivo(false);
+        servicio.recalcularRed(red, MotivoAccion.CAMBIO, null);
+        assertThat(cola.getCortada()).isTrue(); // el corte sigue igual
+        assertThat(cola.getPortal()).isFalse();
+        assertThat(cola.getPortalTokenHash()).isNull(); // su página deja de abrir al instante
     }
 }

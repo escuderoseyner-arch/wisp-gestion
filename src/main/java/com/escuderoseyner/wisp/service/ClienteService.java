@@ -149,6 +149,7 @@ public class ClienteService {
     public ClienteDetalleResponse crear(ClienteRequest request) {
         Cliente cliente = new Cliente();
         validarYAplicar(cliente, request.codigo(), request, null, null, null, new ArrayList<>());
+        cliente.setSinAviso(Boolean.TRUE.equals(request.sinAviso()));
         clienteRepository.save(cliente);
         actualizarColas(cliente);
         return aDetalle(cliente, Optional.empty());
@@ -161,6 +162,7 @@ public class ClienteService {
 
         validarYAplicar(cliente, request.codigo(), request, id, cliente.getPlan(), cliente.getCodigo(),
                 new ArrayList<>());
+        cliente.setSinAviso(Boolean.TRUE.equals(request.sinAviso()));
         actualizarColas(cliente);
 
         // El usuario de acceso NO cambia con el celular: se cambia aparte ("Cambiar usuario")
@@ -421,6 +423,6 @@ public class ClienteService {
                         u.getDebeCambiarPassword())).orElse(null),
                 c.getRed() == null ? null
                         : new ClienteDetalleResponse.RedDelCliente(c.getRed().getId(), c.getRed().getNombre()),
-                c.getNombreCola(), c.getCorteManual());
+                c.getNombreCola(), c.getCorteManual(), c.getSinAviso());
     }
 }

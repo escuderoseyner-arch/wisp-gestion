@@ -2,9 +2,9 @@
 --  SISTEMA DE GESTIÓN PARA PROVEEDORES DE INTERNET (WISP)
 --  INSTALACIÓN COMPLETA para una base de datos NUEVA (MySQL 8.x)
 --
---  Equivale a wisp_db.sql + 002 + 003 + 004 + 005 + 006 + 007 + 008 + 009, con los cambios ya
+--  Equivale a wisp_db.sql + 002 + 003 + 004 + 005 + 006 + 007 + 008 + 009 + 010, con los cambios ya
 --  integrados en cada tabla (sin los pagos de ejemplo).
---  Si tu base ya existe, NO uses este archivo: usa los scripts 002-009.
+--  Si tu base ya existe, NO uses este archivo: usa los scripts 002-010.
 --
 --  Ejecutar UNA sola vez con el usuario administrador del servidor
 --  (root en local; avnadmin en Aiven).
@@ -32,6 +32,10 @@ CREATE TABLE configuracion (
   dias_tolerancia     TINYINT      NOT NULL DEFAULT 3, -- días de gracia antes de marcar vencido
   moneda              VARCHAR(5)   NOT NULL DEFAULT 'S/',
   plantilla_recordatorio VARCHAR(500) NOT NULL,        -- mensaje de WhatsApp con {nombre}, {monto}, {mes}
+  -- Textos de la página de aviso por Wi-Fi, con {nombre}, {monto}, {mes}
+  aviso_texto_suave   VARCHAR(500) NOT NULL DEFAULT 'Hola {nombre}, te recordamos con cariño que ya llegó tu fecha de pago de internet ({mes}): {monto}. Si ya pagaste, envíanos tu comprobante. ¡Gracias por tu preferencia!',
+  aviso_texto_vencido VARCHAR(500) NOT NULL DEFAULT 'Hola {nombre}, tu pago de internet de {mes} ya venció. Debes {monto}. Por favor paga pronto para que tu servicio no se suspenda. Si ya pagaste, envíanos tu comprobante.',
+  aviso_texto_suspendido VARCHAR(500) NOT NULL DEFAULT 'Hola {nombre}, tu servicio de internet está suspendido. Debes {monto} ({mes}). Paga y envíanos tu comprobante por WhatsApp para volver a activarlo.',
   actualizado_en      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT chk_config_unica CHECK (id = 1),          -- impide crear una segunda fila
   CONSTRAINT chk_tolerancia   CHECK (dias_tolerancia BETWEEN 0 AND 15)
@@ -50,6 +54,7 @@ CREATE TABLE redes (
   token_hash            CHAR(64)     NOT NULL UNIQUE,        -- SHA-256 del token (header X-Red-Token)
   modo                  ENUM('SOLO_LECTURA','CONTROL') NOT NULL DEFAULT 'SOLO_LECTURA',
   instalacion_pendiente BOOLEAN      NOT NULL DEFAULT TRUE,  -- el script "puente" descarga la instalación
+  aviso_activo          BOOLEAN      NOT NULL DEFAULT FALSE, -- aviso de pago por Wi-Fi y página "Servicio suspendido"
   ultima_conexion       DATETIME     NULL,                   -- última consulta del MikroTik
   ultimo_reporte        DATETIME     NULL,                   -- último reporte de colas recibido
   ultima_ip             VARCHAR(45)  NULL,                   -- IP pública desde la que consultó
@@ -98,6 +103,8 @@ CREATE TABLE clientes (
   red_id        INT          NULL,                    -- MikroTik al que pertenece
   nombre_cola   VARCHAR(40)  NULL,                    -- por defecto el código (ej: C-07)
   corte_manual  BOOLEAN      NOT NULL DEFAULT FALSE,
+  sin_aviso     BOOLEAN      NOT NULL DEFAULT FALSE,  -- "No mostrar aviso" de pago por Wi-Fi
+  aviso_pospuesto_hasta DATETIME NULL,                -- tocó "Entendido": sin aviso hasta esta hora
   estado        ENUM('ACTIVO','SUSPENDIDO','RETIRADO') NOT NULL DEFAULT 'ACTIVO',
   creado_en     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -217,6 +224,9 @@ CREATE TABLE colas (
   comentario         VARCHAR(100) NOT NULL,
   deshabilitada      BOOLEAN      NOT NULL,
   cortada            BOOLEAN      NOT NULL DEFAULT FALSE,    -- su IP va a la address-list wisp-cortados
+  aviso              BOOLEAN      NOT NULL DEFAULT FALSE,    -- su IP va a la address-list wisp-aviso
+  portal             BOOLEAN      NOT NULL DEFAULT FALSE,    -- su regla en el proxy (aviso o suspendido)
+  portal_token_hash  CHAR(64)     NULL UNIQUE,               -- SHA-256 del token de su página de aviso
   deseado_en         DATETIME     NOT NULL,
 
   -- Último reporte del MikroTik (NULL = todavía no reporta)
@@ -228,6 +238,7 @@ CREATE TABLE colas (
   rep_comentario     VARCHAR(150) NULL,
   rep_deshabilitada  BOOLEAN      NULL,
   rep_cortada        BOOLEAN      NULL,                      -- NULL = el script aún no informa la lista
+  rep_aviso          BOOLEAN      NULL,                      -- NULL = el script aún no informa wisp-aviso
   rate_subida_bps    BIGINT       NULL,
   rate_bajada_bps    BIGINT       NULL,
   bytes_subida       BIGINT       NULL,                      -- contador del MikroTik (se reinicia)

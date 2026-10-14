@@ -776,6 +776,27 @@ body.con-nav-admin {
   background: var(--error-fondo);
 }
 
+/* Aviso suave (recordatorio de pago por Wi-Fi): ámbar, ni verde ni rojo */
+.aviso-alerta {
+  --icono-aviso: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 8v4M12 16h.01'/%3E%3C/svg%3E");
+  color: var(--alerta-texto);
+  background: var(--alerta-fondo);
+}
+
+/* ---------- Página de aviso por Wi-Fi ---------- */
+
+.aviso-texto {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+/* Botones grandes, uno debajo del otro: se tocan fácil en el celular */
+.acciones-aviso {
+  flex-direction: column;
+  align-items: stretch;
+}
+
 /* ---------- Pantallas vacías ---------- */
 
 .vacio {

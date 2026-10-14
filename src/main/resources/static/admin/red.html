@@ -63,6 +63,25 @@
         <button type="button" id="boton-actualizar" class="boton boton-secundario">Actualizar</button>
       </div>
 
+      <section class="panel" aria-labelledby="titulo-aviso">
+        <div class="encabezado-panel">
+          <h2 id="titulo-aviso" class="panel-titulo">Aviso de pago por Wi-Fi</h2>
+          <span id="estado-aviso" class="estado"></span>
+        </div>
+        <p class="campo-ayuda">Desde su día de pago, el celular del cliente le muestra un aviso al usar el Wi-Fi.
+          Su internet sigue funcionando. Los suspendidos ven "Servicio suspendido".</p>
+        <p id="aviso-solo-lectura" class="aviso aviso-alerta" hidden>Esta red está en modo Solo lectura:
+          el aviso solo llega al MikroTik en modo Control.</p>
+        <div class="acciones">
+          <button type="button" id="boton-aviso" class="boton boton-primario"></button>
+        </div>
+        <div id="bloque-en-aviso" hidden>
+          <h3 class="etiqueta-suave">En aviso hoy</h3>
+          <p id="vacio-aviso" class="vacio" hidden>Hoy nadie está en aviso.</p>
+          <ul id="lista-aviso" class="lista-filas" aria-label="Clientes en aviso hoy"></ul>
+        </div>
+      </section>
+
       <section class="panel" aria-labelledby="titulo-sin-conexion">
         <h2 id="titulo-sin-conexion" class="panel-titulo">Clientes sin conexión</h2>
         <p id="vacio-sin-conexion" class="vacio" hidden>Todos los clientes con datos recientes responden al ping.</p>

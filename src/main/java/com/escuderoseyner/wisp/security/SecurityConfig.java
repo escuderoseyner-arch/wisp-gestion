@@ -59,6 +59,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/", "/*.html", "/admin/*.html", "/cliente/*.html",
                                 "/css/**", "/js/**", "/img/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
+                        // Aviso de pago por Wi-Fi: el cliente llega desde el proxy del MikroTik, sin login.
+                        // El token de la URL identifica su cola (ver AvisoService).
+                        .requestMatchers(HttpMethod.GET, "/aviso", "/aviso/", "/aviso/*").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/public/aviso/*/entendido").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers("/error").permitAll()
                         // El MikroTik no usa el login: se autentica con el token de su red (ver MikrotikService)

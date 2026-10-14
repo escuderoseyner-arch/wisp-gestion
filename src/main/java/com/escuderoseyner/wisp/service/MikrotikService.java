@@ -35,12 +35,17 @@ import java.util.Map;
 //   I|<segundos>                  intervalo de consulta
 //   X|<cola protegida>            el script nunca la modifica
 //   R|<nombre>|<ip>               colas que debe reportar (y a qué IP hacer ping)
-//   Q|<id>|<nombre>|<target>|<max-limit>|<parent>|<queue>|<yes/no disabled>|<comentario>   (solo en CONTROL)
+//   Q|<id>|<nombre>|<target>|<max-limit>|<parent>|<queue>|<yes/no disabled>|<comentario>|<yes/no corte>
+//     |<yes/no aviso>|<token de su página o vacío>                                      (solo en CONTROL)
+//     corte = IP en wisp-cortados; aviso = IP en wisp-aviso; token = regla del proxy que desvía su HTTP
+//     a <host>/aviso/<token> (vacío = sin regla). Un script anterior ignora los campos que no conoce.
 //   C|<id>                        comando de la terminal (solo en CONTROL); el texto se pide aparte
 //   # fin                         si no llega, el script descarta la respuesta
 //
 // Reporte (POST /api/mikrotik/reporte), una línea por cola:
 //   Q|<nombre>|<existe 1/0>|<target>|<max-limit>|<parent>|<queue>|<disabled>|<rate>|<bytes>|<ping 1/0>|<comentario>
+//   Q2|... igual, con |<en wisp-cortados 1/0> antes del comentario
+//   Q3|... igual que Q2, con |<en wisp-aviso 1/0> antes del comentario
 @Slf4j
 @Service
 public class MikrotikService {
@@ -51,6 +56,8 @@ public class MikrotikService {
     private static final int CAMPOS_REPORTE = 12;
     // Q2: igual que Q, más "¿está en wisp-cortados?" antes del comentario (que va al final)
     private static final int CAMPOS_REPORTE_V2 = 13;
+    // Q3: igual que Q2, más "¿está en wisp-aviso?" antes del comentario
+    private static final int CAMPOS_REPORTE_V3 = 14;
 
     private final RedRepository redRepository;
     private final ColaRepository colaRepository;
@@ -60,11 +67,13 @@ public class MikrotikService {
     private final ControlTokensRed controlTokensRed;
     private final TerminalService terminalService;
     private final ScriptRouterOsService scriptRouterOsService;
+    private final TokenRed tokenRed;
 
     public MikrotikService(RedRepository redRepository, ColaRepository colaRepository,
                            AccionColaRepository accionColaRepository, ConsumoMensualRepository consumoMensualRepository,
                            SincronizacionService sincronizacionService, ControlTokensRed controlTokensRed,
-                           TerminalService terminalService, ScriptRouterOsService scriptRouterOsService) {
+                           TerminalService terminalService, ScriptRouterOsService scriptRouterOsService,
+                           TokenRed tokenRed) {
         this.redRepository = redRepository;
         this.colaRepository = colaRepository;
         this.accionColaRepository = accionColaRepository;
@@ -73,6 +82,7 @@ public class MikrotikService {
         this.controlTokensRed = controlTokensRed;
         this.terminalService = terminalService;
         this.scriptRouterOsService = scriptRouterOsService;
+        this.tokenRed = tokenRed;
     }
 
     // ---------- Autenticación ----------
@@ -132,11 +142,18 @@ public class MikrotikService {
                     accion.setResueltaEn(ahora);
                     continue;
                 }
-                // El último campo (corte) es nuevo: un script anterior lo ignora sin romperse
+                // Token nuevo en cada envío: solo se guarda su hash, así que no se puede volver a enviar el mismo.
+                // El MikroTik se queda con el último que recibió (la acción se reenvía hasta que la confirme).
+                String tokenPortal = "";
+                if (cola.getPortal()) {
+                    tokenPortal = tokenRed.generar();
+                    cola.setPortalTokenHash(TokenRed.hash(tokenPortal));
+                }
+                // Los últimos campos (corte, aviso, token) son nuevos: un script anterior los ignora sin romperse
                 linea(texto, String.join("|", "Q", String.valueOf(accion.getId()), cola.getNombre(), cola.getTarget(),
                         cola.getMaxLimit(), cola.getParent(), cola.getTipoCola(),
                         cola.getDeshabilitada() ? "yes" : "no", cola.getComentario(),
-                        cola.getCortada() ? "yes" : "no"));
+                        cola.getCortada() ? "yes" : "no", cola.getAviso() ? "yes" : "no", tokenPortal));
                 if (accion.getEstado() == EstadoAccion.PENDIENTE) {
                     accion.setEstado(EstadoAccion.ENVIADA);
                     accion.setEnviadaEn(ahora);
@@ -234,11 +251,12 @@ public class MikrotikService {
         LocalDate periodo = ahora.toLocalDate().withDayOfMonth(1);
         int actualizadas = 0;
         for (String linea : cuerpo.split("\\r?\\n")) {
-            boolean v2 = linea.startsWith("Q2|");
+            boolean v3 = linea.startsWith("Q3|");
+            boolean v2 = v3 || linea.startsWith("Q2|");
             if (!v2 && !linea.startsWith("Q|")) {
                 continue;
             }
-            int campos = v2 ? CAMPOS_REPORTE_V2 : CAMPOS_REPORTE;
+            int campos = v3 ? CAMPOS_REPORTE_V3 : v2 ? CAMPOS_REPORTE_V2 : CAMPOS_REPORTE;
             String[] c = linea.split("\\|", campos);
             if (c.length < campos) {
                 continue;
@@ -250,7 +268,8 @@ public class MikrotikService {
             }
             // Script anterior (Q): no informa la lista, se deja en null para no mostrar diferencias falsas
             cola.setRepCortada(v2 ? FormatoRouterOs.booleano(c[11]) : null);
-            aplicarReporte(cola, c, v2 ? c[12] : c[11], periodo, ahora);
+            cola.setRepAviso(v3 ? FormatoRouterOs.booleano(c[12]) : null);
+            aplicarReporte(cola, c, c[campos - 1], periodo, ahora);
             actualizadas++;
         }
 

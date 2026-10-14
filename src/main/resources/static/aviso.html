@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <!-- El token va en la URL: no se envía a otras páginas (ej: al abrir WhatsApp) -->
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex">
+  <title>Aviso de tu internet</title>
+  <link rel="icon" href="data:,">
+  <script src="/js/tema.js"></script>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <script src="/js/iconos.js" defer></script>
+  <script src="/js/formato.js" defer></script>
+  <script src="/js/aviso.js" defer></script>
+</head>
+<!-- Página pública: llega aquí desde el Wi-Fi (el MikroTik desvía las páginas http://).
+     No necesita iniciar sesión: el token de la URL identifica a quién mostrarle el aviso. -->
+<body>
+  <header class="barra">
+    <div class="barra-marca">
+      <img data-logo alt="" hidden>
+      <span class="barra-nombre" data-empresa>Tu internet</span>
+    </div>
+  </header>
+
+  <main class="contenido portal">
+    <p id="cargando" class="saludo-sub">Cargando…</p>
+
+    <div id="aviso" hidden>
+      <div id="caja-etapa" class="aviso" role="status">
+        <strong id="titulo-etapa"></strong>
+      </div>
+
+      <h1 class="saludo">Hola, <span id="nombre"></span></h1>
+      <p id="texto" class="aviso-texto"></p>
+
+      <section id="panel-deuda" class="panel" aria-labelledby="titulo-deuda" hidden>
+        <h2 id="titulo-deuda" class="panel-titulo">Lo que falta pagar</h2>
+        <p id="deuda-total" class="monto-grande monto-deuda"></p>
+        <p id="deuda-meses"></p>
+      </section>
+
+      <p id="al-dia" class="al-dia" hidden><span data-icono="check"></span>¡Gracias! Tu pago ya está registrado.</p>
+
+      <section id="panel-pagar" class="panel" aria-labelledby="titulo-pagar" hidden>
+        <h2 id="titulo-pagar" class="panel-titulo">¿Cómo pago?</h2>
+        <dl id="datos-pago" class="datos"></dl>
+        <p id="datos-pago-vacio" class="vacio" hidden>Escríbenos por WhatsApp y te diremos cómo pagar.</p>
+      </section>
+
+      <div class="acciones acciones-aviso">
+        <a id="boton-comprobante" class="boton boton-whatsapp" target="_blank" rel="noopener noreferrer" hidden>
+          <span data-icono="whatsapp"></span>Ya pagué, enviar comprobante
+        </a>
+        <button type="button" id="boton-entendido" class="boton boton-secundario" hidden>Entendido</button>
+      </div>
+      <p id="whatsapp-texto" class="campo-ayuda" hidden></p>
+
+      <div id="confirmacion" class="aviso aviso-info" role="status" hidden></div>
+      <div id="error" class="aviso aviso-error" role="alert" hidden></div>
+    </div>
+
+    <!-- Sin token o con un token que ya no vale: aviso general, sin datos de nadie -->
+    <div id="generico" hidden>
+      <h1 class="saludo">Aviso de tu proveedor de internet</h1>
+      <p class="aviso-texto">Si tienes un pago pendiente o tu servicio está suspendido, escríbenos por WhatsApp
+        y te ayudamos.</p>
+      <div class="acciones acciones-aviso">
+        <a id="boton-contacto" class="boton boton-whatsapp" target="_blank" rel="noopener noreferrer" hidden>
+          <span data-icono="whatsapp"></span>Escribir por WhatsApp
+        </a>
+      </div>
+      <p id="contacto-texto" class="campo-ayuda" hidden></p>
+    </div>
+  </main>
+</body>
+</html>

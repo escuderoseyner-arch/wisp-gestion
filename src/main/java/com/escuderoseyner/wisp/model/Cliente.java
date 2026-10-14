@@ -70,6 +70,14 @@ public class Cliente {
     @Column(name = "corte_manual", nullable = false)
     private Boolean corteManual = false;
 
+    // Casilla "No mostrar aviso" de pago por Wi-Fi (script 010)
+    @Column(name = "sin_aviso", nullable = false)
+    private Boolean sinAviso = false;
+
+    // Tocó "Entendido" en la página de aviso: no lo vuelve a ver hasta esta hora
+    @Column(name = "aviso_pospuesto_hasta")
+    private LocalDateTime avisoPospuestoHasta;
+
     // STRING: guarda el texto "ACTIVO" y no un número (0, 1, 2)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

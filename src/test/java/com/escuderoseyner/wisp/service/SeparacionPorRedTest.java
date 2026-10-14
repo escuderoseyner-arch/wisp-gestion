@@ -87,7 +87,8 @@ class SeparacionPorRedTest {
         cajaService = new CajaService(cajaRepository, movimientoRepository, usuarioRepository, pagoRepository,
                 configuracionService, alcanceRedes);
         colaService = new ColaService(colaRepository, accionColaRepository, redRepository, clienteRepository,
-                usuarioRepository, sincronizacionService, consumoMensualRepository, redService, alcanceRedes);
+                usuarioRepository, sincronizacionService, consumoMensualRepository, redService, alcanceRedes,
+                pagoRepository, configuracionService);
         panelService = new PanelService(clienteRepository, pagoRepository, pagoService, configuracionService,
                 alcanceRedes);
 

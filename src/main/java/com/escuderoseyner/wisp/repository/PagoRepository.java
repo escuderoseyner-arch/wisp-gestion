@@ -41,4 +41,8 @@ public interface PagoRepository extends JpaRepository<Pago, Integer> {
     // Solo [id del cliente, periodo] de todos los pagos: liviano, para calcular los atrasados
     @Query("SELECT p.cliente.id, p.periodo FROM Pago p")
     List<Object[]> findClienteYPeriodo();
+
+    // Lo mismo, solo de los clientes de una red (para el aviso de pago por Wi-Fi)
+    @Query("SELECT p.cliente.id, p.periodo FROM Pago p WHERE p.cliente.red.id = :redId")
+    List<Object[]> findClienteYPeriodoDeRed(Integer redId);
 }

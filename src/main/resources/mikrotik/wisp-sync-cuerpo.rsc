@@ -1,6 +1,7 @@
 :local url "{{URL}}/api/mikrotik"
 :local hdr "X-Red-Token: {{TOKEN}}"
 :local hdrPost "X-Red-Token: {{TOKEN}},Content-Type: text/plain"
+:local hostWeb "{{HOST}}"
 :if ([:len [/system script job find where script="wisp-sync"]] > 1) do={
   :log warning "wisp-sync: la ejecucion anterior sigue en curso"
 } else={
@@ -101,6 +102,45 @@
             } on-error={ :set okLista false }
             :if ((!$okLista) && ($err = "")) do={ :set err "No se pudo actualizar la address-list wisp-cortados" }
           }
+          :if ($permitido && ([:len $f] > 11)) do={
+            :local t ($f->3)
+            :local ipc $t
+            :local barraIp [:find $t "/"]
+            :if ([:typeof $barraIp] != "nil") do={ :set ipc [:pick $t 0 $barraIp] }
+            :local etiqueta ("wisp-gestion:" . $n)
+            :local ultimo $ipc
+            :local punto [:find $ultimo "."]
+            :while ([:typeof $punto] != "nil") do={
+              :set ultimo [:pick $ultimo ($punto + 1) [:len $ultimo]]
+              :set punto [:find $ultimo "."]
+            }
+            :local octeto [:tonum $ultimo]
+            :local infra true
+            :if ([:typeof $octeto] = "num") do={ :if ($octeto > 10) do={ :set infra false } }
+            :local okAviso true
+            :do {
+              /ip firewall address-list remove [find where list="wisp-aviso" and comment=$etiqueta]
+              /ip proxy access remove [find where comment=$etiqueta]
+              :if (!$infra) do={
+                :if (($f->10) = "yes") do={
+                  :if ([:len [/ip firewall address-list find where list="wisp-aviso" and address=$ipc]] = 0) do={
+                    /ip firewall address-list add list="wisp-aviso" address=$ipc comment=$etiqueta
+                  }
+                }
+                :local tok ($f->11)
+                :if ([:len $tok] > 0) do={
+                  :local destino ($hostWeb . "/aviso/" . $tok)
+                  :local fin [/ip proxy access find where comment="wisp-gestion: fin"]
+                  :if ([:len $fin] > 0) do={
+                    /ip proxy access add src-address=$ipc action=deny redirect-to=$destino comment=$etiqueta place-before=($fin->0)
+                  } else={
+                    /ip proxy access add src-address=$ipc action=deny redirect-to=$destino comment=$etiqueta
+                  }
+                }
+              }
+            } on-error={ :set okAviso false }
+            :if ((!$okAviso) && ($err = "")) do={ :set err "No se pudo actualizar el aviso (address-list wisp-aviso o proxy)" }
+          }
           :do {
             :if ($err = "") do={
               /tool fetch url=($url . "/acciones/" . $id . "/aplicada") http-method=post http-header-field=$hdrPost http-data="" check-certificate=yes-without-crl output=none
@@ -151,12 +191,18 @@
               :if ([:len [/ip firewall address-list find where list="wisp-cortados" and address=$ip]] > 0) do={ :set cortada "1" }
             } on-error={}
           }
+          :local aviso "0"
+          :if ($ip != "") do={
+            :do {
+              :if ([:len [/ip firewall address-list find where list="wisp-aviso" and address=$ip]] > 0) do={ :set aviso "1" }
+            } on-error={}
+          }
           :local q [/queue simple find where name=$n]
           :if ([:len $q] = 0) do={
-            :set cuerpo ($cuerpo . "Q2|" . $n . "|0||||||||" . $ping . "|" . $cortada . "|\n")
+            :set cuerpo ($cuerpo . "Q3|" . $n . "|0||||||||" . $ping . "|" . $cortada . "|" . $aviso . "|\n")
           } else={
             :local d [/queue simple get ($q->0)]
-            :set cuerpo ($cuerpo . "Q2|" . $n . "|1|" . [:tostr ($d->"target")] . "|" . ($d->"max-limit") . "|" . ($d->"parent") . "|" . ($d->"queue") . "|" . [:tostr ($d->"disabled")] . "|" . ($d->"rate") . "|" . ($d->"bytes") . "|" . $ping . "|" . $cortada . "|" . ($d->"comment") . "\n")
+            :set cuerpo ($cuerpo . "Q3|" . $n . "|1|" . [:tostr ($d->"target")] . "|" . ($d->"max-limit") . "|" . ($d->"parent") . "|" . ($d->"queue") . "|" . [:tostr ($d->"disabled")] . "|" . ($d->"rate") . "|" . ($d->"bytes") . "|" . $ping . "|" . $cortada . "|" . $aviso . "|" . ($d->"comment") . "\n")
           }
         }
       }

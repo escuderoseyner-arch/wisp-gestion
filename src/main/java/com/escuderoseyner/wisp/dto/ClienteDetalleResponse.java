@@ -21,7 +21,8 @@ public record ClienteDetalleResponse(
         CuentaDelCliente cuenta,     // null si no tiene cuenta en el portal
         RedDelCliente red,           // null si no está en ninguna red (MikroTik)
         String nombreCola,
-        boolean corteManual
+        boolean corteManual,
+        boolean sinAviso             // casilla "No mostrar aviso" de pago por Wi-Fi
 ) {
 
     public record RedDelCliente(Integer id, String nombre) {

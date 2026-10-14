@@ -53,6 +53,7 @@ public class ScriptRouterOsService {
         String url = urlBase(urlDePeticion);
         String cuerpo = plantillaCuerpo
                 .replace("{{URL}}", url)
+                .replace("{{HOST}}", hostWeb(url))
                 .replace("{{TOKEN}}", token);
         return plantilla
                 .replace("{{RED}}", FormatoRouterOs.comentario(red.getNombre()))
@@ -104,6 +105,12 @@ public class ScriptRouterOsService {
                     + ". Configura la variable APP_URL_PUBLICA (ej: https://mi-app.onrender.com).");
         }
         return url;
+    }
+
+    // "https://mi-app.onrender.com" -> "mi-app.onrender.com": el proxy del MikroTik redirige a <host>/aviso/<token>
+    // por HTTP y la web lo pasa a HTTPS
+    static String hostWeb(String url) {
+        return url.replaceFirst("^https?://", "");
     }
 
     private static String leerPlantilla(String ruta) {

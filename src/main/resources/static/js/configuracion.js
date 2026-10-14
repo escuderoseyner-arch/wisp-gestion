@@ -44,6 +44,9 @@
     form.cuentaBancaria.value = c.cuentaBancaria || '';
     form.diasTolerancia.value = c.diasTolerancia ?? '';
     form.plantillaRecordatorio.value = c.plantillaRecordatorio || '';
+    form.avisoTextoSuave.value = c.avisoTextoSuave || '';
+    form.avisoTextoVencido.value = c.avisoTextoVencido || '';
+    form.avisoTextoSuspendido.value = c.avisoTextoSuspendido || '';
     actualizarVistaPrevia();
   }
 
@@ -75,6 +78,9 @@
       cuentaBancaria: form.cuentaBancaria.value.trim(),
       diasTolerancia: form.diasTolerancia.value === '' ? null : Number(form.diasTolerancia.value),
       plantillaRecordatorio: form.plantillaRecordatorio.value.trim(),
+      avisoTextoSuave: form.avisoTextoSuave.value.trim(),
+      avisoTextoVencido: form.avisoTextoVencido.value.trim(),
+      avisoTextoSuspendido: form.avisoTextoSuspendido.value.trim(),
     };
 
     // Validación rápida en el navegador. El servidor vuelve a validar todo.
@@ -93,10 +99,20 @@
       problemas.push('Los días de tolerancia deben estar entre 0 y 15.');
     }
     if (!datos.plantillaRecordatorio) problemas.push('La plantilla de recordatorio es obligatoria.');
-    (datos.plantillaRecordatorio.match(/\{[^{}]*\}/g) || []).forEach((v) => {
-      if (!VARIABLES.includes(v.slice(1, -1))) {
-        problemas.push('La plantilla usa la variable ' + v + ', que no existe. Usa solo {nombre}, {monto} y {mes}.');
-      }
+    if (!datos.avisoTextoSuave) problemas.push('El texto del aviso suave es obligatorio.');
+    if (!datos.avisoTextoVencido) problemas.push('El texto del aviso de pago vencido es obligatorio.');
+    if (!datos.avisoTextoSuspendido) problemas.push('El texto de servicio suspendido es obligatorio.');
+    [
+      ['La plantilla', datos.plantillaRecordatorio],
+      ['El texto del aviso suave', datos.avisoTextoSuave],
+      ['El texto del aviso de pago vencido', datos.avisoTextoVencido],
+      ['El texto de servicio suspendido', datos.avisoTextoSuspendido],
+    ].forEach(([nombre, texto]) => {
+      (texto.match(/\{[^{}]*\}/g) || []).forEach((v) => {
+        if (!VARIABLES.includes(v.slice(1, -1))) {
+          problemas.push(nombre + ' usa la variable ' + v + ', que no existe. Usa solo {nombre}, {monto} y {mes}.');
+        }
+      });
     });
     if (problemas.length > 0) {
       Sesion.mostrarMensaje(cajaErrorFormulario, 'Revisa los datos:', problemas);

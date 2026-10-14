@@ -75,7 +75,7 @@ class PortalClienteServiceTest {
 
     private ConfiguracionResponse configuracion() {
         return new ConfiguracionResponse("Empresa Demo", null, null, "900000000", "51", "900000000",
-                "Empresa Demo", null, 3, "Hola {nombre}", "S/");
+                "Empresa Demo", null, 3, "Hola {nombre}", "S/", "Aviso suave", "Aviso vencido", "Suspendido");
     }
 
     @Test
