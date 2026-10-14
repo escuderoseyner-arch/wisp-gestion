@@ -36,6 +36,8 @@
   $('form-script').addEventListener('submit', generarScript);
   $('boton-copiar-script').addEventListener('click', () => copiar('texto-script', 'Script copiado. Pégalo en la terminal del MikroTik.'));
   $('boton-copiar-comando').addEventListener('click', () => copiar('texto-comando-corto', 'Comando copiado. Pégalo en la terminal del MikroTik.'));
+  $('boton-copiar-puente').addEventListener('click', () => copiar('texto-puente', 'Puente copiado. Pégalo en la terminal del MikroTik.'));
+  $('boton-generar-puente').addEventListener('click', generarPuente);
   $('boton-reinstalar').addEventListener('click', marcarReinstalacion);
   $('boton-cerrar-script').addEventListener('click', cerrarScript);
   $('boton-script-token').addEventListener('click', () => {
@@ -179,6 +181,34 @@
     $('resultado-script').hidden = true;
     $('texto-script').textContent = '';
     $('texto-comando-corto').textContent = '';
+    $('resultado-puente').hidden = true;
+    $('texto-puente').textContent = '';
+  }
+
+  // Script "puente": mismo token que el script, otro resultado
+  async function generarPuente() {
+    const red = redScript;
+    if (!red) return;
+    const cajaErrorScript = $('error-script');
+    Sesion.ocultar(cajaErrorScript);
+    ocultarResultadoScript();
+    const token = $('form-script').token.value.trim();
+    if (!FORMATO_TOKEN.test(token)) {
+      Sesion.mostrarMensaje(cajaErrorScript, 'Escribe el token de la red (20 a 128 caracteres).');
+      return;
+    }
+    const boton = $('boton-generar-puente');
+    boton.disabled = true;
+    try {
+      const respuesta = await Sesion.api(URL_REDES + '/' + red.id + '/puente', { method: 'POST', body: { token } });
+      $('texto-puente').textContent = respuesta.comando;
+      $('aviso-http-puente').hidden = respuesta.https;
+      $('resultado-puente').hidden = false;
+    } catch (error) {
+      Sesion.mostrarError(cajaErrorScript, error);
+    } finally {
+      boton.disabled = false;
+    }
   }
 
   async function generarScript(evento) {

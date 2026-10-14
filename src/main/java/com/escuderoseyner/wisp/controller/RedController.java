@@ -4,6 +4,7 @@ import com.escuderoseyner.wisp.dto.CambiarAvisoRequest;
 import com.escuderoseyner.wisp.dto.CambiarTokenRedRequest;
 import com.escuderoseyner.wisp.dto.CrearRedRequest;
 import com.escuderoseyner.wisp.dto.GenerarScriptRequest;
+import com.escuderoseyner.wisp.dto.PuenteRedResponse;
 import com.escuderoseyner.wisp.dto.RedRequest;
 import com.escuderoseyner.wisp.dto.RedResponse;
 import com.escuderoseyner.wisp.dto.RedVisibleResponse;
@@ -79,6 +80,13 @@ public class RedController {
     @PutMapping("/{id}/aviso")
     public RedResponse aviso(@PathVariable Integer id, @Valid @RequestBody CambiarAvisoRequest request) {
         return redService.cambiarAviso(id, request.activo());
+    }
+
+    // Script "puente" (POST por lo mismo: el token va en el cuerpo)
+    @PostMapping("/{id}/puente")
+    public PuenteRedResponse puente(@PathVariable Integer id, @Valid @RequestBody GenerarScriptRequest request) {
+        return redService.generarPuente(id, request.token(),
+                ServletUriComponentsBuilder.fromCurrentContextPath().toUriString());
     }
 
     @PostMapping("/{id}/reinstalar")

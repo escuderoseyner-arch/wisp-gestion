@@ -27,6 +27,9 @@ public class ScriptRouterOsService {
 
     private static final String PLANTILLA = "mikrotik/wisp-sync.rsc";
     private static final String PLANTILLA_CUERPO = "mikrotik/wisp-sync-cuerpo.rsc";
+    // Script "puente": lo instala el admin una sola vez y la web nunca lo modifica
+    private static final String PLANTILLA_PUENTE = "mikrotik/wisp-puente.rsc";
+    private static final String PLANTILLA_PUENTE_CUERPO = "mikrotik/wisp-puente-cuerpo.rsc";
     // Archivo temporal del comando corto de instalación (se borra al terminar)
     public static final String ARCHIVO_INSTALACION = "wisp-instalar.rsc";
     // La URL va dentro de un texto de RouterOS: nada de comillas, $, \, espacios ni llaves
@@ -34,6 +37,8 @@ public class ScriptRouterOsService {
 
     private final String plantilla;
     private final String plantillaCuerpo;
+    private final String plantillaPuente;
+    private final String plantillaPuenteCuerpo;
     private final String urlPublica;
     private final String marcadorPuente;
 
@@ -41,6 +46,8 @@ public class ScriptRouterOsService {
                                  @Value("${app.mikrotik.marcador-puente}") String marcadorPuente) {
         this.plantilla = leerPlantilla(PLANTILLA);
         this.plantillaCuerpo = leerPlantilla(PLANTILLA_CUERPO);
+        this.plantillaPuente = leerPlantilla(PLANTILLA_PUENTE);
+        this.plantillaPuenteCuerpo = leerPlantilla(PLANTILLA_PUENTE_CUERPO);
         this.urlPublica = quitarBarraFinal(urlPublica.trim());
         this.marcadorPuente = marcadorPuente.trim();
     }
@@ -72,6 +79,22 @@ public class ScriptRouterOsService {
                 + "\" check-certificate=yes-without-crl output=file dst-path=" + ARCHIVO_INSTALACION + "\n"
                 + ":do { /import file-name=" + ARCHIVO_INSTALACION + " } on-error={ :log warning \"wisp-gestion: fallo la instalacion\" };"
                 + " /file remove [find where name=\"" + ARCHIVO_INSTALACION + "\"]\n";
+    }
+
+    // Script "puente" para pegar en la terminal: crea el script y la tarea "wisp-puente". Cada 2 minutos
+    // hace GET /api/mikrotik/bootstrap y SOLO ejecuta la respuesta si su primera línea es el marcador.
+    // Un comando por línea y el código escapado en source="..." (igual que el instalador de wisp-sync).
+    public String generarPuente(Red red, String token, String urlDePeticion) {
+        if (!TokenRed.formatoValido(token)) {
+            throw new ReglaNegocioException("El token no tiene un formato válido.");
+        }
+        String cuerpo = plantillaPuenteCuerpo
+                .replace("{{URL}}", urlBase(urlDePeticion))
+                .replace("{{TOKEN}}", token)
+                .replace("{{MARCADOR}}", textoRouterOs(marcadorPuente));
+        return plantillaPuente
+                .replace("{{RED}}", FormatoRouterOs.comentario(red.getNombre()))
+                .replace("{{SOURCE}}", textoRouterOs(cuerpo));
     }
 
     // Texto entre comillas de RouterOS: escapa \, ", $ y ? y convierte los saltos de línea en \n

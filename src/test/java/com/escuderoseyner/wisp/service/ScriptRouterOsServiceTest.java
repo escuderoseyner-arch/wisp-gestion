@@ -163,6 +163,42 @@ class ScriptRouterOsServiceTest {
     }
 
     @Test
+    @DisplayName("Script puente: 4 líneas completas, solo crea wisp-puente y consulta el bootstrap cada 2 min")
+    void scriptPuente() {
+        String puente = servicio.generarPuente(red(), TOKEN, "https://mi-app.example.com/");
+        List<String> lineas = puente.lines().toList();
+
+        assertThat(lineas).hasSize(4);
+        lineas.forEach(ScriptRouterOsServiceTest::validarLinea);
+        assertThat(puente).doesNotContain("{{", "source={", "\r");
+        // Solo borra o reemplaza su propio script y su propia tarea (nunca wisp-sync ni otro)
+        Matcher borrados = Pattern.compile("remove \\[find where name=\"([^\"]+)\"]").matcher(puente);
+        int cantidad = 0;
+        while (borrados.find()) {
+            assertThat(borrados.group(1)).isEqualTo("wisp-puente");
+            cantidad++;
+        }
+        assertThat(cantidad).isEqualTo(2);
+        assertThat(puente).contains("interval=2m", "on-event=\"/system script run wisp-puente\"");
+
+        String cuerpo = cuerpo(puente);
+        assertThat(cuerpo).contains("/tool fetch url=\"https://mi-app.example.com/api/mikrotik/bootstrap\"",
+                "http-header-field=\"X-Red-Token: " + TOKEN + "\"", "check-certificate=yes-without-crl");
+        // Solo ejecuta si la respuesta empieza con el marcador seguido de un salto de línea
+        assertThat(cuerpo).contains(":local marca \"# marcador-ok\\n\"",
+                "([:pick $res 0 [:len $marca]] = $marca)", ":local codigo [:parse $res]");
+        assertThat(cuerpo).doesNotContainPattern(":local \\w+ do=");
+        assertThat(cuerpo.toLowerCase()).doesNotContain("/ip firewall", "/system reset", "/system reboot", "queue simple");
+    }
+
+    @Test
+    @DisplayName("Lo que descarga el puente cabe en output=user (máx. 64 KB en RouterOS 7)")
+    void instalacionCabeEnElPuente() {
+        String script = servicio.generarParaPuente(red(), TOKEN, "https://una-app-con-nombre-largo.onrender.com");
+        assertThat(script.getBytes(java.nio.charset.StandardCharsets.UTF_8).length).isLessThan(60_000);
+    }
+
+    @Test
     @DisplayName("Para el puente, la primera línea es su marcador")
     void marcadorDelPuente() {
         String script = servicio.generarParaPuente(red(), TOKEN, "https://mi-app.example.com");

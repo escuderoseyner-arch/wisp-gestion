@@ -4,6 +4,7 @@ import com.escuderoseyner.wisp.dto.CrearRedRequest;
 import com.escuderoseyner.wisp.dto.DatosRed;
 import com.escuderoseyner.wisp.dto.RedRequest;
 import com.escuderoseyner.wisp.dto.RedResponse;
+import com.escuderoseyner.wisp.dto.PuenteRedResponse;
 import com.escuderoseyner.wisp.dto.RedVisibleResponse;
 import com.escuderoseyner.wisp.dto.ScriptRedResponse;
 import com.escuderoseyner.wisp.dto.TokenRedResponse;
@@ -129,6 +130,19 @@ public class RedService {
         String url = scriptRouterOsService.urlBase(urlDePeticion);
         return new ScriptRedResponse(scriptRouterOsService.generar(red, token, urlDePeticion),
                 scriptRouterOsService.comandoInstalacion(token, urlDePeticion), url,
+                url.startsWith("https://"));
+    }
+
+    // Script "puente" para pegar en el MikroTik, con la misma verificación del token que generarScript
+    @Transactional(readOnly = true)
+    public PuenteRedResponse generarPuente(Integer id, String tokenRecibido, String urlDePeticion) {
+        Red red = buscar(id);
+        String token = tokenRecibido == null ? "" : tokenRecibido.trim();
+        if (!TokenRed.formatoValido(token) || !TokenRed.hash(token).equals(red.getTokenHash())) {
+            throw new ReglaNegocioException("Ese token no corresponde a la red \"" + red.getNombre() + "\".");
+        }
+        String url = scriptRouterOsService.urlBase(urlDePeticion);
+        return new PuenteRedResponse(scriptRouterOsService.generarPuente(red, token, urlDePeticion), url,
                 url.startsWith("https://"));
     }
 

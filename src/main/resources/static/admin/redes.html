@@ -158,6 +158,7 @@
         </div>
         <div class="acciones">
           <button type="submit" id="boton-generar-script" class="boton boton-primario">Generar script</button>
+          <button type="button" id="boton-generar-puente" class="boton boton-secundario">Generar puente</button>
           <button type="button" id="boton-reinstalar" class="boton boton-secundario">Que el puente lo reinstale</button>
           <button type="button" id="boton-cerrar-script" class="boton boton-secundario">Cerrar</button>
         </div>
@@ -178,6 +179,18 @@
         <pre id="texto-script" class="salida-terminal"></pre>
         <div class="acciones">
           <button type="button" id="boton-copiar-script" class="boton boton-secundario"><span data-icono="copiar"></span>Copiar script</button>
+        </div>
+      </div>
+      <div id="resultado-puente" hidden>
+        <p id="aviso-http-puente" class="aviso aviso-error" hidden>La URL no es HTTPS: el router no podrá verificar el
+          certificado. Configura APP_URL_PUBLICA en Render.</p>
+        <h3 class="panel-titulo">Script puente (se instala una sola vez)</h3>
+        <p class="campo-ayuda">Pega estas 4 líneas en la terminal del MikroTik (New Terminal en Winbox). Crea el script y
+          la tarea <code>wisp-puente</code>: cada 2 minutos pregunta a la web si hay una instalación de wisp-sync pendiente
+          y solo la ejecuta si viene con el marcador. La web nunca lo modifica. Contiene el token: no lo compartas.</p>
+        <pre id="texto-puente" class="salida-terminal"></pre>
+        <div class="acciones">
+          <button type="button" id="boton-copiar-puente" class="boton boton-primario"><span data-icono="copiar"></span>Copiar puente</button>
         </div>
       </div>
     </section>

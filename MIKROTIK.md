@@ -220,6 +220,35 @@ Para apagarlo de emergencia sin tocar la web: `/ip firewall nat disable [find wh
 
 ## 2. Instalar
 
+### 2.0 Script puente (una sola vez por router)
+
+En **Redes → Script** escribe el token de la red y toca **Generar puente**. Copia las 4 líneas y pégalas en
+*New Terminal* de Winbox. Crean el script y la tarea `wisp-puente` (cada 2 min). El puente:
+
+- hace `GET /api/mikrotik/bootstrap` con el token en el header y el certificado verificado;
+- **solo** ejecuta la respuesta si su primera línea es el marcador (`MIKROTIK_MARCADOR_PUENTE`); si no hay
+  nada pendiente, la web responde vacío y no hace nada (ni escribe en el log);
+- nunca lo modifica la web ni `wisp-sync`. Volver a pegarlo lo reemplaza (por ejemplo, si cambias el token).
+
+Si ya tenías otro puente hecho a mano (ej: `astranet-boot`), revisa `/system script print` y deja solo uno.
+
+**Comprobar que funciona:**
+
+```
+/system script print where name="wisp-puente"
+/system scheduler print where name="wisp-puente"
+/system script run wisp-puente
+/log print where message~"wisp"
+```
+
+- La tarea debe estar sin `X` (habilitada) y con `next-run` dentro de 2 min; `run-count` sube cada 2 min.
+- `script run` sin ningún mensaje en el log = consultó bien y no había nada pendiente.
+  `wisp-puente: no se pudo consultar la web` = revisa internet, hora y certificados (1.2 y 1.3).
+- Prueba real: en la web toca **Script → Que el puente lo reinstale**. En máximo 2 min el log dice
+  `wisp-puente: la web envio una instalacion, se ejecuta` y `wisp-gestion: sincronizacion instalada`,
+  y la red deja de mostrar "Instalación pendiente" con el primer reporte de `wisp-sync`.
+  Si pasan 4 min sin eso, el token del puente no es el de la red (la web responde vacío): genera y pega de nuevo.
+
 1. En la web, **Redes → Nueva red**: elige **Solo lectura** y "Usar una clave que ya tengo"
    con la clave de tu puente.
 2. Instala `wisp-sync` de una de estas dos formas:
