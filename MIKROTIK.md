@@ -166,9 +166,10 @@ Pega los bloques **en este orden**:
 # a) Proxy del router, sin caché (solo se usa para el aviso)
 /ip proxy set enabled=yes port=8080 max-cache-size=none cache-on-disk=no
 
-# b) Regla final (todo lo que no tenga regla propia va a la página general) y, antes, la web pasa directo
-/ip proxy access add action=deny redirect-to="TU-APP.onrender.com/aviso" comment="wisp-gestion: fin"
-/ip proxy access add dst-host=TU-APP.onrender.com action=allow comment="wisp-gestion: la web" place-before=0
+# b) Primero la web pasa directo; después, la regla final (todo lo que no tenga regla propia va a la
+#    página general). wisp-sync pone las reglas de cada cliente entre estas dos. Sin place-before.
+/ip proxy access add dst-host=TU-APP.onrender.com action=allow comment="wisp-gestion: la web"
+/ip proxy access add action=redirect action-data="TU-APP.onrender.com/aviso" comment="wisp-gestion: fin"
 
 # c) Nadie usa el proxy directamente: solo las conexiones desviadas por la NAT de abajo
 /ip firewall filter add chain=input protocol=tcp dst-port=8080 connection-nat-state=!dstnat action=drop comment="wisp-gestion: proxy solo para el aviso" place-before=0
@@ -188,7 +189,9 @@ Pega los bloques **en este orden**:
 /ip firewall filter add chain=forward src-address-list=wisp-web dst-address-list=wisp-cortados protocol=tcp src-port=443 action=accept comment="wisp-gestion: suspendidos a la web (entrada)" place-before=0
 ```
 
-- Si un `place-before=0` da error porque la lista está vacía, vuelve a pegar esa línea sin `place-before=0`.
+- En RouterOS 7 la redirección del proxy es `action=redirect action-data="dominio/ruta"` (`redirect-to` ya no existe).
+- Si un `place-before=0` del firewall o la NAT da error porque la lista está vacía, vuelve a pegar esa línea sin `place-before=0`.
+- Revisa el orden con `/ip proxy access print`: "la web" primero, las reglas `wisp-gestion:<cola>` y "fin" al último.
 - Para Shiaunto, cambia `192.168.10.` por su subred en el bloque d) (y no agregues el .99).
 - `wisp-web` usa el dominio: el router lo resuelve solo y actualiza las IP. Límite: Render comparte IPs entre
   apps, así que un suspendido podría abrir otras webs alojadas en Render (solo por HTTPS).

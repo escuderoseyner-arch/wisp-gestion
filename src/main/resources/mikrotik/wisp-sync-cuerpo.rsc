@@ -132,9 +132,9 @@
                   :local destino ($hostWeb . "/aviso/" . $tok)
                   :local fin [/ip proxy access find where comment="wisp-gestion: fin"]
                   :if ([:len $fin] > 0) do={
-                    /ip proxy access add src-address=$ipc action=deny redirect-to=$destino comment=$etiqueta place-before=($fin->0)
+                    /ip proxy access add src-address=$ipc action=redirect action-data=$destino comment=$etiqueta place-before=($fin->0)
                   } else={
-                    /ip proxy access add src-address=$ipc action=deny redirect-to=$destino comment=$etiqueta
+                    /ip proxy access add src-address=$ipc action=redirect action-data=$destino comment=$etiqueta
                   }
                 }
               }

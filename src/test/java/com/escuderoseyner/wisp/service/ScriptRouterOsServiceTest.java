@@ -80,7 +80,8 @@ class ScriptRouterOsServiceTest {
                 assertThat(proxy.group(2)).startsWith(" [find where comment=$etiqueta]");
             }
             if (proxy.group(1).equals("add")) {
-                assertThat(proxy.group(2)).contains("src-address=$ipc", "action=deny", "comment=$etiqueta");
+                assertThat(proxy.group(2)).contains("src-address=$ipc", "action=redirect", "action-data=$destino", "comment=$etiqueta")
+                        .doesNotContain("redirect-to"); // RouterOS 7: "bad parameter redirect-to"
             }
             reglas++;
         }
