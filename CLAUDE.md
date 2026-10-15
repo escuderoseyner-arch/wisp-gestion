@@ -33,6 +33,9 @@ Debe ser genérico y vendible a otras empresas: los datos de cada empresa viven 
 - Los controladores reciben y devuelven DTOs, nunca entidades directamente. Validar entradas con Bean Validation (`@Valid`, `@NotBlank`, etc.).
 - Manejo de errores centralizado con `@RestControllerAdvice`, devolviendo mensajes claros en español.
 
+## Git
+- NUNCA agregar la línea `Co-Authored-By` (ni ninguna otra atribución a Claude) en commits ni pull requests.
+
 ## Seguridad (prioridad máxima)
 - NUNCA escribir contraseñas, tokens ni secretos en el código ni en `application.properties`. Usar variables de entorno (ej: `${DB_PASSWORD}`).
 - Contraseñas de usuarios cifradas con BCrypt.
