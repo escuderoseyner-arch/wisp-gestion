@@ -16,8 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 // Terminal remota: un ADMIN encola un comando de RouterOS y el MikroTik lo ejecuta en su próxima consulta.
 //  - Solo en modo CONTROL (en Solo lectura la web no envía nada al router).
@@ -32,7 +34,11 @@ public class TerminalService {
     public static final Duration ESPERA_SALIDA = Duration.ofMinutes(10);
     public static final int MAX_SALIDA = 16 * 1024;
     public static final int MAX_PENDIENTES_POR_RED = 5;
-    private static final int TAMANO_HISTORIAL = 50;
+    public static final int MAX_HISTORIAL = 200;
+    public static final Duration RETENCION = Duration.ofDays(30);
+    // Los que aún esperan al MikroTik nunca se borran
+    private static final Set<EstadoComando> TERMINADOS = EnumSet.of(EstadoComando.EJECUTADO, EstadoComando.ERROR,
+            EstadoComando.EXPIRADO, EstadoComando.CANCELADO);
 
     private final ComandoTerminalRepository comandoRepository;
     private final RedRepository redRepository;
@@ -82,11 +88,28 @@ public class TerminalService {
     }
 
     @Transactional
-    public List<ComandoTerminalResponse> historial(Integer redId) {
+    public List<ComandoTerminalResponse> historial(Integer redId, int limite) {
         buscarRed(redId);
         expirarVencidos(redId);
-        return comandoRepository.findHistorial(redId, PageRequest.of(0, TAMANO_HISTORIAL)).stream()
+        int tamano = Math.clamp(limite, 1, MAX_HISTORIAL);
+        return comandoRepository.findHistorial(redId, PageRequest.of(0, tamano)).stream()
                 .map(this::aResponse).toList();
+    }
+
+    // Borra el historial de la red. Los comandos que aún esperan al MikroTik se conservan.
+    @Transactional
+    public int limpiarHistorial(Integer redId, String usernameAdmin) {
+        buscarRed(redId);
+        expirarVencidos(redId);
+        int borrados = comandoRepository.borrarTerminadosDeRed(redId, TERMINADOS);
+        log.info("Historial de terminal de la red {} limpiado por {} ({} comandos)", redId, usernameAdmin, borrados);
+        return borrados;
+    }
+
+    // Borra los comandos terminados de más de 30 días (lo llama TerminalLimpiezaTarea)
+    @Transactional
+    public int borrarAntiguos() {
+        return comandoRepository.borrarTerminadosAntesDe(LocalDateTime.now().minus(RETENCION), TERMINADOS);
     }
 
     @Transactional

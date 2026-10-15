@@ -63,10 +63,19 @@
       </form>
     </section>
 
-    <h2 class="panel-titulo">Historial</h2>
-    <p id="cargando" class="saludo-sub">Cargando…</p>
-    <p id="vacio" class="vacio" hidden>Aún no se han enviado comandos a esta red.</p>
-    <ul id="historial" class="lista-tarjetas" aria-label="Historial de comandos" aria-live="polite"></ul>
+    <section class="panel" aria-labelledby="titulo-historial">
+      <div class="historial-cabecera">
+        <h2 id="titulo-historial" class="panel-titulo">Historial</h2>
+        <button type="button" id="boton-limpiar" class="boton boton-secundario boton-compacto" hidden>Limpiar historial</button>
+      </div>
+      <p class="campo-ayuda">Toca un comando para ver su salida. Se borran solos después de 30 días.</p>
+      <p id="cargando" class="saludo-sub">Cargando…</p>
+      <p id="vacio" class="vacio" hidden>Aún no se han enviado comandos a esta red.</p>
+      <ul id="historial" class="historial-terminal" aria-label="Historial de comandos"></ul>
+      <div id="contenedor-ver-mas" class="acciones" hidden>
+        <button type="button" id="ver-mas" class="boton boton-secundario">Ver más</button>
+      </div>
+    </section>
   </main>
 
   <!-- Confirmación antes de encolar -->

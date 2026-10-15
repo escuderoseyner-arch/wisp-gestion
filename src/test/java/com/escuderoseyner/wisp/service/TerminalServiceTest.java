@@ -12,19 +12,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import org.springframework.data.domain.PageRequest;
+
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -143,5 +148,49 @@ class TerminalServiceTest {
         assertThat(c.getEstado()).isEqualTo(EstadoComando.EJECUTADO);
         assertThat(c.getSalida()).hasSize(TerminalService.MAX_SALIDA);
         assertThat(c.getSalidaTruncada()).isTrue();
+    }
+
+    @Test
+    @DisplayName("El historial pide como máximo 200 y como mínimo 1")
+    void limiteHistorial() {
+        when(comandoRepository.findHistorial(eq(1), any())).thenReturn(List.of());
+
+        servicio.historial(1, 5000);
+        verify(comandoRepository).findHistorial(1, PageRequest.of(0, TerminalService.MAX_HISTORIAL));
+        servicio.historial(1, 0);
+        verify(comandoRepository).findHistorial(1, PageRequest.of(0, 1));
+    }
+
+    @Test
+    @DisplayName("Limpiar el historial borra solo los terminados de ESA red, no los que esperan al MikroTik")
+    @SuppressWarnings("unchecked")
+    void limpiarHistorial() {
+        when(comandoRepository.borrarTerminadosDeRed(eq(1), any())).thenReturn(3);
+
+        assertThat(servicio.limpiarHistorial(1, "admin")).isEqualTo(3);
+        ArgumentCaptor<Collection<EstadoComando>> estados = ArgumentCaptor.forClass(Collection.class);
+        verify(comandoRepository).borrarTerminadosDeRed(eq(1), estados.capture());
+        assertThat(estados.getValue()).doesNotContain(EstadoComando.PENDIENTE, EstadoComando.ENVIADO);
+    }
+
+    @Test
+    @DisplayName("Limpiar el historial de una red que no existe da error")
+    void limpiarRedInexistente() {
+        when(redRepository.findById(99)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> servicio.limpiarHistorial(99, "admin")).isInstanceOf(RecursoNoEncontradoException.class);
+        verify(comandoRepository, never()).borrarTerminadosDeRed(any(), any());
+    }
+
+    @Test
+    @DisplayName("Se borran solos los comandos terminados de más de 30 días")
+    @SuppressWarnings("unchecked")
+    void borrarAntiguos() {
+        servicio.borrarAntiguos();
+        ArgumentCaptor<LocalDateTime> fecha = ArgumentCaptor.forClass(LocalDateTime.class);
+        ArgumentCaptor<Collection<EstadoComando>> estados = ArgumentCaptor.forClass(Collection.class);
+        verify(comandoRepository).borrarTerminadosAntesDe(fecha.capture(), estados.capture());
+        assertThat(fecha.getValue()).isBetween(LocalDateTime.now().minusDays(30).minusMinutes(1),
+                LocalDateTime.now().minusDays(30));
+        assertThat(estados.getValue()).doesNotContain(EstadoComando.PENDIENTE, EstadoComando.ENVIADO);
     }
 }

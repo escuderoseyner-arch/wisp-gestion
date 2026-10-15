@@ -7,15 +7,18 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 // Terminal remota del MikroTik (solo ADMIN, ver SecurityConfig)
 @RestController
@@ -29,8 +32,14 @@ public class TerminalController {
     }
 
     @GetMapping("/redes/{id}/comandos")
-    public List<ComandoTerminalResponse> historial(@PathVariable Integer id) {
-        return terminalService.historial(id);
+    public List<ComandoTerminalResponse> historial(@PathVariable Integer id,
+                                                   @RequestParam(defaultValue = "50") int limite) {
+        return terminalService.historial(id, limite);
+    }
+
+    @DeleteMapping("/redes/{id}/comandos")
+    public Map<String, Integer> limpiar(@PathVariable Integer id, @AuthenticationPrincipal Jwt jwt) {
+        return Map.of("borrados", terminalService.limpiarHistorial(id, jwt.getSubject()));
     }
 
     @PostMapping("/redes/{id}/comandos")

@@ -170,6 +170,7 @@ class SeguridadRutasTest {
                 .contentType("application/json").content("{}")).andExpect(status().isForbidden());
         mockMvc.perform(post("/api/admin/clientes/2/retirar").header("Authorization", operador)).andExpect(status().isForbidden());
         mockMvc.perform(post("/api/admin/clientes/2/cortar").header("Authorization", operador)).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/admin/redes/1/comandos").header("Authorization", operador)).andExpect(status().isForbidden());
         mockMvc.perform(post("/api/admin/clientes/2/cuenta/restablecer-password").header("Authorization", operador)
                 .contentType("application/json").content("{\"password\": \"Clave-nueva-1\"}")).andExpect(status().isForbidden());
         for (String ruta : new String[]{"/api/admin/planes", "/api/admin/redes", "/api/admin/administradores",

@@ -7,6 +7,7 @@
 
   const URL_REDES = '/api/admin/redes';
   const INTERVALO_REVISION_MS = 5000;
+  const PASO_HISTORIAL = 10;
   const $ = (id) => document.getElementById(id);
 
   const ETIQUETA_ESTADO = {
@@ -33,14 +34,23 @@
 
   let redes = [];
   let temporizador = null;
+  let visibles = PASO_HISTORIAL;   // cuántos comandos se muestran ("Ver más" suma 10)
+  const abiertos = new Set();      // ids desplegados (se mantienen al refrescar)
 
   Sesion.cargarEmpresa();
   $('cerrar-sesion').addEventListener('click', Sesion.cerrar);
   form.addEventListener('submit', enviar);
   form.red.addEventListener('change', () => {
     actualizarAvisoModo();
+    visibles = PASO_HISTORIAL;
+    abiertos.clear();
     cargarHistorial();
   });
+  $('ver-mas').addEventListener('click', () => {
+    visibles += PASO_HISTORIAL;
+    cargarHistorial();
+  });
+  $('boton-limpiar').addEventListener('click', limpiarHistorial);
 
   iniciar();
 
@@ -80,10 +90,14 @@
     const red = redActual();
     if (!red) return;
     try {
-      const comandos = await Sesion.api(URL_REDES + '/' + red.id + '/comandos');
+      // Se pide uno más de los que se muestran para saber si hay "Ver más"
+      const recibidos = await Sesion.api(URL_REDES + '/' + red.id + '/comandos?limite=' + (visibles + 1));
       if (redActual() !== red) return; // se cambió de red mientras cargaba
-      $('historial').replaceChildren(...comandos.map(crearTarjeta));
+      const comandos = recibidos.slice(0, visibles);
+      $('historial').replaceChildren(...comandos.map(crearFila));
       $('vacio').hidden = comandos.length > 0;
+      $('contenedor-ver-mas').hidden = recibidos.length <= visibles;
+      $('boton-limpiar').hidden = comandos.length === 0;
       // Mientras haya comandos sin terminar, se revisa cada 5 segundos
       if (comandos.some((c) => c.estado === 'PENDIENTE' || c.estado === 'ENVIADO')) {
         temporizador = setTimeout(cargarHistorial, INTERVALO_REVISION_MS);
@@ -96,50 +110,134 @@
   }
 
   // createElement + textContent (nunca innerHTML): la salida del router se muestra tal cual, sin interpretarse
-  function crearTarjeta(c) {
+  // Cada comando es una fila compacta: al tocarla se despliega su salida y al tocarla de nuevo se cierra.
+  function crearFila(c) {
     const item = document.createElement('li');
-    item.className = 'tarjeta-plan';
+    item.className = 'fila-comando';
 
-    const cabecera = document.createElement('div');
-    cabecera.className = 'tarjeta-plan-cabecera';
-    const titulo = document.createElement('p');
-    titulo.className = 'campo-ayuda';
-    titulo.textContent = c.enviadoPor + ' · ' + (c.creadoEn ? formatoFecha.format(new Date(c.creadoEn)) : 'ahora');
+    const resumen = document.createElement('button');
+    resumen.type = 'button';
+    resumen.className = 'fila-comando-resumen';
+    resumen.setAttribute('aria-controls', 'detalle-' + c.id);
+
+    const meta = document.createElement('span');
+    meta.className = 'fila-comando-meta';
+    meta.textContent = (c.creadoEn ? formatoFecha.format(new Date(c.creadoEn)) : 'ahora') + ' · ' + c.enviadoPor;
     const estado = document.createElement('span');
     estado.className = 'estado ' + CLASE_ESTADO[c.estado];
     estado.textContent = ETIQUETA_ESTADO[c.estado];
-    cabecera.append(titulo, estado);
+    const texto = document.createElement('span');
+    texto.className = 'fila-comando-texto';
+    texto.textContent = c.comando.replace(/\s+/g, ' ');
+    resumen.append(meta, texto, estado);
 
+    const detalle = document.createElement('div');
+    detalle.className = 'fila-comando-detalle';
+    detalle.id = 'detalle-' + c.id;
+    llenarDetalle(detalle, c);
+
+    const ponerAbierta = (abierta) => {
+      resumen.setAttribute('aria-expanded', String(abierta));
+      detalle.hidden = !abierta;
+      item.classList.toggle('abierta', abierta);
+    };
+    ponerAbierta(abiertos.has(c.id));
+    resumen.addEventListener('click', () => {
+      const abrir = !abiertos.has(c.id);
+      if (abrir) abiertos.add(c.id); else abiertos.delete(c.id);
+      ponerAbierta(abrir);
+    });
+
+    item.append(resumen, detalle);
+    return item;
+  }
+
+  function llenarDetalle(detalle, c) {
     const comando = document.createElement('pre');
     comando.className = 'salida-terminal comando-terminal';
     comando.textContent = c.comando;
-    item.append(cabecera, comando);
+    detalle.appendChild(comando);
 
-    if (c.salida !== null && c.salida !== undefined) {
+    const tieneSalida = c.salida !== null && c.salida !== undefined;
+    if (tieneSalida) {
       const salida = document.createElement('pre');
       salida.className = 'salida-terminal';
       salida.textContent = c.salida === '' ? '(sin salida)' : c.salida;
-      item.appendChild(salida);
+      detalle.appendChild(salida);
       if (c.salidaTruncada) {
-        const nota = document.createElement('p');
-        nota.className = 'campo-ayuda';
-        nota.textContent = 'La salida era más larga: se guardaron solo los primeros 16 KB.';
-        item.appendChild(nota);
+        detalle.appendChild(nota('La salida era más larga: se guardaron solo los primeros 16 KB.'));
       }
+    } else {
+      detalle.appendChild(nota(c.estado === 'PENDIENTE' || c.estado === 'ENVIADO'
+        ? 'Aún no hay salida: esperando al MikroTik.' : 'Este comando no tiene salida.'));
     }
 
+    const acciones = document.createElement('div');
+    acciones.className = 'fila-comando-acciones';
+    if (tieneSalida && c.salida !== '') {
+      const copiar = botonCompacto('Copiar salida');
+      copiar.addEventListener('click', () => copiarSalida(c.salida, copiar));
+      acciones.appendChild(copiar);
+    }
     if (c.estado === 'PENDIENTE') {
-      const acciones = document.createElement('div');
-      acciones.className = 'tarjeta-plan-acciones';
-      const cancelar = document.createElement('button');
-      cancelar.type = 'button';
-      cancelar.className = 'boton boton-secundario boton-compacto';
-      cancelar.textContent = 'Cancelar';
+      const cancelar = botonCompacto('Cancelar');
       cancelar.addEventListener('click', () => cancelarComando(c, cancelar));
       acciones.appendChild(cancelar);
-      item.appendChild(acciones);
     }
-    return item;
+    if (acciones.childElementCount > 0) detalle.appendChild(acciones);
+  }
+
+  function nota(texto) {
+    const p = document.createElement('p');
+    p.className = 'campo-ayuda';
+    p.textContent = texto;
+    return p;
+  }
+
+  function botonCompacto(texto) {
+    const boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'boton boton-secundario boton-compacto';
+    boton.textContent = texto;
+    return boton;
+  }
+
+  async function copiarSalida(texto, boton) {
+    try {
+      await navigator.clipboard.writeText(texto);
+      boton.textContent = 'Copiado';
+    } catch {
+      boton.textContent = 'No se pudo copiar';
+    }
+    setTimeout(() => { boton.textContent = 'Copiar salida'; }, 2000);
+  }
+
+  // Borra el historial de la red elegida (los comandos que aún esperan al MikroTik se conservan)
+  async function limpiarHistorial() {
+    limpiarAvisos();
+    const red = redActual();
+    if (!red) return;
+    const confirmado = await confirmar({
+      titulo: '¿Limpiar el historial de ' + red.nombre + '?',
+      texto: 'Se borrarán los comandos ya terminados de esta red y sus salidas. No se puede deshacer. '
+        + 'Los que aún esperan al MikroTik se conservan.',
+      boton: 'Sí, limpiar historial',
+    });
+    if (!confirmado) return;
+
+    const boton = $('boton-limpiar');
+    boton.disabled = true;
+    try {
+      const respuesta = await Sesion.api(URL_REDES + '/' + red.id + '/comandos', { method: 'DELETE' });
+      Sesion.mostrarMensaje(cajaExito, 'Historial limpiado: ' + respuesta.borrados + ' comando(s) borrado(s).');
+      visibles = PASO_HISTORIAL;
+      abiertos.clear();
+      await cargarHistorial();
+    } catch (error) {
+      Sesion.mostrarError(cajaError, error);
+    } finally {
+      boton.disabled = false;
+    }
   }
 
   // ---------- Enviar ----------
@@ -209,7 +307,8 @@
     const dialogo = $('dialogo');
     $('dialogo-titulo').textContent = titulo;
     $('dialogo-texto').textContent = texto;
-    $('dialogo-comando').textContent = comando;
+    $('dialogo-comando').textContent = comando || '';
+    $('dialogo-comando').hidden = !comando;
     $('dialogo-si').textContent = boton;
     dialogo.returnValue = '';
     return new Promise((resolver) => {

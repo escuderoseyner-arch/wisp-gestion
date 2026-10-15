@@ -1369,6 +1369,111 @@ body.con-nav-admin {
   font-weight: 600;
 }
 
+/* Historial de la terminal: una sola columna, cada comando en una fila que se despliega */
+.historial-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.historial-cabecera .panel-titulo {
+  margin: 0;
+}
+
+.historial-terminal {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-control);
+  overflow: hidden;
+}
+
+.fila-comando + .fila-comando {
+  border-top: 1px solid var(--borde);
+}
+
+.fila-comando-resumen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "meta estado"
+    "texto texto";
+  gap: 4px 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: var(--texto);
+  text-align: left;
+  font: inherit;
+  background: var(--superficie);
+  border: 0;
+  cursor: pointer;
+}
+
+.fila-comando-resumen:hover,
+.fila-comando.abierta .fila-comando-resumen {
+  background: var(--gris-claro-fondo);
+}
+
+.fila-comando-resumen:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: -2px;
+}
+
+.fila-comando-meta {
+  grid-area: meta;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fila-comando-texto {
+  grid-area: texto;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fila-comando-resumen .estado {
+  grid-area: estado;
+  justify-self: end;
+}
+
+.fila-comando-detalle {
+  padding: 4px 12px 12px;
+  background: var(--gris-claro-fondo);
+}
+
+.fila-comando-detalle .salida-terminal {
+  max-width: 100%;
+  background: var(--superficie);
+}
+
+.fila-comando-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* En pantallas anchas: fecha, comando y estado en una sola línea */
+@media (min-width: 720px) {
+  .fila-comando-resumen {
+    grid-template-columns: 12.5rem minmax(0, 1fr) auto;
+    grid-template-areas: "meta texto estado";
+  }
+}
+
 #grupo-token {
   border: 0;
   padding: 0;
